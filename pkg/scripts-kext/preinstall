@@ -1,0 +1,18 @@
+#!/bin/sh
+set -e
+if /bin/launchctl list ch.roe.xnumon >/dev/null 2>&1; then
+	if [ -f /var/run/xnumon.pid ]; then
+		pid=`cat /var/run/xnumon.pid`
+	else
+		pid=`killall -u root -s xnumon|cut -f 3 -d ' '|head -1 2>/dev/null || true`
+	fi
+	/bin/launchctl remove ch.roe.xnumon
+	if [ "x$pid" != "x" ]; then
+		while ps -p "$pid" -o comm= >/dev/null; do sleep 1; done
+	else
+		sleep 10
+	fi
+fi
+if /usr/sbin/kextstat -l -b ch.roe.kext.xnumon|grep -q .; then
+	/sbin/kextunload -b ch.roe.kext.xnumon
+fi

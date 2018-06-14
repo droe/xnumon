@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<!--
+
+    Do not change this default configuration!
+
+    Instead, install a modified copy of this configuration to
+    /Library/Application Support/ch.roe.xnumon/configuration.plist
+    and make sure to change the value of config_id accordingly.
+
+-->
+<dict>
+
+  <!-- Config ID:
+       String that identifies this configuration revision in an enterprise
+       deployment.  Change this when modifying the configuration in order to
+       verify the deployment of configs via xnumon-start[0] events.
+       Good practice is to use your org name with a date or commit id, but
+       there are no expectations with regards to the syntax of this string.
+       If unset, defaults to:   unset
+       -->
+  <key>config_id</key>
+  <string>default-__BUILD_VERSION__</string>
+
+
+  <!-- LOG FORMAT AND DESTINATION -->
+
+  <!-- Log format:
+       json         JSON objects separated by newlines.  Equivalent to JSON
+                    Lines format if used in oneline mode.
+       yaml         YAML documents.  Only supports multiline mode.
+       If unset, defaults to:   json
+       -->
+  <key>log_format</key>
+  <string>json</string>
+
+  <!-- Log destination:
+       syslog       Submit events to syslog(3).  Only supports oneline mode.
+       -            Write events to standard output.
+       <file>       Write events to a file.
+       If unset, defaults to:   - (standard output)
+       -->
+  <key>log_destination</key>
+  <string>/var/log/xnumon.log</string>
+
+  <!-- Log mode:
+       oneline      One line per event.
+       multiline    Multiple lines per event, indented where applicable.
+       If unset, defaults to:   multiline if stdout is TTY, otherwise oneline.
+       -->
+  <!--
+  <key>log_mode</key>
+  <string>oneline</string>
+  <string>multiline</string>
+  -->
+
+
+  <!-- DATA ACQUISITION -->
+
+  <!-- Kernel extension level:
+       0 none       Do not use kernel extension.  Processes may execute without
+                    any delay, but acquisition of images may fail for processes
+                    writing to or unlinking their executable image on disk,
+                    resulting in log events without hashes or codesign info.
+       1 open       Synchroniously open and stat executable image before the
+                    process is allowed to execute in the new image.
+                    This incurs only a minimal delay before the new process may
+                    execute, but processes writing to their own exec image may
+                    cause subsequent hashes and codesign acquisition to fail,
+                    resulting in log events without hashes or codesign info.
+                    Processes unlinking but not modifying their own executable
+                    image on disk will have hashes acquired successfully.
+       2 hashes     Synchroniously acquire hashes of the executable image
+                    before the process is allowed to execute in the new image.
+                    Incurs a delay of a few milliseconds depending on image
+                    size, but ensures we have hashes for all exec images.  For
+                    processes modifying or unlinking their own image on disk,
+                    the subsequent acquisition of codesign information may
+                    fail, resulting in log events without codesign info.
+       3 codesign   Synchroniously acquire hashes and code signature info
+                    before the process is allowed to execute in the new image.
+                    Incurs a significant delay of tens of milliseconds even for
+                    very small executable images, but ensures we have both
+                    hashes and code signature information for all executed
+                    image files.
+       If unset, defaults to:   hash
+       -->
+  <!--
+  <key>kextlevel</key>
+  <string>none</string>
+  <string>open</string>
+  <string>hash</string>
+  <string>codesign</string>
+  -->
+
+  <!-- Hashes:
+       Comma-separated list of hash algorithms to use when acquiring hashes of
+       executable images on disk.  Supported are md5, sha1 and sha256, or any
+       combinations thereof, such as md5,sha1,sha256.  More hashes result in
+       longer acquisition time and higher CPU use, but not more I/O, since the
+       hashes are calculated in a single I/O loop.  The difference is
+       insignificant for smaller executables.
+       If unset, defaults to:   sha256
+       -->
+  <!--
+  <key>hashes</key>
+  <string>sha256</string>
+  -->
+
+  <!-- Code signature information:
+       Enable (<true/>) or disable (<false/>) the acquisition of code signature
+       information from executed files, including the executable ident string
+       certificate and CA chain Common Names.
+       If unset, defaults to:   true
+       -->
+  <!--
+  <key>codesign</key>
+  <true/>
+  <false/>
+  -->
+
+
+  <!-- LEVEL OF DETAIL -->
+
+  <!-- Ancestory:
+       Number of images to list in subject ancestry, and to remember in memory
+       for each active process.
+       If unset, defaults to:   unlimited
+       -->
+  <!--
+  <key>ancestors</key>
+  <string>unlimited</string>
+  -->
+
+
+  <!-- SUPPRESSIONS -->
+
+  <!-- Suppress exec image events by ident:
+       Code signing ident strings to exclude from logging image-exec[3] events.
+       Unsigned binaries or broken signature binaries have no ident string so
+       never match an identifier in this list.
+       If unset, defaults to:   no suppressions
+       -->
+  <key>suppress_image_exec_by_ident</key>
+  <array>
+    <string>com.apple.xpc.proxy</string>
+    <string>com.apple.mdworker</string>
+  </array>
+
+  <!-- Suppress exec image events by path:
+       Executable image paths to exclude from logging image-exec[3] events.
+       It is generally preferable to use suppress_image_exec_by_ident instead.
+       If unset, defaults to:   no suppressions
+       -->
+  <key>suppress_image_exec_by_path</key>
+  <array>
+  <!--
+    <string>/usr/libexec/xpcproxy</string>
+    <string>/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mdworker</string>
+    <string>/Applications/Splunk/bin/splunk-optimize</string>
+    -->
+  </array>
+
+  <!-- Suppress process access events by ident:
+       Code signing ident strings to exclude from logging process-access[4]
+       events.
+       Unsigned binaries or broken signature binaries have no ident string so
+       never match an identifier in this list.
+       If unset, defaults to:   no suppressions
+       -->
+  <key>suppress_process_access_by_ident</key>
+  <array>
+    <string>com.apple.coreservicesd</string>
+    <string>com.apple.spindump</string>
+    <string>com.apple.sysmond</string>
+  </array>
+
+  <!-- Suppress process access events by path:
+       Executable image paths to exclude from logging process-access[4] events.
+       It is generally preferable to use suppress_process_access_by_ident
+       instead.
+       If unset, defaults to:   no suppressions
+       -->
+  <key>suppress_process_access_by_path</key>
+  <array>
+    <!--
+    <string>/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/CarbonCore.framework/Versions/A/Support/coreservicesd</string>
+    <string>/usr/sbin/spindump</string>
+    <string>/usr/libexec/sysmond</string>
+    -->
+  </array>
+
+
+  <!-- RESOURCE LIMITS -->
+
+  <!-- Number of open files resource limit:
+       Maximum number of open files that the operating system allows xnumon to
+       open before opening more files will fail.  For kextlevel open, the
+       limit needs to be large enough to fit the queue of processes that have
+       called exec, but have not been logged by xnumon yet.  Additionally, upon
+       starting xnumon, all currently running processes will be added to the
+       queue at once.  The default should be sufficient for all configurations,
+       but increase it if xnumon fails to open files with EMFILE.
+       If unset, defaults to:   8192
+       -->
+  <!--
+  <key>rlimit_nofile</key>
+  <string>8192</string>
+  -->
+
+</dict>
+</plist>

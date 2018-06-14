@@ -1,0 +1,3 @@
+#!/bin/sh
+set -e
+/bin/launchctl load /Library/LaunchDaemons/ch.roe.xnumon.plist

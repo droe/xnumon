@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<installer-gui-script minSpecVersion="1">
+    <title>xnumon</title>
+    <organization>ch.roe</organization>
+    <domains enable_localSystem="true"/>
+    <options customize="never" require-scripts="true" rootVolumeOnly="true"/>
+    <license file="license.html" mime-type="text/html"/>
+    <readme  file="readme.rtf"   mime-type="text/rtf" />
+    <pkg-ref id="ch.roe.xnumon"
+             version="0"
+             auth="root">ch.roe.xnumon.pkg</pkg-ref>
+    <pkg-ref id="ch.roe.kext.xnumon"
+             version="0"
+             auth="root">ch.roe.kext.xnumon.pkg</pkg-ref>
+    <choices-outline>
+        <line choice="ch.roe.xnumon">
+            <line choice="ch.roe.kext.xnumon"/>
+        </line>
+    </choices-outline>
+    <choice
+        id="ch.roe.xnumon"
+        visible="false"
+        title="xnumon"
+        description="Userspace daemon"
+        start_selected="true">
+      <pkg-ref id="ch.roe.xnumon"/>
+    </choice>
+    <choice
+        id="ch.roe.kext.xnumon"
+        visible="false"
+        title="xnumon.kext"
+        description="Kernel extension"
+        start_selected="true">
+      <pkg-ref id="ch.roe.kext.xnumon"/>
+    </choice>
+</installer-gui-script>

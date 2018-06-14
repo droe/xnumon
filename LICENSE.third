@@ -1,0 +1,22 @@
+This software includes third-party source code components with different
+copyright and other but one-way-compatible license terms:
+
+tommy*:
+
+    Copyright (c) Andrea Mazzoleni.
+    Licensed under a 2-clause BSD license.
+    https://www.tommyds.it/
+
+memstream*:
+
+    Copyright (c) Ian Piumarta.
+    Licensed under the MIT license.
+    http://piumarta.com/software/memstream/
+
+map.h:
+
+    Copyright (c) William Swanson.
+    Licensed under the MIT license.
+    https://github.com/swansontec/map-macro
+
+See the respective source code, license and/or website for details.
