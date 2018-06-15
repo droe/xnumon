@@ -15,7 +15,7 @@ Currently implemented are the following log events:
 
 -   **xnumon-ops[0]** and **xnumon-stats[1]** for in-band monitoring of agent
     status and activity metrics.
--   **exec-image[2]**: a process has replaced its executable image as a result
+-   **image-exec[2]**: a process has replaced its executable image as a result
     of calling one of the execve(2) or posix_spawn(2) family syscalls.
 -   **process-access[3]**: a process has accessed and possibly manipulated
     another process using either the task_for_pid or ptrace(2) syscalls.
