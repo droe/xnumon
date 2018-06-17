@@ -15,7 +15,7 @@
   <!-- Config ID:
        String that identifies this configuration revision in an enterprise
        deployment.  Change this when modifying the configuration in order to
-       verify the deployment of configs via xnumon-start[0] events.
+       verify the deployment of configs via xnumon-ops[0] events.
        Good practice is to use your org name with a date or commit id, but
        there are no expectations with regards to the syntax of this string.
        If unset, defaults to:   unset
@@ -78,12 +78,17 @@
                     processes modifying or unlinking their own image on disk,
                     the subsequent acquisition of codesign information may
                     fail, resulting in log events without codesign info.
+                    The delay for hash acquisition is minimal if hashes for the
+                    same binary have been cached from a previous execution.
        3 codesign   Synchroniously acquire hashes and code signature info
                     before the process is allowed to execute in the new image.
                     Incurs a significant delay of tens of milliseconds even for
                     very small executable images, but ensures we have both
                     hashes and code signature information for all executed
-                    image files.
+                    image files.  The delay for hash and code signature info
+                    acquisition is minimal if hashes and code signature info
+                    for the same binary have been cached from a previous
+                    execution.
        If unset, defaults to:   hash
        -->
   <!--
