@@ -117,8 +117,10 @@ codesign_new(const char *cpath) {
 		return cs;
 	}
 	rv = SecStaticCodeCheckValidity(scode,
-	                                /*kSecCSCheckAllArchitectures|*/
-	                                /*kSecCSCheckNestedCode|*/
+	                                kSecCSDefaultFlags|
+	                                kSecCSCheckAllArchitectures|
+	                                kSecCSCheckNestedCode|
+	                                kSecCSEnforceRevocationChecks|
 	                                kSecCSConsiderExpiration,
 	                                req);
 	CFRelease(req);
