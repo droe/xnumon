@@ -119,6 +119,7 @@ codesign_new(const char *cpath) {
 	rv = SecStaticCodeCheckValidity(scode,
 	                                kSecCSDefaultFlags|
 	                                kSecCSCheckAllArchitectures|
+	                                kSecCSStrictValidate|
 	                                kSecCSCheckNestedCode|
 	                                kSecCSEnforceRevocationChecks|
 	                                kSecCSConsiderExpiration,
