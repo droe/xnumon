@@ -1,3 +1,6 @@
+# Kext version only incremented when there were actual changes in the kext, so
+# effectively the kext version is the xnumon release it last changed.
+
 KEXTNAME=	xnumon
 KEXTVERSION=	0.1.0
 KEXTBUILD=	0.1.0
