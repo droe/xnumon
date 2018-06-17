@@ -169,11 +169,14 @@ pkg/ch.roe.xnumon.pkg: xnumon.signed \
 	cp pkg/newsyslog.conf \
 	   pkgroot~/private/etc/newsyslog.d/ch.roe.xnumon.conf
 	mkdir -p "pkgroot~/Library/Application Support/ch.roe.xnumon/"
+	chmod 750 "pkgroot~/Library/Application Support/ch.roe.xnumon/"
 	cat pkg/configuration.plist-default.in \
 	   | sed 's/__BUILD_VERSION__/$(BUILD_VERSION)/' \
 	   > "pkgroot~/Library/Application Support/ch.roe.xnumon/configuration.plist-default"
+	chmod 440 "pkgroot~/Library/Application Support/ch.roe.xnumon/configuration.plist-default"
 	cp pkg/uninstall.sh \
 	   "pkgroot~/Library/Application Support/ch.roe.xnumon/uninstall.sh"
+	chmod 550 "pkgroot~/Library/Application Support/ch.roe.xnumon/uninstall.sh"
 	pkgbuild --root pkgroot~ \
 	         --scripts pkg/scripts/ \
 	         --identifier ch.roe.xnumon \
