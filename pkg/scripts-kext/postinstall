@@ -1,2 +1,11 @@
 #!/bin/sh
-touch /Library/Extensions
+# $1  Full path to package
+# $2  Full path to target installation directory: /Applications
+# $3  Mountpoint of installation disk: / or /Volumes/ExtDrive
+# $4  Root directory of currently booted system
+set -e
+if [ "$3" != "/" ]; then
+	exit 0
+fi
+/usr/bin/touch /Library/Extensions
+exit 0

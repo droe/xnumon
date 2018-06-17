@@ -1,3 +1,11 @@
 #!/bin/sh
+# $1  Full path to package
+# $2  Full path to target installation directory: /Applications
+# $3  Mountpoint of installation disk: / or /Volumes/ExtDrive
+# $4  Root directory of currently booted system
 set -e
-/bin/launchctl load /Library/LaunchDaemons/ch.roe.xnumon.plist
+/bin/chmod o-rwx "$3/Library/Application Support/ch.roe.xnumon/"
+if [ "$3" = "/" ]; then
+	/bin/launchctl load "/Library/LaunchDaemons/ch.roe.xnumon.plist"
+fi
+exit 0

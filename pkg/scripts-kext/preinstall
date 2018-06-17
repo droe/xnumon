@@ -1,5 +1,12 @@
 #!/bin/sh
+# $1  Full path to package
+# $2  Full path to target installation directory: /Applications
+# $3  Mountpoint of installation disk: / or /Volumes/ExtDrive
+# $4  Root directory of currently booted system
 set -e
+if [ "$3" != "/" ]; then
+	exit 0
+fi
 if /bin/launchctl list ch.roe.xnumon >/dev/null 2>&1; then
 	if [ -f /var/run/xnumon.pid ]; then
 		pid=`cat /var/run/xnumon.pid`
@@ -16,3 +23,4 @@ fi
 if /usr/sbin/kextstat -l -b ch.roe.kext.xnumon|grep -q .; then
 	/sbin/kextunload -b ch.roe.kext.xnumon
 fi
+exit 0
