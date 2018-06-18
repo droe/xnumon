@@ -45,7 +45,8 @@ const uint16_t auclass_xnumon_events[] = {
 	/* tracking of inter-process access for potential manipulation */
 	AUE_PTRACE,     /* ptrace */
 	AUE_TASKFORPID, /* task_for_pid */
-	                /* processor_set_tasks cannot be audited (40755284) */
+	                /* processor_set_tasks cannot be audited (40755284);
+	                 * but seems to be disarmed in 10.14 */
 
 	/* file modification tracking for monitoring launch daemons */
 	AUE_CLOSE,      /* close, close_nocancel, guarded_close_np */

@@ -12,6 +12,9 @@
  * On unsigned binaries, it works for root or special code signing magic.
  * http://os-tres.net/blog/2010/02/17/mac-os-x-and-task-for-pid-mach-call/
  * http://devstreaming.apple.com/videos/wwdc/2015/706nu20qkag/706/706_security_and_your_apps.pdf
+ *
+ * Note that processor_set_default() returns only the task port of the current
+ * process on macOS 10.14.
  */
 
 mach_error_t
@@ -44,9 +47,11 @@ alt_task_for_pid(pid_t pid, mach_port_t *taskport)
 	for (size_t i = 0; i < taskcount; i++) {
 		pid_t taskpid;
 		pid_for_task(taskarr[i], &taskpid);
+		fprintf(stderr, "received task for pid %i\n", taskpid);
 		if (taskpid == pid) {
 			*taskport = taskarr[i];
 			kr = KERN_SUCCESS;
+			continue;
 		}
 		mach_port_deallocate(mach_task_self(), taskarr[i]);
 	}
