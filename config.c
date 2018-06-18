@@ -207,13 +207,11 @@ config_new(const char *cfgpath) {
 	cfg->logoneline = -1; /* any */
 	if (logfmt_parse(cfg, "json") == -1) {
 		fprintf(stderr, "Failed to set default logfmt 'json'\n");
-		free(cfg);
-		return NULL;
+		goto errout;
 	}
 	if (logdst_parse(cfg, "-") == -1) {
 		fprintf(stderr, "Failed to set default logdst '-'\n");
-		free(cfg);
-		return NULL;
+		goto errout;
 	}
 
 	/* load configuration plist */
@@ -333,7 +331,8 @@ config_new(const char *cfgpath) {
 	return cfg;
 
 errout:
-	CFRelease(plist);
+	if (plist)
+		CFRelease(plist);
 	config_free(cfg);
 	return NULL;
 }
