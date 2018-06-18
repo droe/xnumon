@@ -1,6 +1,9 @@
 #include <unistd.h>
 #include <stdio.h>
+
+#define __APPLE_API_PRIVATE
 #include <security/mac.h>
+#undef __APPLE_API_PRIVATE
 
 int
 main(int argc, char *argv[]) {
