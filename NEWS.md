@@ -1,5 +1,9 @@
 ### xnumon develop
 
+-   Fix default hash if unspecified to be sha256 as documented in the default
+    config.
+-   Minor bugfixes and improvements.
+
 
 ### xnumon 0.1.1 2018-06-17
 

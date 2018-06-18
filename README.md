@@ -36,6 +36,7 @@ A supported version of OS X or macOS, currently:
 -   OS X 10.11 El Capitan
 -   macOS 10.12 Sierra
 -   macOS 10.13 High Sierra
+-   macOS 10.14 Mojave
 
 
 ## Documentation
