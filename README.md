@@ -128,3 +128,9 @@ Contains components licensed under BSD and MIT licenses.
 
 See `LICENSE`, `LICENSE.contrib` and `LICENSE.third` as well as the respective
 source file headers for details.
+
+
+## Sponsoring
+
+If you are interested in supporting the development and maintenance of xnumon,
+[contact me](mailto:daniel@roe.ch).
