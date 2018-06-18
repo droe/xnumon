@@ -202,7 +202,7 @@ config_new(const char *cfgpath) {
 	/* set defaults that differ from all zeroes */
 	cfg->limit_nofile = 8192;
 	cfg->kextlevel = KEXTLEVEL_HASH;
-	cfg->hflags = HASH_MD5|HASH_SHA1|HASH_SHA256;
+	cfg->hflags = HASH_SHA256;
 	cfg->codesign = true;
 	cfg->logoneline = -1; /* any */
 	if (logfmt_parse(cfg, "json") == -1) {
