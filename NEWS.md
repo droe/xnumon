@@ -2,6 +2,7 @@
 
 -   Fix default hash if unspecified to be sha256 as documented in the default
     config.
+-   Fix metrics for hackmon.
 -   Minor bugfixes and improvements.
 
 

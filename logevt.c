@@ -160,11 +160,11 @@ logevt_xnumon_stats(logfmt_t *fmt, FILE *f, void *arg0) {
 	fmt->dict_item(f, "hackmon");
 	fmt->dict_begin(f);
 	fmt->dict_item(f, "recvd");
-	fmt->value_uint(f, st->fm.receiveds);
+	fmt->value_uint(f, st->hm.receiveds);
 	fmt->dict_item(f, "procd");
-	fmt->value_uint(f, st->fm.processeds);
+	fmt->value_uint(f, st->hm.processeds);
 	fmt->dict_item(f, "oom");
-	fmt->value_uint(f, st->fm.ooms);
+	fmt->value_uint(f, st->hm.ooms);
 	fmt->dict_end(f); /* hackmon */
 
 	fmt->dict_item(f, "filemon");
