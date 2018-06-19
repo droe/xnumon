@@ -88,6 +88,11 @@ config_str(config_t *cfg, const char *key, const char *value) {
 		return 0;
 	}
 
+	if (!strcmp(key, "stats_interval")) {
+		cfg->stats_interval = atoi(value);
+		return 0;
+	}
+
 	if (!strcmp(key, "kextlevel"))
 		return config_kextlevel(cfg, value);
 
@@ -201,6 +206,7 @@ config_new(const char *cfgpath) {
 
 	/* set defaults that differ from all zeroes */
 	cfg->limit_nofile = 8192;
+	cfg->stats_interval = 3600;
 	cfg->kextlevel = KEXTLEVEL_HASH;
 	cfg->hflags = HASH_SHA256;
 	cfg->codesign = true;
@@ -281,6 +287,12 @@ config_new(const char *cfgpath) {
 	                           plist, CFSTR("ancestors"));
 	if (rv == -1) {
 		fprintf(stderr, "Failed to load 'ancestors'\n");
+		goto errout;
+	}
+	rv = config_str_from_plist(cfg, "stats_interval",
+	                           plist, CFSTR("stats_interval"));
+	if (rv == -1) {
+		fprintf(stderr, "Failed to load 'stats_interval'\n");
 		goto errout;
 	}
 	rv = config_str_from_plist(cfg, "rlimit_nofile",

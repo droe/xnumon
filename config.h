@@ -24,6 +24,7 @@ typedef struct {
 	bool launchd_mode;      /* only settable via command line */
 
 	size_t limit_nofile;
+	size_t stats_interval;  /* generate xnumon-stats every n seconds */
 
 	int kextlevel;
 #define KEXTLEVEL_NONE 0

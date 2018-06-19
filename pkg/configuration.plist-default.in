@@ -56,6 +56,19 @@
   -->
 
 
+  <!-- EVENTS -->
+
+  <!-- Stats interval:
+       Generate a xnumon-stats[1] event with operational metrics every this
+       many seconds.
+       If unset, defaults to:   3600
+       -->
+  <!--
+  <key>stats_interval</key>
+  <string>3600</string>
+  -->
+
+
   <!-- DATA ACQUISITION -->
 
   <!-- Kernel extension level:

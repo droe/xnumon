@@ -851,7 +851,7 @@ evtloop_run(config_t *cfg) {
 	}
 
 	/* start stats timer */
-	rv = kqueue_add_timer(1, 3600, &sttm_ctx);
+	rv = kqueue_add_timer(1, cfg->stats_interval, &sttm_ctx);
 	if (rv == -1) {
 		fprintf(stderr, "kqueue_add_timer(1) failed: %s (%i)\n",
 		                strerror(errno), errno);
