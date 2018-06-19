@@ -1,7 +1,8 @@
 ### xnumon develop
 
--   Add `stats_interval` to control how often xnumon-stats[1] events are
-    generated.
+-   Add `reload|restart` targets to `xnumonctl` to restart the daemon.
+-   Add `stats_interval` config option to control how often xnumon-stats[1]
+    events are generated.
 -   Fix default hash if unspecified to be sha256 as documented in the default
     config.
 -   Fix metrics for hackmon.

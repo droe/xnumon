@@ -9,6 +9,11 @@ load|start)
 unload|stop)
 	/bin/launchctl unload /Library/LaunchDaemons/ch.roe.xnumon.plist
 	;;
+restart|reload)
+	"$0" unload
+	/bin/sleep 1
+	"$0" load
+	;;
 status)
 	/bin/launchctl list ch.roe.xnumon
 	;;
@@ -31,7 +36,7 @@ uninstall)
 	exec /bin/sh '/Library/Application Support/ch.roe.xnumon/uninstall.sh'
 	;;
 *)
-	echo "Usage: $0 load|unload|start|stop|status|kextload|kextunload|kextstat|reopen|logstats|uninstall" >&2
+	echo "Usage: $0 load|unload|reload|start|stop|restart|status|kextload|kextunload|kextstat|reopen|logstats|uninstall" >&2
 	exit 1
 	;;
 esac
