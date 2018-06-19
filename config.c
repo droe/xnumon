@@ -190,7 +190,7 @@ config_t *
 config_new(const char *cfgpath) {
 	const char *selected_path;
 	char *wd;
-	CFPropertyListRef plist;
+	CFPropertyListRef plist = NULL;
 	config_t *cfg;
 	int rv;
 
