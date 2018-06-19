@@ -178,6 +178,7 @@ sys_realpath(const char *restrict path, const char *restrict cwd) {
 	char *rp, *res;
 	int rv;
 
+	errno = 0;
 	if (!path)
 		return NULL;
 	if (path[0] == '/')

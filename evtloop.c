@@ -168,14 +168,16 @@ auef_readable(UNUSED int fd, UNUSED void *udata) {
 					 * image on disk. */
 					path = strdup(ev.execarg[0]);
 				}
-				if (!path) {
+				if (!path)
 					ooms++;
-					break;
-				}
 			}
 		} else {
 			path = strdup(path);
+			if (!path)
+				ooms++;
 		}
+		if (!path)
+			break;
 		if (!ev.args[0].present) {
 			/* POSIX_SPAWN_SETEXEC */
 			procmon_exec(&ev.tv,
@@ -214,9 +216,14 @@ auef_readable(UNUSED int fd, UNUSED void *udata) {
 		assert(ev.subject_present);
 		path = (char *)(ev.path[1] ? ev.path[1] : ev.path[0]);
 		assert(path);
+		path = strdup(path);
+		if (!path) {
+			ooms++;
+			break;
+		}
 		procmon_exec(&ev.tv,
 		             &ev.subject,
-		             strdup(path),
+		             path,
 		             ev.attr_present ? &ev.attr : NULL,
 		             ev.execarg);
 		ev.execarg = NULL; /* pass ownership to procmon */
@@ -249,7 +256,12 @@ auef_readable(UNUSED int fd, UNUSED void *udata) {
 		assert(ev.subject_present);
 		path = (char *)(ev.path[1] ? ev.path[1] : ev.path[0]);
 		assert(path);
-		procmon_chdir(ev.subject.pid, strdup(path));
+		path = strdup(path);
+		if (!path) {
+			ooms++;
+			break;
+		}
+		procmon_chdir(ev.subject.pid, path);
 		break;
 
 	/*
@@ -299,7 +311,12 @@ auef_readable(UNUSED int fd, UNUSED void *udata) {
 			break;
 		path = (char *)(ev.path[1] ? ev.path[1] : ev.path[0]);
 		assert(path);
-		filemon_touched(&ev.tv, &ev.subject, strdup(path));
+		path = strdup(path);
+		if (!path) {
+			ooms++;
+			break;
+		}
+		filemon_touched(&ev.tv, &ev.subject, path);
 		break;
 
 	case AUE_UTIMES:
@@ -319,22 +336,26 @@ auef_readable(UNUSED int fd, UNUSED void *udata) {
 		if (ev.path[1]) {
 			/* two path tokens */
 			path = strdup(ev.path[1]);
+			if (!path)
+				ooms++;
 		} else if (ev.path[0]) {
 			/* one path token, assume unresolved if no attr */
 			if (ev.attr_present) {
 				path = strdup(ev.path[0]);
+				if (!path)
+					ooms++;
 			} else {
 				pathbugs++;
 				path = sys_realpath(ev.path[0],
 				           procmon_getcwd(ev.subject.pid));
+				if (!path && errno == ENOMEM)
+					ooms++;
 			}
 		} else {
 			path = NULL;
 		}
-		if (!path) {
-			ooms++;
+		if (!path)
 			break;
-		}
 		filemon_touched(&ev.tv, &ev.subject, path);
 		break;
 
@@ -355,21 +376,25 @@ auef_readable(UNUSED int fd, UNUSED void *udata) {
 		if (ev.path[1] && !ev.path[2]) {
 			/* two path tokens, assume both resolved */
 			path = strdup(ev.path[1]);
+			if (!path)
+				ooms++;
 		} else if (ev.path[3]) {
 			/* four path tokens, as expected */
 			path = strdup(ev.path[3]);
+			if (!path)
+				ooms++;
 		} else if (ev.path[2] && !ev.path[3]) {
 			/* three path tokens, assume third unresolved dpath */
 			pathbugs++;
 			path = sys_realpath(ev.path[2],
 			                    procmon_getcwd(ev.subject.pid));
+			if (!path && errno == ENOMEM)
+				ooms++;
 		} else {
 			path = NULL;
 		}
-		if (!path) {
-			ooms++;
+		if (!path)
 			break;
-		}
 		filemon_touched(&ev.tv, &ev.subject, path);
 		break;
 
