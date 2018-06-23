@@ -35,6 +35,10 @@ logstats)
 uninstall)
 	exec /bin/sh '/Library/Application Support/ch.roe.xnumon/uninstall.sh'
 	;;
+logstderr)
+	/usr/bin/plutil -replace StandardErrorPath -string /var/log/xnumon.stderr /Library/LaunchDaemons/ch.roe.xnumon.plist
+	"$0" reload
+	;;
 *)
 	echo "Usage: $0 load|unload|reload|start|stop|restart|status|kextload|kextunload|kextstat|reopen|logstats|uninstall" >&2
 	exit 1
