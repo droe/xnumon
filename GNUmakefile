@@ -14,6 +14,9 @@ include Mk/buildinfo.mk
 DEVIDAPPL?=	"Developer ID Application: Daniel Roethlisberger (C9BFEG985N)"
 DEVIDINST?=	"Developer ID Installer: Daniel Roethlisberger (C9BFEG985N)"
 MACOSX_VERSION_MIN=10.11
+ifdef DEVIDINST
+PRODUCTBUILDFLAGS+=--sign $(DEVIDINST)
+endif
 
 ifdef SDKROOT
 CPPFLAGS=	-isysroot $(SDKROOT)
@@ -144,7 +147,7 @@ $(PKGNAME)-$(BUILD_VERSION).pkg: pkg/distribution.xml \
 	             --package-path pkg/ \
 	             --identifier ch.roe.xnumon \
 	             --version $(BUILD_VERSION) \
-	             --sign $(DEVIDINST) \
+	             $(PRODUCTBUILDFLAGS) \
 	             $@
 	rm -f pkg/ch.roe.xnumon.pkg pkg/ch.roe.kext.xnumon.pkg
 	rm -f pkg/resources/license.html pkg/resources/readme.rtf
