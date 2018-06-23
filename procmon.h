@@ -28,10 +28,14 @@
 typedef struct {
 	uint32_t procs;
 	uint32_t images;
-	uint64_t eimisseds;
-	uint64_t cwdmisseds;
+	uint64_t eimiss_bypid;
+	uint64_t eimiss_forksubj;
+	uint64_t eimiss_execsubj;
+	uint64_t eimiss_execinterp;
+	uint64_t eimiss_chdirsubj;
+	uint64_t eimiss_getcwd;
 	uint64_t ooms;
-	uint32_t kqsize;
+	uint64_t kqsize;
 	uint64_t kqlookups;
 	uint64_t kqnotfounds;
 	uint64_t kqtimeouts;

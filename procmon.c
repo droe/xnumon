@@ -47,8 +47,12 @@ static uint64_t kqtimeouts;     /* counts preloaded imgs removed due max TTL */
 static uint64_t kqskips;        /* counts non-matching entries skipped in kq */
 
 static atomic32_t images;
-static uint64_t eimisseds;      /* counts missed images during fork/exec */
-static uint64_t cwdmisseds;     /* counts missed cwds during fork/exec */
+static uint64_t eimiss_bypid;   /* counts various missed image conditions */
+static uint64_t eimiss_forksubj;
+static uint64_t eimiss_execsubj;
+static uint64_t eimiss_execinterp;
+static uint64_t eimiss_chdirsubj;
+static uint64_t eimiss_getcwd;
 static atomic64_t ooms;         /* counts events impaired due to OOM */
 
 strset_t *suppress_image_exec_by_ident;
@@ -59,8 +63,7 @@ static int image_exec_work(image_exec_t *);
 /*
  * Ownership of path will be transfered to image_exec; caller must not assume
  * that path still exists after calling this function.  Path is also freed when
- * this function fails and returns NULL.  On failure due to allocation failure,
- * errno is set to ENOMEM.
+ * this function fails and returns NULL.
  */
 static image_exec_t *
 image_exec_new(char *path) {
@@ -71,6 +74,7 @@ image_exec_new(char *path) {
 	image = malloc(sizeof(image_exec_t));
 	if (!image) {
 		free(path);
+		atomic64_inc(&ooms);
 		return NULL;
 	}
 	bzero(image, sizeof(image_exec_t));
@@ -471,8 +475,15 @@ image_exec_from_pid(pid_t pid) {
 	                pid, path);
 #endif
 	if (!path) {
-		if (asprintf(&path, "<%i>", pid) == -1)
+		if (errno == ENOMEM) {
+			atomic64_inc(&ooms);
 			return NULL;
+		}
+		if (asprintf(&path, "<%i>", pid) == -1) {
+			atomic64_inc(&ooms);
+			free(path);
+			return NULL;
+		}
 		nopath = 1;
 	}
 	ei = image_exec_new(path);
@@ -487,10 +498,16 @@ image_exec_from_pid(pid_t pid) {
 
 /*
  * Create new proc from pid using runtime lookups.
+ * Called after looking up the subject of a call fails.
+ *
+ * Returns NULL on oom or if the process is not running anymore.
+ *
+ * Does oom counting, caller does not need to.
+ * However, caller needs to count and report eimiss if this fails.
  */
 static proc_t *
 procmon_proc_from_pid(pid_t pid) {
-	proc_t *proc, *pproc;
+	proc_t *proc;
 	pid_t ppid;
 
 	proc = proctab_find_or_create(pid);
@@ -499,20 +516,10 @@ procmon_proc_from_pid(pid_t pid) {
 		return NULL;
 	}
 
-	sys_pidbsdinfo(&proc->fork_tv, &ppid, pid);
-
-	if ((ppid >= 0) && (ppid != pid)) {
-		pproc = proctab_find(ppid);
-		if (!pproc) {
-			pproc = procmon_proc_from_pid(ppid);
-		}
-		if (!pproc) {
-			atomic64_inc(&ooms);
-			proctab_remove(pid);
-			return NULL;
-		}
-	} else {
-		pproc = NULL;
+	if (sys_pidbsdinfo(&proc->fork_tv, &ppid, pid) == -1) {
+		/* process not alive anymore */
+		proctab_remove(pid);
+		return NULL;
 	}
 
 	if (proc->cwd) {
@@ -522,6 +529,7 @@ procmon_proc_from_pid(pid_t pid) {
 	if (!proc->cwd) {
 		if (errno == ENOMEM)
 			atomic64_inc(&ooms);
+		/* process not alive anymore unless ENOMEM */
 		proctab_remove(pid);
 		return NULL;
 	}
@@ -531,16 +539,31 @@ procmon_proc_from_pid(pid_t pid) {
 	}
 	proc->image_exec = image_exec_from_pid(pid);
 	if (!proc->image_exec) {
-		if (errno == ENOMEM)
-			atomic64_inc(&ooms);
+		/* process not alive anymore unless ENOMEM */
 		proctab_remove(pid);
 		return NULL;
 	}
 	image_exec_open(proc->image_exec, NULL);
-	if (pproc) {
-		proc->image_exec->prev = pproc->image_exec;
-		if (proc->image_exec->prev) {
-			image_exec_ref(proc->image_exec->prev);
+
+	/* after acquiring all info from process, go after parent */
+	if ((ppid >= 0) && (ppid != pid)) {
+		proc_t *pproc = proctab_find(ppid);
+		if (!pproc) {
+			pproc = procmon_proc_from_pid(ppid);
+			if (!pproc) {
+				if (errno == ENOMEM) {
+					proctab_remove(pid);
+					return NULL;
+				}
+				/* parent not alive anymore */
+				ppid = -1;
+			}
+		}
+		if (pproc) {
+			proc->image_exec->prev = pproc->image_exec;
+			if (proc->image_exec->prev) {
+				image_exec_ref(proc->image_exec->prev);
+			}
 		}
 	}
 
@@ -561,6 +584,8 @@ procmon_proc_from_pid(pid_t pid) {
  * Caller must free the returned image_exec_t with image_exec_free().
  * On error returns NULL.
  * Not thread-safe - must be called from the main thread, not worker or logger!
+ *
+ * Caller does error counting and reporting.
  */
 image_exec_t *
 image_exec_by_pid(pid_t pid) {
@@ -568,15 +593,20 @@ image_exec_by_pid(pid_t pid) {
 
 	proc = proctab_find(pid);
 	if (!proc) {
-		eimisseds++;
 		proc = procmon_proc_from_pid(pid);
+		if (!proc) {
+			if (errno != ENOMEM)
+				eimiss_bypid++;
+			return NULL;
+		}
 	}
-	if (!proc)
-		return NULL;
 	image_exec_ref(proc->image_exec);
 	return proc->image_exec;
 }
 
+/*
+ * Handles fork.
+ */
 void
 procmon_fork(struct timespec *tv,
              audit_proc_t *subject, pid_t childpid) {
@@ -590,13 +620,14 @@ procmon_fork(struct timespec *tv,
 
 	parent = proctab_find(subject->pid);
 	if (!parent) {
-		eimisseds++;
 		parent = procmon_proc_from_pid(subject->pid);
 		if (!parent) {
-			atomic64_inc(&ooms);
+			if (errno != ENOMEM)
+				eimiss_forksubj++;
 			return;
 		}
 	}
+	assert(parent);
 
 	proctab_remove(childpid);
 	child = proctab_create(childpid);
@@ -669,17 +700,18 @@ procmon_exec(struct timespec *tv,
 
 	proc = proctab_find(subject->pid);
 	if (!proc) {
-		eimisseds++;
 		proc = procmon_proc_from_pid(subject->pid);
 		if (!proc) {
+			if (errno != ENOMEM)
+				eimiss_execsubj++;
 			if (imagepath)
 				free(imagepath);
 			if (argv)
 				free(argv);
-			atomic64_inc(&ooms);
 			return;
 		}
 	}
+	assert(proc);
 
 	/*
 	 * Look up the corresponding exec images acquired by kext events
@@ -783,9 +815,6 @@ procmon_exec(struct timespec *tv,
 		kqnotfounds++;
 		image = image_exec_new(imagepath);
 		if (!image) {
-			atomic64_inc(&ooms);
-			if (imagepath)
-				free(imagepath);
 			if (argv)
 				free(argv);
 			return;
@@ -799,17 +828,20 @@ procmon_exec(struct timespec *tv,
 	if (image->flags & EIFLAG_SHEBANG) {
 		if (!interp) {
 			kqnotfounds++;
-			if (argv[0][0] == '/' || proc->cwd)
-				interp = image_exec_new(
-				             sys_realpath(argv[0],
-				                          proc->cwd));
-		}
-		if (!interp) {
-			atomic64_inc(&ooms);
-			image_exec_free(image);
-			if (argv)
-				free(argv);
-			return;
+			if (argv[0][0] == '/' || proc->cwd) {
+				char *p = sys_realpath(argv[0], proc->cwd);
+				if (p)
+					interp = image_exec_new(p);
+				else if (errno == ENOMEM)
+					atomic64_inc(&ooms);
+			}
+			if (!interp) {
+				eimiss_execinterp++;
+				image_exec_free(image);
+				if (argv)
+					free(argv);
+				return;
+			}
 		}
 		assert(interp);
 		image_exec_open(interp, NULL);
@@ -823,15 +855,14 @@ procmon_exec(struct timespec *tv,
 	} else {
 		proc->image_exec = image;
 	}
+	assert(proc->image_exec);
 	assert(proc->image_exec != prev_image_exec);
 	cwd = strdup(proc->cwd);
-	if (!cwd && proc->image_exec) {
+	if (!cwd) {
+		atomic64_inc(&ooms);
 		image_exec_free(proc->image_exec);
 		proc->image_exec = NULL;
-	}
-	if (!proc->image_exec) {
-		/* free what would have been transfered to image_exec */
-		atomic64_inc(&ooms);
+		/* free what would have been transfered to image_exec below */
 		if (prev_image_exec)
 			image_exec_free(prev_image_exec);
 		if (argv)
@@ -917,13 +948,16 @@ procmon_chdir(pid_t pid, char *path) {
 
 	proc = proctab_find(pid);
 	if (!proc) {
-		eimisseds++;
 		proc = procmon_proc_from_pid(pid);
+		if (!proc) {
+			if (errno != ENOMEM)
+				eimiss_chdirsubj++;
+			free(path);
+			return;
+		}
 	}
-	if (!proc) {
-		free(path);
-		return;
-	}
+	assert(proc);
+
 	if (proc->cwd)
 		free(proc->cwd);
 	proc->cwd = path;
@@ -941,6 +975,7 @@ procmon_chdir(pid_t pid, char *path) {
 void
 procmon_kern_preexec(struct timespec *tm, pid_t pid, const char *imagepath) {
 	image_exec_t *ei;
+	char *path;
 
 #ifdef DEBUG_PROCMON
 	fprintf(stderr, "DEBUG_PROCMON: procmon_kern_preexec"
@@ -948,7 +983,13 @@ procmon_kern_preexec(struct timespec *tm, pid_t pid, const char *imagepath) {
 	                pid, imagepath);
 #endif
 
-	ei = image_exec_new(strdup(imagepath));
+	path = strdup(imagepath);
+	if (!path) {
+		atomic64_inc(&ooms);
+		return;
+	}
+
+	ei = image_exec_new(path);
 	if (!ei)
 		return;
 	ei->hdr.tv = *tm;
@@ -984,11 +1025,13 @@ procmon_getcwd(pid_t pid) {
 
 	proc = proctab_find(pid);
 	if (!proc) {
-		eimisseds++;
 		proc = procmon_proc_from_pid(pid);
+		if (!proc) {
+			if (errno != ENOMEM)
+				eimiss_getcwd++;
+			return NULL;
+		}
 	}
-	if (!proc)
-		return NULL;
 	return proc->cwd;
 }
 
@@ -997,8 +1040,12 @@ procmon_init(config_t *cfg) {
 	proctab_init();
 	config = cfg;
 	images = 0;
-	eimisseds = 0;
-	cwdmisseds = 0;
+	eimiss_bypid = 0;
+	eimiss_forksubj = 0;
+	eimiss_execsubj = 0;
+	eimiss_execinterp = 0;
+	eimiss_chdirsubj = 0;
+	eimiss_getcwd = 0;
 	ooms = 0;
 	kqlookups = 0;
 	kqnotfounds = 0;
@@ -1034,8 +1081,12 @@ procmon_stats(procmon_stat_t *st) {
 
 	st->procs = procs; /* external */
 	st->images = (uint32_t)images;
-	st->eimisseds = eimisseds;
-	st->cwdmisseds = cwdmisseds;
+	st->eimiss_bypid = eimiss_bypid;
+	st->eimiss_forksubj = eimiss_forksubj;
+	st->eimiss_execsubj = eimiss_execsubj;
+	st->eimiss_execinterp = eimiss_execinterp;
+	st->eimiss_chdirsubj = eimiss_chdirsubj;
+	st->eimiss_getcwd = eimiss_getcwd;
 	st->ooms = (uint64_t)ooms;
 	st->kqlookups = kqlookups;
 	st->kqnotfounds = kqnotfounds;

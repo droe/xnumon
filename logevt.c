@@ -149,10 +149,21 @@ logevt_xnumon_stats(logfmt_t *fmt, FILE *f, void *arg0) {
 	fmt->value_uint(f, st->pm.procs);
 	fmt->dict_item(f, "actexecimages");
 	fmt->value_uint(f, st->pm.images);
-	fmt->dict_item(f, "cwdmiss");
-	fmt->value_uint(f, st->pm.cwdmisseds);
 	fmt->dict_item(f, "eimiss");
-	fmt->value_uint(f, st->pm.eimisseds);
+	fmt->dict_begin(f);
+	fmt->dict_item(f, "bypid");
+	fmt->value_uint(f, st->pm.eimiss_bypid);
+	fmt->dict_item(f, "forksubj");
+	fmt->value_uint(f, st->pm.eimiss_forksubj);
+	fmt->dict_item(f, "execsubj");
+	fmt->value_uint(f, st->pm.eimiss_execsubj);
+	fmt->dict_item(f, "execinterp");
+	fmt->value_uint(f, st->pm.eimiss_execinterp);
+	fmt->dict_item(f, "chdirsubj");
+	fmt->value_uint(f, st->pm.eimiss_chdirsubj);
+	fmt->dict_item(f, "getcwd");
+	fmt->value_uint(f, st->pm.eimiss_getcwd);
+	fmt->dict_end(f); /* eimiss */
 	fmt->dict_item(f, "oom");
 	fmt->value_uint(f, st->pm.ooms);
 	fmt->dict_end(f); /* procmon */

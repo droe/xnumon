@@ -480,14 +480,22 @@ siginfo_arrived(UNUSED int sig, UNUSED void *udata) {
 
 	fprintf(stderr, "procmon "
 	                "actprocs:%"PRIu32" "
-	                "actexecimages:%"PRIu32" "
-	                "eimiss:%"PRIu64" "
-	                "cwdmiss:%"PRIu64" "
+	                "actimages:%"PRIu32" "
+	                "eimiss bp:%"PRIu64" "
+	                "fs:%"PRIu64" "
+	                "es:%"PRIu64" "
+	                "ei:%"PRIu64" "
+	                "cs:%"PRIu64" "
+	                "gc:%"PRIu64" "
 	                "oom:%"PRIu64"\n",
 	                st.pm.procs,
 	                st.pm.images,
-	                st.pm.cwdmisseds,
-	                st.pm.eimisseds,
+	                st.pm.eimiss_bypid,
+	                st.pm.eimiss_forksubj,
+	                st.pm.eimiss_execsubj,
+	                st.pm.eimiss_execinterp,
+	                st.pm.eimiss_chdirsubj,
+	                st.pm.eimiss_getcwd,
 	                st.pm.ooms);
 
 	fprintf(stderr, "hackmon "
@@ -524,7 +532,7 @@ siginfo_arrived(UNUSED int sig, UNUSED void *udata) {
 		                st.ke.kauth_denies);
 
 		fprintf(stderr, "prep queue "
-		                "buckets:%"PRIu32"/~ "
+		                "buckets:%"PRIu64"/~ "
 		                "lookup:%"PRIu64" "
 		                "miss:%"PRIu64" "       /* normal at startup */
 		                "drop:%"PRIu64" "       /* too many ooo */

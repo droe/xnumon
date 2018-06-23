@@ -31,17 +31,17 @@ typedef struct {
 
 char * sys_pidpath(pid_t) MALLOC;
 char * sys_pidcwd(pid_t) MALLOC;
-int sys_pidbsdinfo(struct timespec *, pid_t *, pid_t);
+int sys_pidbsdinfo(struct timespec *, pid_t *, pid_t) WUNRES;
 pid_t * sys_pidlist(int *) MALLOC NONNULL(1);
 
 gid_t sys_gidbyname(const char *) NONNULL(1);
 
-const char * sys_ttydevname(dev_t);
+const char * sys_ttydevname(dev_t) WUNRES;
 
 int sys_pathattr(stat_attr_t *, const char *) NONNULL(1,2);
 int sys_fdattr(stat_attr_t *, int) NONNULL(1);
 
-int sys_basenamecmp(const char *restrict, const char *restrict);
+int sys_basenamecmp(const char *restrict, const char *restrict) WUNRES;
 char * sys_realpath(const char *restrict, const char *restrict) MALLOC;
 
 int sys_limit_nofile(size_t);

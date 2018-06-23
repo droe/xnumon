@@ -29,6 +29,7 @@ char *
 sys_pidpath(pid_t pid) {
 	char buf[PROC_PIDPATHINFO_MAXSIZE];
 
+	errno = 0;
 	if (pid == 0)
 		return strdup("/System/Library/Kernels/kernel");
 	if (proc_pidpath(pid, buf, sizeof(buf)) <= 0)
