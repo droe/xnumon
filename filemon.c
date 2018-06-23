@@ -119,14 +119,20 @@ launchd_add_analyze(launchd_add_t *ldadd) {
 	ldadd->program_path = cf_cstr(CFDictionaryGetValue(
 	                      (CFDictionaryRef)plist,
 	                      CFSTR("Program")));
+	if (!ldadd->program_path && (errno == ENOMEM)) {
+		atomic64_inc(&ooms);
+		CFRelease(plist);
+		return;
+	}
 	ldadd->program_argv = cf_aev(CFDictionaryGetValue(
 	                      (CFDictionaryRef)plist,
 	                      CFSTR("ProgramArguments")));
-	CFRelease(plist);
-	if (errno == ENOMEM) {
+	if (!ldadd->program_argv && (errno == ENOMEM)) {
 		atomic64_inc(&ooms);
+		CFRelease(plist);
 		return;
 	}
+	CFRelease(plist);
 
 	if (!ldadd->program_path &&
 	    ldadd->program_argv &&
