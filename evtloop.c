@@ -146,7 +146,8 @@ auef_readable(UNUSED int fd, UNUSED void *udata) {
 			path = sys_pidpath(ev.args[0].present ?
 			                   ev.args[0].value : ev.subject.pid);
 			if (!path) {
-				assert(ev.execarg);
+				if (!ev.execarg)
+					break;
 				/* When launchd spawns the xpcproxy exec
 				 * trampoline, path is /dev/console and argv[0]
 				 * is just xpcproxy; hardcode that.

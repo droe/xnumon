@@ -46,7 +46,7 @@ void procmon_fork(struct timespec *, audit_proc_t *, pid_t) NONNULL(1,2);
 void procmon_spawn(struct timespec *, audit_proc_t *, pid_t,
                    char *, audit_attr_t *, char **) NONNULL(1,2);
 void procmon_exec(struct timespec *, audit_proc_t *,
-                  char *, audit_attr_t *, char **) NONNULL(1,2);
+                  char *, audit_attr_t *, char **) NONNULL(1,2,3);
 void procmon_exit(pid_t);
 void procmon_wait4(pid_t);
 void procmon_chdir(pid_t, char *) NONNULL(2);

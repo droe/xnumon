@@ -681,7 +681,7 @@ procmon_spawn(struct timespec *tv,
  * attr as the file attributes of the script.
  *
  * Ownership of argv and imagepath is transfered, procmon guarantees that they
- * will be freed.
+ * will be freed.  Only argv and attr can be NULL.
  */
 void
 procmon_exec(struct timespec *tv,
@@ -704,8 +704,7 @@ procmon_exec(struct timespec *tv,
 		if (!proc) {
 			if (errno != ENOMEM)
 				eimiss_execsubj++;
-			if (imagepath)
-				free(imagepath);
+			free(imagepath);
 			if (argv)
 				free(argv);
 			return;
@@ -796,7 +795,7 @@ procmon_exec(struct timespec *tv,
 			kqtimeouts++;
 		}
 	}
-	assert(!interp || image);
+	assert(!(interp && !image));
 
 #ifdef DEBUG_PROCMON
 	if (image)
@@ -815,8 +814,10 @@ procmon_exec(struct timespec *tv,
 		kqnotfounds++;
 		image = image_exec_new(imagepath);
 		if (!image) {
+			/* no counter, oom is the only reason this can happen */
 			if (argv)
 				free(argv);
+			assert(!interp);
 			return;
 		}
 	} else {
@@ -828,18 +829,27 @@ procmon_exec(struct timespec *tv,
 	if (image->flags & EIFLAG_SHEBANG) {
 		if (!interp) {
 			kqnotfounds++;
+			if (!argv) {
+				eimiss_execinterp++;
+				image_exec_free(image);
+				return;
+			}
 			if (argv[0][0] == '/' || proc->cwd) {
 				char *p = sys_realpath(argv[0], proc->cwd);
-				if (p)
-					interp = image_exec_new(p);
-				else if (errno == ENOMEM)
-					atomic64_inc(&ooms);
+				if (!p) {
+					if (errno == ENOMEM)
+						atomic64_inc(&ooms);
+					eimiss_execinterp++;
+					image_exec_free(image);
+					free(argv);
+					return;
+				}
+				interp = image_exec_new(p);
 			}
 			if (!interp) {
 				eimiss_execinterp++;
 				image_exec_free(image);
-				if (argv)
-					free(argv);
+				free(argv);
 				return;
 			}
 		}
