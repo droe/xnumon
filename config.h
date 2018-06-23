@@ -22,6 +22,7 @@ typedef struct {
 	char *id;
 
 	bool launchd_mode;      /* only settable via command line */
+	bool debug;
 
 	size_t limit_nofile;
 	size_t stats_interval;  /* generate xnumon-stats every n seconds */
@@ -55,6 +56,12 @@ int config_str(config_t *, const char *, const char *) NONNULL(1,2,3) WUNRES;
 
 int config_kextlevel(config_t *, const char *) NONNULL(1,2);
 const char * config_kextlevel_s(config_t *) NONNULL(1);
+
+#define DEBUG(cond, topic, fmt, ...) \
+	if (cond) { \
+		fprintf(stderr, "%s %s " fmt "\n", \
+		                __func__, topic, __VA_ARGS__); \
+	}
 
 #endif
 

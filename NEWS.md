@@ -1,17 +1,20 @@
 ### xnumon develop
 
--   Bumping schema version to 2.  Changes affect only eventcode 1.
+-   Fix potential crash in ptrace audit event handling.
+-   Fix default hash if unspecified to be sha256 as documented in the default
+    config.
+-   Add `reload|restart` targets to `xnumonctl` to restart the daemon.
+-   Add `stats_interval` config option to control how often xnumon-stats[1]
+    events are generated.
+-   Add `debug` config option to control whether debug messages are logged to
+    stderr.
+-   Schema version increased to 2.  Changes affect eventcodes 0 and 1.
+    Eventcode 0 added config.stats_interval, config.debug.
     Eventcode 1 removed evtloop.pathbugs, procmon.cwdmiss, procmon.eimiss;
     added evtloop.radar38845422, evtloop.radar39267328, evtloop.radar39623812,
     evtloop.needpath, evtloop.needargv, evtloop.needcwd, procmon.eimiss.bypid,
     procmon.eimiss.forksubj, procmon.eimiss.execsubj, procmon.eimiss.execinterp,
     procmon.eimiss.chdirsubj, procmon.eimiss.getcwd, hackmon.pidmiss.
--   Add `reload|restart` targets to `xnumonctl` to restart the daemon.
--   Add `stats_interval` config option to control how often xnumon-stats[1]
-    events are generated.
--   Fix potential crash in ptrace audit event handling.
--   Fix default hash if unspecified to be sha256 as documented in the default
-    config.
 -   Minor bugfixes and improvements.
 
 

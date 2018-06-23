@@ -75,6 +75,8 @@ logevt_xnumon_ops(logfmt_t *fmt, FILE *f, void *arg0) {
 		fmt->value_null(f);
 	fmt->dict_item(f, "launchd_mode");
 	fmt->value_bool(f, config->launchd_mode);
+	fmt->dict_item(f, "debug");
+	fmt->value_bool(f, config->debug);
 	fmt->dict_item(f, "limit_nofile");
 	fmt->value_uint(f, config->limit_nofile);
 	fmt->dict_item(f, "kextlevel");

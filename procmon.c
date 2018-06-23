@@ -597,8 +597,11 @@ image_exec_by_pid(pid_t pid) {
 	if (!proc) {
 		proc = procmon_proc_from_pid(pid);
 		if (!proc) {
-			if (errno != ENOMEM)
+			if (errno != ENOMEM) {
 				eimiss_bypid++;
+				DEBUG(config->debug, "eimiss_bypid",
+				      "pid=%i", pid);
+			}
 			return NULL;
 		}
 	}
@@ -624,8 +627,12 @@ procmon_fork(struct timespec *tv,
 	if (!parent) {
 		parent = procmon_proc_from_pid(subject->pid);
 		if (!parent) {
-			if (errno != ENOMEM)
+			if (errno != ENOMEM) {
 				eimiss_forksubj++;
+				DEBUG(config->debug, "eimiss_forksubj",
+				      "subject.pid=%i childpid=%i",
+				      subject->pid, childpid);
+			}
 			return;
 		}
 	}
@@ -704,8 +711,14 @@ procmon_exec(struct timespec *tv,
 	if (!proc) {
 		proc = procmon_proc_from_pid(subject->pid);
 		if (!proc) {
-			if (errno != ENOMEM)
+			if (errno != ENOMEM) {
 				eimiss_execsubj++;
+				DEBUG(config->debug, "eimiss_execsubj",
+				      "subject.pid=%i imagepath='%s' "
+				      "argv[0]='%s'",
+				      subject->pid, imagepath,
+				      argv ? argv[0] : NULL);
+			}
 			free(imagepath);
 			if (argv)
 				free(argv);
@@ -833,6 +846,10 @@ procmon_exec(struct timespec *tv,
 			kqnotfounds++;
 			if (!argv) {
 				eimiss_execinterp++;
+				DEBUG(config->debug, "eimiss_execinterp",
+				      "subject.pid=%i imagepath='%s' "
+				      "argv=NULL",
+				      subject->pid, imagepath);
 				image_exec_free(image);
 				return;
 			}
@@ -850,6 +867,11 @@ procmon_exec(struct timespec *tv,
 			}
 			if (!interp) {
 				eimiss_execinterp++;
+				DEBUG(config->debug, "eimiss_execinterp",
+				      "subject.pid=%i imagepath='%s' "
+				      "argv[0]='%s' argv[1]='%s'",
+				      subject->pid, imagepath,
+				      argv[0], argv[1]);
 				image_exec_free(image);
 				free(argv);
 				return;
@@ -962,8 +984,11 @@ procmon_chdir(pid_t pid, char *path) {
 	if (!proc) {
 		proc = procmon_proc_from_pid(pid);
 		if (!proc) {
-			if (errno != ENOMEM)
+			if (errno != ENOMEM) {
 				eimiss_chdirsubj++;
+				DEBUG(config->debug, "eimiss_chdirsubj",
+				      "pid=%i path='%s'", pid, path);
+			}
 			free(path);
 			return;
 		}
@@ -1039,8 +1064,11 @@ procmon_getcwd(pid_t pid) {
 	if (!proc) {
 		proc = procmon_proc_from_pid(pid);
 		if (!proc) {
-			if (errno != ENOMEM)
+			if (errno != ENOMEM) {
 				eimiss_getcwd++;
+				DEBUG(config->debug, "eimiss_getcwd",
+				      "pid=%i", pid);
+			}
 			return NULL;
 		}
 	}

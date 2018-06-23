@@ -112,6 +112,12 @@ config_str(config_t *cfg, const char *key, const char *value) {
 		return 0;
 	}
 
+	if (!strcmp(key, "debug")) {
+		if (config_set_bool(&cfg->debug, value) == -1)
+			return -1;
+		return 0;
+	}
+
 	if (!strcmp(key, "log_format")) {
 		if (logfmt_parse(cfg, value) == -1)
 			return -1;

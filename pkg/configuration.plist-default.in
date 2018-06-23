@@ -210,7 +210,7 @@
   </array>
 
 
-  <!-- RESOURCE LIMITS -->
+  <!-- MISCELLANEOUS -->
 
   <!-- Number of open files resource limit:
        Maximum number of open files that the operating system allows xnumon to
@@ -225,6 +225,21 @@
   <!--
   <key>rlimit_nofile</key>
   <string>8192</string>
+  -->
+
+  <!-- Debug:
+       Enable (<true/>) or disable (<false/>) printing of debug information to
+       stderr.  When disabled, error conditions are only counted via metrics in
+       eventcode 1 and on SIGINFO.  When enabled, counted events also get
+       documented on stderr with context information.  To actually see the
+       debug messages, configure the launchd plist for xnumon to log stderr to
+       a file or run xnumon manually from the command line.
+       If unset, defaults to:   false
+       -->
+  <!--
+  <key>debug</key>
+  <true/>
+  <false/>
   -->
 
 </dict>

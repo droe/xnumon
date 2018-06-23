@@ -155,6 +155,9 @@ hackmon_ptrace(struct timespec *tv,
 		                   &obj.dev, objpid) == -1) {
 			/* process not alive anymore */
 			pidmiss++;
+			DEBUG(config->debug, "pidmiss",
+			      "objpid=%i subjpid=%i",
+			      objpid, subject->pid)
 			return;
 		}
 		object = &obj;
