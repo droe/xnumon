@@ -157,7 +157,7 @@ hackmon_ptrace(struct timespec *tv,
 			pidmiss++;
 			DEBUG(config->debug, "pidmiss",
 			      "objpid=%i subjpid=%i",
-			      objpid, subject->pid)
+			      objpid, subject->pid);
 			return;
 		}
 		object = &obj;
