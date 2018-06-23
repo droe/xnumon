@@ -307,6 +307,12 @@ config_new(const char *cfgpath) {
 		fprintf(stderr, "Failed to load 'rlimit_nofile'\n");
 		goto errout;
 	}
+	rv = config_str_from_plist(cfg, "debug",
+	                           plist, CFSTR("debug"));
+	if (rv == -1) {
+		fprintf(stderr, "Failed to load 'debug'\n");
+		goto errout;
+	}
 
 	/* The strset initializations must be called even if we were to allow
 	 * xnumon to run without a config file; they handle plist==NULL. */
