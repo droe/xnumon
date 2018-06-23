@@ -1,6 +1,6 @@
 ### xnumon develop
 
--   Fix potential crash in ptrace audit event handling.
+-   Fix handling of `ptrace` and `task_for_pid` audit events for pid 0 or -1.
 -   Fix default hash if unspecified to be sha256 as documented in the default
     config.
 -   Add `stats_interval` config option to control how often xnumon-stats[1]
@@ -14,7 +14,7 @@
     added evtloop.radar38845422, evtloop.radar39267328, evtloop.radar39623812,
     evtloop.needpath, evtloop.needargv, evtloop.needcwd, procmon.miss.bypid,
     procmon.miss.forksubj, procmon.miss.execsubj, procmon.miss.execinterp,
-    procmon.miss.chdirsubj, procmon.miss.getcwd, hackmon.pidmiss.
+    procmon.miss.chdirsubj, procmon.miss.getcwd.
 -   Minor bugfixes and improvements.
 
 

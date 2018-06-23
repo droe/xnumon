@@ -25,7 +25,6 @@ static config_t *config;
 static uint64_t events_received;    /* number of events received */
 static uint64_t events_processed;   /* number of events processed */
 static atomic64_t ooms;             /* counts events impaired due to OOM */
-static uint64_t pidmiss;            /* pid no longer alive */
 
 strset_t *suppress_process_access_by_ident;
 strset_t *suppress_process_access_by_path;
@@ -111,19 +110,38 @@ log_event_process_access(struct timespec *tv,
 	work_submit(pa);
 }
 
+static void
+hackmon_process_access(struct timespec *tv,
+                       audit_proc_t *subject,
+                       audit_proc_t *object,
+                       pid_t objectpid,
+                       const char *method) {
+	pid_t objpid;
+
+	events_received++;
+	objpid = object ? object->pid : objectpid;
+
+	if (objpid <= 0)
+		return;
+	if (subject->pid == objpid)
+		return;
+
+	/* XNU only omits the process token if pid <= 0. */
+	assert(object);
+
+	events_processed++;
+	log_event_process_access(tv, subject, object, method);
+}
+
 /*
  * Called for task_for_pid invocations.
  */
 void
 hackmon_taskforpid(struct timespec *tv,
                    audit_proc_t *subject,
-                   audit_proc_t *object) {
-	events_received++;
-	if (subject->pid != object->pid) {
-		events_processed++;
-		log_event_process_access(tv, subject, object, "task_for_pid");
-		return;
-	}
+                   audit_proc_t *object, /* may be NULL */
+                   pid_t objectpid) {
+	hackmon_process_access(tv, subject, object, objectpid, "task_for_pid");
 }
 
 /*
@@ -134,45 +152,13 @@ hackmon_ptrace(struct timespec *tv,
                audit_proc_t *subject,
                audit_proc_t *object, /* may be NULL */
                pid_t objectpid) {
-	audit_proc_t obj;
-	pid_t objpid;
-
-	events_received++;
-
-	objpid = object ? object->pid : objectpid;
-
-	if (objpid == -1)
-		return;
-	if (subject->pid == objpid)
-		return;
-
-	if (object == NULL) {
-		obj.pid = objpid;
-		if (sys_pidbsdinfo(NULL, NULL,
-		                   &obj.auid, &obj.sid,
-		                   &obj.euid, &obj.egid,
-		                   &obj.ruid, &obj.rgid,
-		                   &obj.dev, objpid) == -1) {
-			/* process not alive anymore */
-			pidmiss++;
-			DEBUG(config->debug, "pidmiss",
-			      "objpid=%i subjpid=%i",
-			      objpid, subject->pid);
-			return;
-		}
-		object = &obj;
-	}
-	assert(object);
-
-	events_processed++;
-	log_event_process_access(tv, subject, object, "ptrace");
+	hackmon_process_access(tv, subject, object, objectpid, "ptrace");
 }
 
 void
 hackmon_init(config_t *cfg) {
 	config = cfg;
 	ooms = 0;
-	pidmiss = 0;
 	events_received = 0;
 	events_processed = 0;
 	suppress_process_access_by_ident =
@@ -195,6 +181,5 @@ hackmon_stats(hackmon_stat_t *st) {
 	st->receiveds = events_received;
 	st->processeds = events_processed;
 	st->ooms = (uint64_t)ooms;
-	st->pidmiss = pidmiss;
 }
 

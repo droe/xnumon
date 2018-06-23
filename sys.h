@@ -32,10 +32,7 @@ typedef struct {
 
 char * sys_pidpath(pid_t) MALLOC;
 char * sys_pidcwd(pid_t) MALLOC;
-int sys_pidbsdinfo(struct timespec *, pid_t *,
-                   uid_t *, uint32_t *, uid_t *, gid_t *, uid_t *, gid_t *,
-                   dev_t *dev, /* missing addr */
-                   pid_t) WUNRES;
+int sys_pidbsdinfo(struct timespec *, pid_t *, pid_t) WUNRES;
 pid_t * sys_pidlist(int *) MALLOC NONNULL(1);
 
 gid_t sys_gidbyname(const char *) NONNULL(1);

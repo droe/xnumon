@@ -294,8 +294,12 @@ auef_readable(UNUSED int fd, UNUSED void *udata) {
 			break;
 		}
 		assert(ev.subject_present);
-		assert(ev.process_present);
-		hackmon_taskforpid(&ev.tv, &ev.subject, &ev.process);
+		/* The PROCESS_PID_TOKENS macro in XNU creates a process token
+		 * from pid arg 2 only if pid > 0. */
+		assert(ev.process_present || ev.args[2].present);
+		hackmon_taskforpid(&ev.tv, &ev.subject,
+		                   ev.process_present ? &ev.process : NULL,
+		                   ev.args[2].present ? ev.args[2].value : -1);
 		break;
 
 	case AUE_PTRACE:
@@ -305,10 +309,12 @@ auef_readable(UNUSED int fd, UNUSED void *udata) {
 			break;
 		}
 		assert(ev.subject_present);
-		assert(ev.process_present || ev.args[1].present);
+		/* The PROCESS_PID_TOKENS macro in XNU creates a process token
+		 * from pid arg 2 only if pid > 0. */
+		assert(ev.process_present || ev.args[2].present);
 		hackmon_ptrace(&ev.tv, &ev.subject,
 		               ev.process_present ? &ev.process : NULL,
-		               ev.args[1].present ? ev.args[1].value : -1);
+		               ev.args[2].present ? ev.args[2].value : -1);
 		break;
 
 	/*
@@ -552,11 +558,9 @@ siginfo_arrived(UNUSED int sig, UNUSED void *udata) {
 	fprintf(stderr, "hackmon "
 	                "recvd:%"PRIu64" "
 	                "procd:%"PRIu64" "
-	                "pidmiss:%"PRIu64" "
 	                "oom:%"PRIu64"\n",
 	                st.hm.receiveds,
 	                st.hm.processeds,
-	                st.hm.pidmiss,
 	                st.hm.ooms);
 
 	fprintf(stderr, "filemon "

@@ -23,6 +23,8 @@ ifdef SDKROOT
 CPPFLAGS=	-isysroot $(SDKROOT)
 CC=		$(shell xcrun -find -sdk $(SDKROOT) cc)
 CODESIGN=	$(shell xcrun -find -sdk $(SDKROOT) codesign)
+else
+CODESIGN?=	codesign
 endif
 
 CPPFLAGS+=	$(FEATURES)

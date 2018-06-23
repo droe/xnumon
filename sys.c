@@ -51,12 +51,7 @@ sys_pidcwd(pid_t pid) {
 }
 
 int
-sys_pidbsdinfo(struct timespec *tv, pid_t *ppid,
-               uid_t *auid, uint32_t *sid,
-               uid_t *euid, gid_t *egid,
-               uid_t *ruid, gid_t *rgid,
-               dev_t *dev, /* missing addr */
-               pid_t pid) {
+sys_pidbsdinfo(struct timespec *tv, pid_t *ppid, pid_t pid) {
 	struct proc_bsdinfo pbi;
 	int rv;
 
@@ -69,22 +64,8 @@ sys_pidbsdinfo(struct timespec *tv, pid_t *ppid,
 		tv->tv_sec = pbi.pbi_start_tvsec;
 		tv->tv_nsec = pbi.pbi_start_tvusec*1000;
 	}
-	if (auid)
-		*auid = pbi.pbi_ruid;
-	if (sid)
-		*sid = -1; /* TODO */
 	if (ppid)
 		*ppid = pbi.pbi_ppid;
-	if (euid)
-		*euid = pbi.pbi_uid;
-	if (egid)
-		*egid = pbi.pbi_gid;
-	if (ruid)
-		*ruid = pbi.pbi_ruid;
-	if (rgid)
-		*rgid = pbi.pbi_rgid;
-	if (dev)
-		*dev = pbi.e_tdev;
 	return 0;
 }
 

@@ -186,8 +186,6 @@ logevt_xnumon_stats(logfmt_t *fmt, FILE *f, void *arg0) {
 	fmt->value_uint(f, st->hm.receiveds);
 	fmt->dict_item(f, "procd");
 	fmt->value_uint(f, st->hm.processeds);
-	fmt->dict_item(f, "pidmiss");
-	fmt->value_uint(f, st->hm.pidmiss);
 	fmt->dict_item(f, "oom");
 	fmt->value_uint(f, st->hm.ooms);
 	fmt->dict_end(f); /* hackmon */
