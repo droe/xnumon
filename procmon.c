@@ -516,7 +516,9 @@ procmon_proc_from_pid(pid_t pid) {
 		return NULL;
 	}
 
-	if (sys_pidbsdinfo(&proc->fork_tv, &ppid, pid) == -1) {
+	if (sys_pidbsdinfo(&proc->fork_tv, &ppid,
+	                   NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+	                   pid) == -1) {
 		/* process not alive anymore */
 		proctab_remove(pid);
 		return NULL;

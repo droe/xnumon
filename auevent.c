@@ -370,9 +370,10 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], FILE *f) {
 			 * path arguments.
 			 */
 			assert(pathc < sizeof(ev->path)/sizeof(ev->path[0]));
-			ev->path[pathc++] = tok.tt.path.path;
-			if (!ev->path[pathc-1])
+			ev->path[pathc] = tok.tt.path.path;
+			if (!ev->path[pathc])
 				ev->flags |= AEFLAG_ENOMEM;
+			pathc++;
 			break;
 		/* attr */
 		case AUT_ATTR32:

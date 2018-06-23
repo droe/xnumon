@@ -5,13 +5,13 @@
     added evtloop.radar38845422, evtloop.radar39267328, evtloop.radar39623812,
     evtloop.needpath, evtloop.needargv, evtloop.needcwd, procmon.eimiss.bypid,
     procmon.eimiss.forksubj, procmon.eimiss.execsubj, procmon.eimiss.execinterp,
-    procmon.eimiss.chdirsubj, procmon.eimiss.getcwd.
+    procmon.eimiss.chdirsubj, procmon.eimiss.getcwd, hackmon.pidmiss.
 -   Add `reload|restart` targets to `xnumonctl` to restart the daemon.
 -   Add `stats_interval` config option to control how often xnumon-stats[1]
     events are generated.
+-   Fix potential crash in ptrace audit event handling.
 -   Fix default hash if unspecified to be sha256 as documented in the default
     config.
--   Fix metrics for hackmon.
 -   Minor bugfixes and improvements.
 
 

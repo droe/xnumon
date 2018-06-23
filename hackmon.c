@@ -25,6 +25,7 @@ static config_t *config;
 static uint64_t events_received;    /* number of events received */
 static uint64_t events_processed;   /* number of events processed */
 static atomic64_t ooms;             /* counts events impaired due to OOM */
+static uint64_t pidmiss;            /* pid no longer alive */
 
 strset_t *suppress_process_access_by_ident;
 strset_t *suppress_process_access_by_path;
@@ -131,19 +132,35 @@ hackmon_taskforpid(struct timespec *tv,
 void
 hackmon_ptrace(struct timespec *tv,
                audit_proc_t *subject,
-               audit_proc_t *object) {
+               pid_t objpid) {
+	audit_proc_t object;
+
 	events_received++;
-	if (subject->pid != object->pid) {
-		events_processed++;
-		log_event_process_access(tv, subject, object, "ptrace");
+	if (objpid == -1)
+		return;
+	if (subject->pid == objpid)
+		return;
+
+	object.pid = objpid;
+	if (sys_pidbsdinfo(NULL, NULL,
+	                   &object.auid, &object.sid,
+	                   &object.euid, &object.egid,
+	                   &object.ruid, &object.rgid,
+	                   &object.dev, objpid) == -1) {
+		/* process not alive anymore */
+		pidmiss++;
 		return;
 	}
+
+	events_processed++;
+	log_event_process_access(tv, subject, &object, "ptrace");
 }
 
 void
 hackmon_init(config_t *cfg) {
 	config = cfg;
 	ooms = 0;
+	pidmiss = 0;
 	events_received = 0;
 	events_processed = 0;
 	suppress_process_access_by_ident =
@@ -166,5 +183,6 @@ hackmon_stats(hackmon_stat_t *st) {
 	st->receiveds = events_received;
 	st->processeds = events_processed;
 	st->ooms = (uint64_t)ooms;
+	st->pidmiss = pidmiss;
 }
 

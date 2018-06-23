@@ -162,6 +162,6 @@ proctab_init(void) {
 void
 proctab_fini(void) {
 	proctab_flush();
-	assert(procs == 0);
+	assert(procs == 0); // XXX
 }
 
