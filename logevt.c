@@ -161,21 +161,21 @@ logevt_xnumon_stats(logfmt_t *fmt, FILE *f, void *arg0) {
 	fmt->value_uint(f, st->pm.procs);
 	fmt->dict_item(f, "actexecimages");
 	fmt->value_uint(f, st->pm.images);
-	fmt->dict_item(f, "eimiss");
+	fmt->dict_item(f, "miss");
 	fmt->dict_begin(f);
 	fmt->dict_item(f, "bypid");
-	fmt->value_uint(f, st->pm.eimiss_bypid);
+	fmt->value_uint(f, st->pm.miss_bypid);
 	fmt->dict_item(f, "forksubj");
-	fmt->value_uint(f, st->pm.eimiss_forksubj);
+	fmt->value_uint(f, st->pm.miss_forksubj);
 	fmt->dict_item(f, "execsubj");
-	fmt->value_uint(f, st->pm.eimiss_execsubj);
+	fmt->value_uint(f, st->pm.miss_execsubj);
 	fmt->dict_item(f, "execinterp");
-	fmt->value_uint(f, st->pm.eimiss_execinterp);
+	fmt->value_uint(f, st->pm.miss_execinterp);
 	fmt->dict_item(f, "chdirsubj");
-	fmt->value_uint(f, st->pm.eimiss_chdirsubj);
+	fmt->value_uint(f, st->pm.miss_chdirsubj);
 	fmt->dict_item(f, "getcwd");
-	fmt->value_uint(f, st->pm.eimiss_getcwd);
-	fmt->dict_end(f); /* eimiss */
+	fmt->value_uint(f, st->pm.miss_getcwd);
+	fmt->dict_end(f); /* miss */
 	fmt->dict_item(f, "oom");
 	fmt->value_uint(f, st->pm.ooms);
 	fmt->dict_end(f); /* procmon */
@@ -199,7 +199,7 @@ logevt_xnumon_stats(logfmt_t *fmt, FILE *f, void *arg0) {
 	fmt->dict_item(f, "procd");
 	fmt->value_uint(f, st->fm.processeds);
 	fmt->dict_item(f, "lpmiss");
-	fmt->value_uint(f, st->fm.lpmisseds);
+	fmt->value_uint(f, st->fm.lpmiss);
 	fmt->dict_item(f, "oom");
 	fmt->value_uint(f, st->fm.ooms);
 	fmt->dict_end(f); /* filemon */

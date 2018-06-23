@@ -12,9 +12,9 @@
     Eventcode 0 added config.stats_interval, config.debug.
     Eventcode 1 removed evtloop.pathbugs, procmon.cwdmiss, procmon.eimiss;
     added evtloop.radar38845422, evtloop.radar39267328, evtloop.radar39623812,
-    evtloop.needpath, evtloop.needargv, evtloop.needcwd, procmon.eimiss.bypid,
-    procmon.eimiss.forksubj, procmon.eimiss.execsubj, procmon.eimiss.execinterp,
-    procmon.eimiss.chdirsubj, procmon.eimiss.getcwd, hackmon.pidmiss.
+    evtloop.needpath, evtloop.needargv, evtloop.needcwd, procmon.miss.bypid,
+    procmon.miss.forksubj, procmon.miss.execsubj, procmon.miss.execinterp,
+    procmon.miss.chdirsubj, procmon.miss.getcwd, hackmon.pidmiss.
 -   Minor bugfixes and improvements.
 
 

@@ -23,7 +23,7 @@
 typedef struct {
 	uint64_t receiveds;
 	uint64_t processeds;
-	uint64_t lpmisseds;
+	uint64_t lpmiss;
 	uint64_t ooms;
 } filemon_stat_t;
 

@@ -532,7 +532,7 @@ siginfo_arrived(UNUSED int sig, UNUSED void *udata) {
 	fprintf(stderr, "procmon "
 	                "actprocs:%"PRIu32" "
 	                "actimages:%"PRIu32" "
-	                "eimiss bp:%"PRIu64" "
+	                "miss bp:%"PRIu64" "
 	                "fs:%"PRIu64" "
 	                "es:%"PRIu64" "
 	                "ei:%"PRIu64" "
@@ -541,12 +541,12 @@ siginfo_arrived(UNUSED int sig, UNUSED void *udata) {
 	                "oom:%"PRIu64"\n",
 	                st.pm.procs,
 	                st.pm.images,
-	                st.pm.eimiss_bypid,
-	                st.pm.eimiss_forksubj,
-	                st.pm.eimiss_execsubj,
-	                st.pm.eimiss_execinterp,
-	                st.pm.eimiss_chdirsubj,
-	                st.pm.eimiss_getcwd,
+	                st.pm.miss_bypid,
+	                st.pm.miss_forksubj,
+	                st.pm.miss_execsubj,
+	                st.pm.miss_execinterp,
+	                st.pm.miss_chdirsubj,
+	                st.pm.miss_getcwd,
 	                st.pm.ooms);
 
 	fprintf(stderr, "hackmon "
@@ -566,7 +566,7 @@ siginfo_arrived(UNUSED int sig, UNUSED void *udata) {
 	                "oom:%"PRIu64"\n",
 	                st.fm.receiveds,
 	                st.fm.processeds,
-	                st.fm.lpmisseds,
+	                st.fm.lpmiss,
 	                st.fm.ooms);
 
 	if (kefd != -1) {

@@ -47,12 +47,12 @@ static uint64_t kqtimeouts;     /* counts preloaded imgs removed due max TTL */
 static uint64_t kqskips;        /* counts non-matching entries skipped in kq */
 
 static atomic32_t images;
-static uint64_t eimiss_bypid;   /* counts various missed image conditions */
-static uint64_t eimiss_forksubj;
-static uint64_t eimiss_execsubj;
-static uint64_t eimiss_execinterp;
-static uint64_t eimiss_chdirsubj;
-static uint64_t eimiss_getcwd;
+static uint64_t miss_bypid;     /* counts various miss conditions */
+static uint64_t miss_forksubj;
+static uint64_t miss_execsubj;
+static uint64_t miss_execinterp;
+static uint64_t miss_chdirsubj;
+static uint64_t miss_getcwd;
 static atomic64_t ooms;         /* counts events impaired due to OOM */
 
 strset_t *suppress_image_exec_by_ident;
@@ -503,7 +503,7 @@ image_exec_from_pid(pid_t pid) {
  * Returns NULL on oom or if the process is not running anymore.
  *
  * Does oom counting, caller does not need to.
- * However, caller needs to count and report eimiss if this fails.
+ * However, caller needs to count and report miss if this fails.
  */
 static proc_t *
 procmon_proc_from_pid(pid_t pid) {
@@ -598,8 +598,8 @@ image_exec_by_pid(pid_t pid) {
 		proc = procmon_proc_from_pid(pid);
 		if (!proc) {
 			if (errno != ENOMEM) {
-				eimiss_bypid++;
-				DEBUG(config->debug, "eimiss_bypid",
+				miss_bypid++;
+				DEBUG(config->debug, "miss_bypid",
 				      "pid=%i", pid);
 			}
 			return NULL;
@@ -628,8 +628,8 @@ procmon_fork(struct timespec *tv,
 		parent = procmon_proc_from_pid(subject->pid);
 		if (!parent) {
 			if (errno != ENOMEM) {
-				eimiss_forksubj++;
-				DEBUG(config->debug, "eimiss_forksubj",
+				miss_forksubj++;
+				DEBUG(config->debug, "miss_forksubj",
 				      "subject.pid=%i childpid=%i",
 				      subject->pid, childpid);
 			}
@@ -712,8 +712,8 @@ procmon_exec(struct timespec *tv,
 		proc = procmon_proc_from_pid(subject->pid);
 		if (!proc) {
 			if (errno != ENOMEM) {
-				eimiss_execsubj++;
-				DEBUG(config->debug, "eimiss_execsubj",
+				miss_execsubj++;
+				DEBUG(config->debug, "miss_execsubj",
 				      "subject.pid=%i imagepath='%s' "
 				      "argv[0]='%s'",
 				      subject->pid, imagepath,
@@ -845,11 +845,12 @@ procmon_exec(struct timespec *tv,
 		if (!interp) {
 			kqnotfounds++;
 			if (!argv) {
-				eimiss_execinterp++;
-				DEBUG(config->debug, "eimiss_execinterp",
+				miss_execinterp++;
+				DEBUG(config->debug, "miss_execinterp",
 				      "subject.pid=%i imagepath='%s' "
-				      "argv=NULL",
-				      subject->pid, imagepath);
+				      "argv=NULL attr:%s",
+				      subject->pid, imagepath,
+				      attr ? "y" : "n");
 				image_exec_free(image);
 				return;
 			}
@@ -858,7 +859,15 @@ procmon_exec(struct timespec *tv,
 				if (!p) {
 					if (errno == ENOMEM)
 						atomic64_inc(&ooms);
-					eimiss_execinterp++;
+					miss_execinterp++;
+					DEBUG(config->debug,
+					      "miss_execinterp",
+					      "subject.pid=%i imagepath='%s' "
+					      "argv[0]='%s' argv[1]='%s' "
+					      "attr:%s",
+					      subject->pid, imagepath,
+					      argv[0], argv[1],
+					      attr ? "y" : "n");
 					image_exec_free(image);
 					free(argv);
 					return;
@@ -866,12 +875,13 @@ procmon_exec(struct timespec *tv,
 				interp = image_exec_new(p);
 			}
 			if (!interp) {
-				eimiss_execinterp++;
-				DEBUG(config->debug, "eimiss_execinterp",
+				miss_execinterp++;
+				DEBUG(config->debug, "miss_execinterp",
 				      "subject.pid=%i imagepath='%s' "
-				      "argv[0]='%s' argv[1]='%s'",
+				      "argv[0]='%s' argv[1]='%s' attr:%s",
 				      subject->pid, imagepath,
-				      argv[0], argv[1]);
+				      argv[0], argv[1],
+				      attr ? "y" : "n");
 				image_exec_free(image);
 				free(argv);
 				return;
@@ -985,8 +995,8 @@ procmon_chdir(pid_t pid, char *path) {
 		proc = procmon_proc_from_pid(pid);
 		if (!proc) {
 			if (errno != ENOMEM) {
-				eimiss_chdirsubj++;
-				DEBUG(config->debug, "eimiss_chdirsubj",
+				miss_chdirsubj++;
+				DEBUG(config->debug, "miss_chdirsubj",
 				      "pid=%i path='%s'", pid, path);
 			}
 			free(path);
@@ -1065,8 +1075,8 @@ procmon_getcwd(pid_t pid) {
 		proc = procmon_proc_from_pid(pid);
 		if (!proc) {
 			if (errno != ENOMEM) {
-				eimiss_getcwd++;
-				DEBUG(config->debug, "eimiss_getcwd",
+				miss_getcwd++;
+				DEBUG(config->debug, "miss_getcwd",
 				      "pid=%i", pid);
 			}
 			return NULL;
@@ -1080,12 +1090,12 @@ procmon_init(config_t *cfg) {
 	proctab_init();
 	config = cfg;
 	images = 0;
-	eimiss_bypid = 0;
-	eimiss_forksubj = 0;
-	eimiss_execsubj = 0;
-	eimiss_execinterp = 0;
-	eimiss_chdirsubj = 0;
-	eimiss_getcwd = 0;
+	miss_bypid = 0;
+	miss_forksubj = 0;
+	miss_execsubj = 0;
+	miss_execinterp = 0;
+	miss_chdirsubj = 0;
+	miss_getcwd = 0;
 	ooms = 0;
 	kqlookups = 0;
 	kqnotfounds = 0;
@@ -1121,12 +1131,12 @@ procmon_stats(procmon_stat_t *st) {
 
 	st->procs = procs; /* external */
 	st->images = (uint32_t)images;
-	st->eimiss_bypid = eimiss_bypid;
-	st->eimiss_forksubj = eimiss_forksubj;
-	st->eimiss_execsubj = eimiss_execsubj;
-	st->eimiss_execinterp = eimiss_execinterp;
-	st->eimiss_chdirsubj = eimiss_chdirsubj;
-	st->eimiss_getcwd = eimiss_getcwd;
+	st->miss_bypid = miss_bypid;
+	st->miss_forksubj = miss_forksubj;
+	st->miss_execsubj = miss_execsubj;
+	st->miss_execinterp = miss_execinterp;
+	st->miss_chdirsubj = miss_chdirsubj;
+	st->miss_getcwd = miss_getcwd;
 	st->ooms = (uint64_t)ooms;
 	st->kqlookups = kqlookups;
 	st->kqnotfounds = kqnotfounds;

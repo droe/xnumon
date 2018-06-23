@@ -33,7 +33,7 @@ static config_t *config;
 static uint64_t events_received;    /* number of filesystem events received */
 static uint64_t events_processed;   /* number of filesystem events processed */
 static atomic64_t ooms;             /* counts events impaired due to OOM */
-static atomic64_t lpmisseds;        /* plists that were not present anymore */
+static atomic64_t lpmiss;           /* plists that were not present anymore */
 
 static bool
 filemon_is_launchd_path(const char *path) {
@@ -113,7 +113,7 @@ launchd_add_analyze(launchd_add_t *ldadd) {
 	assert(ldadd->plist_path);
 	plist = cf_plist_load(ldadd->plist_path);
 	if (!plist) {
-		atomic64_inc(&lpmisseds);
+		atomic64_inc(&lpmiss);
 		return;
 	}
 	ldadd->program_path = cf_cstr(CFDictionaryGetValue(
@@ -151,7 +151,7 @@ launchd_add_analyze(launchd_add_t *ldadd) {
 		}
 	}
 	if (!ldadd->program_path) {
-		atomic64_inc(&lpmisseds);
+		atomic64_inc(&lpmiss);
 		return;
 	}
 
@@ -260,7 +260,7 @@ int
 filemon_init(config_t *cfg) {
 	config = cfg;
 	ooms = 0;
-	lpmisseds = 0;
+	lpmiss = 0;
 	events_received = 0;
 	events_processed = 0;
 	glob_t g;
@@ -296,7 +296,7 @@ filemon_stats(filemon_stat_t *st) {
 
 	st->receiveds = events_received;
 	st->processeds = events_processed;
-	st->lpmisseds = (uint64_t)lpmisseds;
+	st->lpmiss = (uint64_t)lpmiss;
 	st->ooms = (uint64_t)ooms;
 }
 
