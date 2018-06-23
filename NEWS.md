@@ -3,12 +3,12 @@
 -   Fix potential crash in ptrace audit event handling.
 -   Fix default hash if unspecified to be sha256 as documented in the default
     config.
--   Add `reload|restart` targets to `xnumonctl` to restart the daemon.
 -   Add `stats_interval` config option to control how often xnumon-stats[1]
     events are generated.
 -   Add `debug` config option to control whether debug messages are logged to
     stderr.
--   Schema version increased to 2.  Changes affect eventcodes 0 and 1.
+-   Add `reload|restart` target to `xnumonctl`, rename `logstats` to `event1`.
+-   Event schema version increased to 2.  Changes affect eventcodes 0 and 1.
     Eventcode 0 added config.stats_interval, config.debug.
     Eventcode 1 removed evtloop.pathbugs, procmon.cwdmiss, procmon.eimiss;
     added evtloop.radar38845422, evtloop.radar39267328, evtloop.radar39623812,

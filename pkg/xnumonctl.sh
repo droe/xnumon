@@ -29,18 +29,18 @@ kextstat)
 reopen)
 	kill -HUP `/bin/cat /var/run/xnumon.pid`
 	;;
-logstats)
+event1)
 	kill -USR1 `/bin/cat /var/run/xnumon.pid`
-	;;
-uninstall)
-	exec /bin/sh '/Library/Application Support/ch.roe.xnumon/uninstall.sh'
 	;;
 logstderr)
 	/usr/bin/plutil -replace StandardErrorPath -string /var/log/xnumon.stderr /Library/LaunchDaemons/ch.roe.xnumon.plist
 	"$0" reload
 	;;
+uninstall)
+	exec /bin/sh '/Library/Application Support/ch.roe.xnumon/uninstall.sh'
+	;;
 *)
-	echo "Usage: $0 load|unload|reload|start|stop|restart|status|kextload|kextunload|kextstat|reopen|logstats|uninstall" >&2
+	echo "Usage: $0 load|unload|reload|start|stop|restart|status|kextload|kextunload|kextstat|reopen|event1|logstderr|uninstall" >&2
 	exit 1
 	;;
 esac
