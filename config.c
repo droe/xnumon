@@ -307,8 +307,8 @@ config_new(const char *cfgpath) {
 		fprintf(stderr, "Failed to load 'rlimit_nofile'\n");
 		goto errout;
 	}
-	rv = config_str_from_plist(cfg, "debug",
-	                           plist, CFSTR("debug"));
+	rv = config_bool_from_plist(cfg, "debug",
+	                            plist, CFSTR("debug"));
 	if (rv == -1) {
 		fprintf(stderr, "Failed to load 'debug'\n");
 		goto errout;
