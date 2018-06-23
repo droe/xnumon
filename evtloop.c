@@ -35,9 +35,14 @@ static bool running = true;
 static int kefd = -1;
 static FILE *auef = NULL;
 static pid_t xnumon_pid;
-static uint64_t failedsyscalls = 0;
-static uint64_t pathbugs = 0;
 static uint64_t aueunknowns = 0;
+static uint64_t failedsyscalls = 0;
+static uint64_t radar38845422 = 0;
+static uint64_t radar39267328 = 0;
+static uint64_t radar39623812 = 0;
+static uint64_t needpath = 0; /* unknown missing path bug */
+static uint64_t needargv = 0; /* need argv to recover from path bug */
+static uint64_t needcwd = 0;  /* need cwd to recover from path bug */
 static uint64_t ooms = 0;
 
 /* return 1 if kextctl should be treated with priority */
@@ -81,6 +86,7 @@ kextctl_readable(int fd, UNUSED void *udata) {
 static int
 auef_readable(UNUSED int fd, UNUSED void *udata) {
 	audit_event_t ev;
+	const char *cwd;
 	char *path;
 	int rv;
 
@@ -142,12 +148,14 @@ auef_readable(UNUSED int fd, UNUSED void *udata) {
 		path = (char *)(ev.path[1] ? ev.path[1] : ev.path[0]);
 		if (!ev.attr_present || !path ||
 		    !str_beginswith(path, "/dev/")) {
-			pathbugs++;
+			radar38845422++;
 			path = sys_pidpath(ev.args[0].present ?
 			                   ev.args[0].value : ev.subject.pid);
 			if (!path) {
-				if (!ev.execarg)
+				if (!ev.execarg) {
+					needargv++;
 					break;
+				}
 				/* When launchd spawns the xpcproxy exec
 				 * trampoline, path is /dev/console and argv[0]
 				 * is just xpcproxy; hardcode that.
@@ -178,6 +186,7 @@ auef_readable(UNUSED int fd, UNUSED void *udata) {
 				ooms++;
 		}
 		if (!path)
+			/* got counted above */
 			break;
 		if (!ev.args[0].present) {
 			/* POSIX_SPAWN_SETEXEC */
@@ -215,6 +224,10 @@ auef_readable(UNUSED int fd, UNUSED void *udata) {
 			break;
 		}
 		assert(ev.subject_present);
+		if (!ev.path[0]) {
+			needpath++;
+			break;
+		}
 		path = (char *)(ev.path[1] ? ev.path[1] : ev.path[0]);
 		assert(path);
 		path = strdup(path);
@@ -255,6 +268,10 @@ auef_readable(UNUSED int fd, UNUSED void *udata) {
 			break;
 		}
 		assert(ev.subject_present);
+		if (!ev.path[0]) {
+			needpath++;
+			break;
+		}
 		path = (char *)(ev.path[1] ? ev.path[1] : ev.path[0]);
 		assert(path);
 		path = strdup(path);
@@ -346,16 +363,24 @@ auef_readable(UNUSED int fd, UNUSED void *udata) {
 				if (!path)
 					ooms++;
 			} else {
-				pathbugs++;
-				path = sys_realpath(ev.path[0],
-				           procmon_getcwd(ev.subject.pid));
-				if (!path && errno == ENOMEM)
+				radar39623812++;
+				cwd = procmon_getcwd(ev.subject.pid);
+				if (!cwd && (errno == ENOMEM))
 					ooms++;
+				path = sys_realpath(ev.path[0], cwd);
+				if (!path) {
+					if (errno == ENOMEM)
+						ooms++;
+					assert(!cwd);
+					needcwd++;
+				}
 			}
 		} else {
 			path = NULL;
+			needpath++;
 		}
 		if (!path)
+			/* counted above */
 			break;
 		filemon_touched(&ev.tv, &ev.subject, path);
 		break;
@@ -386,15 +411,23 @@ auef_readable(UNUSED int fd, UNUSED void *udata) {
 				ooms++;
 		} else if (ev.path[2] && !ev.path[3]) {
 			/* three path tokens, assume third unresolved dpath */
-			pathbugs++;
-			path = sys_realpath(ev.path[2],
-			                    procmon_getcwd(ev.subject.pid));
-			if (!path && errno == ENOMEM)
+			radar39267328++;
+			cwd = procmon_getcwd(ev.subject.pid);
+			if (!cwd && (errno == ENOMEM))
 				ooms++;
+			path = sys_realpath(ev.path[2], cwd);
+			if (!path) {
+				if (errno == ENOMEM)
+					ooms++;
+				assert(!cwd);
+				needcwd++;
+			}
 		} else {
 			path = NULL;
+			needpath++;
 		}
 		if (!path)
+			/* counted above */
 			break;
 		filemon_touched(&ev.tv, &ev.subject, path);
 		break;
@@ -448,9 +481,14 @@ evtloop_stats(evtloop_stat_t *st) {
 	procmon_stats(&st->pm);
 	hackmon_stats(&st->hm);
 	filemon_stats(&st->fm);
-	st->el_failedsyscalls = failedsyscalls;
-	st->el_pathbugs = pathbugs;
 	st->el_aueunknowns = aueunknowns;
+	st->el_failedsyscalls = failedsyscalls;
+	st->el_radar38845422 = radar38845422;
+	st->el_radar39623812 = radar39623812;
+	st->el_radar39267328 = radar39267328;
+	st->el_needpath = needpath;
+	st->el_needargv = needargv;
+	st->el_needcwd  = needcwd;
 	st->el_ooms = ooms;
 	aupipe_stats(fileno(auef), &st->ap);
 	work_stats(&st->wq);
@@ -470,13 +508,23 @@ siginfo_arrived(UNUSED int sig, UNUSED void *udata) {
 	evtloop_stats(&st);
 
 	fprintf(stderr, "evtloop "
-	                "failedsyscalls:%"PRIu64" "
-	                "pathbug:%"PRIu64" "
 	                "aueunknown:%"PRIu64" "
+	                "failedsyscalls:%"PRIu64"\n        "
+	                "radar38845422:%"PRIu64" "
+	                "radar39267328:%"PRIu64" "
+	                "radar39623812:%"PRIu64"\n        "
+	                "needpath:%"PRIu64" "
+	                "needargv:%"PRIu64" "
+	                "needcwd:%"PRIu64" "
 	                "oom:%"PRIu64"\n",
-	                st.el_failedsyscalls,
-	                st.el_pathbugs,
 	                st.el_aueunknowns,
+	                st.el_failedsyscalls,
+	                st.el_radar38845422,
+	                st.el_radar39267328,
+	                st.el_radar39623812,
+	                st.el_needpath,
+	                st.el_needargv,
+	                st.el_needcwd,
 	                st.el_ooms);
 
 	fprintf(stderr, "procmon "
@@ -696,9 +744,14 @@ evtloop_run(config_t *cfg) {
 
 	kefd = -1;
 	auef = NULL;
-	failedsyscalls = 0;
-	pathbugs = 0;
 	aueunknowns = 0;
+	failedsyscalls = 0;
+	radar38845422 = 0;
+	radar39267328 = 0;
+	radar39623812 = 0;
+	needpath = 0;
+	needargv = 0;
+	needcwd = 0;
 	ooms = 0;
 	xnumon_pid = getpid();
 

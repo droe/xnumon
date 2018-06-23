@@ -1,9 +1,11 @@
 ### xnumon develop
 
--   Bumping schema version to 2.  Eventcode 1 removed procmon.cwdmiss and
-    procmon.eimiss, added procmon.eimiss.bypid, procmon.eimiss.forksubj,
-    procmon.eimiss.execsubj, procmon.eimiss.execinterp,
-    procmon.eimiss.chdirsubj and procmon.eimiss.getcwd.
+-   Bumping schema version to 2.  Changes affect only eventcode 1.
+    Eventcode 1 removed evtloop.pathbugs, procmon.cwdmiss, procmon.eimiss;
+    added evtloop.radar38845422, evtloop.radar39267328, evtloop.radar39623812,
+    evtloop.needpath, evtloop.needargv, evtloop.needcwd, procmon.eimiss.bypid,
+    procmon.eimiss.forksubj, procmon.eimiss.execsubj, procmon.eimiss.execinterp,
+    procmon.eimiss.chdirsubj, procmon.eimiss.getcwd.
 -   Add `reload|restart` targets to `xnumonctl` to restart the daemon.
 -   Add `stats_interval` config option to control how often xnumon-stats[1]
     events are generated.
