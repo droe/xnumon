@@ -144,7 +144,7 @@ static void
 proctab_flush(void) {
 	proc_t *proc, *next;
 
-	for (uint16_t h = 0; h < UINT16_MAX; h++) {
+	for (uint16_t h = 0; h <= UINT16_MAX; h++) {
 		proc = proctab[h];
 		while (proc) {
 			next = proc->next;
@@ -162,6 +162,6 @@ proctab_init(void) {
 void
 proctab_fini(void) {
 	proctab_flush();
-	assert(procs == 0); // XXX
+	assert(procs == 0);
 }
 
