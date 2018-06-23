@@ -38,7 +38,7 @@ typedef struct {
 
 void hackmon_taskforpid(struct timespec *tv, audit_proc_t *, audit_proc_t *)
      NONNULL(1,2,3);
-void hackmon_ptrace(struct timespec *tv, audit_proc_t *, pid_t)
+void hackmon_ptrace(struct timespec *tv, audit_proc_t *, audit_proc_t *, pid_t)
      NONNULL(1,2);
 
 void hackmon_init(config_t *) NONNULL(1);

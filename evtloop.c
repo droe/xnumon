@@ -305,8 +305,10 @@ auef_readable(UNUSED int fd, UNUSED void *udata) {
 			break;
 		}
 		assert(ev.subject_present);
-		assert(ev.args[1].present); /* pid, can be -1 */
-		hackmon_ptrace(&ev.tv, &ev.subject, (pid_t)ev.args[1].value);
+		assert(ev.process_present || ev.args[1].present);
+		hackmon_ptrace(&ev.tv, &ev.subject,
+		               ev.process_present ? &ev.process : NULL,
+		               ev.args[1].present ? ev.args[1].value : -1);
 		break;
 
 	/*

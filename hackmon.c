@@ -132,28 +132,37 @@ hackmon_taskforpid(struct timespec *tv,
 void
 hackmon_ptrace(struct timespec *tv,
                audit_proc_t *subject,
-               pid_t objpid) {
-	audit_proc_t object;
+               audit_proc_t *object, /* may be NULL */
+               pid_t objectpid) {
+	audit_proc_t obj;
+	pid_t objpid;
 
 	events_received++;
+
+	objpid = object ? object->pid : objectpid;
+
 	if (objpid == -1)
 		return;
 	if (subject->pid == objpid)
 		return;
 
-	object.pid = objpid;
-	if (sys_pidbsdinfo(NULL, NULL,
-	                   &object.auid, &object.sid,
-	                   &object.euid, &object.egid,
-	                   &object.ruid, &object.rgid,
-	                   &object.dev, objpid) == -1) {
-		/* process not alive anymore */
-		pidmiss++;
-		return;
+	if (object == NULL) {
+		obj.pid = objpid;
+		if (sys_pidbsdinfo(NULL, NULL,
+		                   &obj.auid, &obj.sid,
+		                   &obj.euid, &obj.egid,
+		                   &obj.ruid, &obj.rgid,
+		                   &obj.dev, objpid) == -1) {
+			/* process not alive anymore */
+			pidmiss++;
+			return;
+		}
+		object = &obj;
 	}
+	assert(object);
 
 	events_processed++;
-	log_event_process_access(tv, subject, &object, "ptrace");
+	log_event_process_access(tv, subject, object, "ptrace");
 }
 
 void
