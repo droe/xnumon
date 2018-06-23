@@ -146,33 +146,44 @@ config_str(config_t *cfg, const char *key, const char *value) {
 static int
 config_str_from_plist(config_t *cfg, const char *optname,
                       CFPropertyListRef plist, CFStringRef key) {
-	CFStringRef cfs = CFDictionaryGetValue((CFDictionaryRef)plist, key);
-	if (cfs) {
-		int rv;
-		char *s = cf_cstr(cfs);
-		if (!s)
-			return -1;
-		rv = config_str(cfg, optname, s);
-		free(s);
-		if (rv == -1)
-			return -1;
-	}
+	CFStringRef cfs;
+	int rv;
+	char *s;
+
+	cfs = CFDictionaryGetValue((CFDictionaryRef)plist, key);
+	if (!cfs)
+		return 0;
+	if (!cf_is_string(cfs))
+		return -1;
+
+	s = cf_cstr(cfs);
+	if (!s)
+		return -1;
+	rv = config_str(cfg, optname, s);
+	free(s);
+	if (rv == -1)
+		return -1;
 	return 0;
 }
 
 static int
 config_bool_from_plist(config_t *cfg, const char *optname,
                        CFPropertyListRef plist, CFStringRef key) {
-	CFBooleanRef cfb = CFDictionaryGetValue((CFDictionaryRef)plist, key);
-	if (cfb) {
-		int rv;
-		if (CFBooleanGetValue(cfb))
-			rv = config_str(cfg, optname, "true");
-		else
-			rv = config_str(cfg, optname, "false");
-		if (rv == -1)
-			return -1;
-	}
+	CFBooleanRef cfb;
+	int rv;
+
+	cfb = CFDictionaryGetValue((CFDictionaryRef)plist, key);
+	if (!cfb)
+		return 0;
+	if (!cf_is_boolean(cfb))
+		return -1;
+
+	if (CFBooleanGetValue(cfb))
+		rv = config_str(cfg, optname, "true");
+	else
+		rv = config_str(cfg, optname, "false");
+	if (rv == -1)
+		return -1;
 	return 0;
 }
 
@@ -186,7 +197,7 @@ config_strset_from_plist(strset_t *set,
 	if (!plist)
 		return strset_init(set, 0, NULL);
 	arr = CFDictionaryGetValue((CFDictionaryRef)plist, key);
-	if (!arr)
+	if (!arr || !cf_is_array(arr))
 		return strset_init(set, 0, NULL);
 	arrsz = CFArrayGetCount(arr);
 	if (arrsz == 0)

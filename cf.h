@@ -13,8 +13,13 @@
 
 #include "attrib.h"
 
+#include <stdbool.h>
+
 #include <CoreFoundation/CoreFoundation.h>
 
+bool cf_is_boolean(CFTypeRef) WUNRES NONNULL(1);
+bool cf_is_string(CFTypeRef) WUNRES NONNULL(1);
+bool cf_is_array(CFTypeRef) WUNRES NONNULL(1);
 char * cf_cstr(CFStringRef) MALLOC;
 char ** cf_cstrv(CFArrayRef) MALLOC;
 char ** cf_aev(CFArrayRef) MALLOC;

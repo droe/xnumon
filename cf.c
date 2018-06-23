@@ -15,6 +15,21 @@
 #include <stdlib.h>
 #include <strings.h>
 
+bool
+cf_is_boolean(CFTypeRef unknown) {
+	return (CFBooleanGetTypeID() == CFGetTypeID(unknown));
+}
+
+bool
+cf_is_string(CFTypeRef unknown) {
+	return (CFStringGetTypeID() == CFGetTypeID(unknown));
+}
+
+bool
+cf_is_array(CFTypeRef unknown) {
+	return (CFArrayGetTypeID() == CFGetTypeID(unknown));
+}
+
 char *
 cf_cstr(CFStringRef str) {
 	if (!str)
