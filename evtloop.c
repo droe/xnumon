@@ -379,8 +379,8 @@ auef_readable(UNUSED int fd, UNUSED void *udata) {
 				if (!path) {
 					if (errno == ENOMEM)
 						ooms++;
-					assert(!cwd);
-					needcwd++;
+					else
+						needcwd++;
 				}
 			}
 		} else {
@@ -427,8 +427,8 @@ auef_readable(UNUSED int fd, UNUSED void *udata) {
 			if (!path) {
 				if (errno == ENOMEM)
 					ooms++;
-				assert(!cwd);
-				needcwd++;
+				else
+					needcwd++;
 			}
 		} else {
 			path = NULL;

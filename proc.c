@@ -16,7 +16,7 @@
 #include <string.h>
 #include <assert.h>
 
-static proc_t *proctab[0x10000] = {0};
+static proc_t *proctab[UINT16_MAX + 1];
 uint32_t procs; /* external access from procmap.c */
 
 _Static_assert(sizeof(pid_t) == 4, "pid_t is 32bit");
@@ -75,6 +75,7 @@ proctab_create(pid_t pid) {
 		proc = proc->next;
 	}
 	assert(proc);
+	assert(!proc->next);
 	proc->pid = pid;
 	return proc;
 }
@@ -143,8 +144,10 @@ proctab_remove(pid_t pid) {
 static void
 proctab_flush(void) {
 	proc_t *proc, *next;
+	uint16_t h;
 
-	for (uint16_t h = 0; h <= UINT16_MAX; h++) {
+	for (size_t i = 0; i < (sizeof(proctab)/sizeof(proctab[0])); i++) {
+		h = (uint16_t)i;
 		proc = proctab[h];
 		while (proc) {
 			next = proc->next;
@@ -157,6 +160,7 @@ proctab_flush(void) {
 void
 proctab_init(void) {
 	procs = 0;
+	bzero(proctab, sizeof(proctab));
 }
 
 void
