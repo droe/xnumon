@@ -150,7 +150,8 @@
   <!-- Code signature information:
        Enable (<true/>) or disable (<false/>) the acquisition of code signature
        information from executed files, including the executable ident string
-       certificate and CA chain Common Names.
+       certificate and CA chain Common Names.  If this is false, suppression
+       rules by ident will not have any effect.
        If unset, defaults to:   true
        -->
   <!--
