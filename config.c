@@ -13,6 +13,7 @@
 #include "log.h"
 #include "cf.h"
 #include "sys.h"
+#include "memstream.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -80,6 +81,37 @@ config_parse_events(const char *spec) {
 	if (flags == 0)
 		return -1;
 	return flags;
+}
+
+char *
+config_events_s(config_t *cfg) {
+	int i = cfg->events;
+	int code = 0;
+
+	char *msg;
+	size_t sz;
+	FILE *f;
+
+	f = open_memstream(&msg, &sz);
+	if (!f)
+		return NULL;
+
+	if (i & 1) {
+		fprintf(f, "%i", code);
+	}
+	for (;;) {
+		i >>= 1;
+		code++;
+		if (i == 0)
+			break;
+		else if (i & 1) {
+			fprintf(f, ",%i", code);
+		}
+	}
+	fclose(f);
+	if (!msg)
+		return NULL;
+	return msg;
 }
 
 static int
@@ -266,6 +298,7 @@ config_new(const char *cfgpath) {
 
 	/* set defaults that differ from all zeroes */
 	cfg->limit_nofile = 8192;
+	cfg->events = (1 << LOGEVT_SIZE) - 1;
 	cfg->stats_interval = 3600;
 	cfg->kextlevel = KEXTLEVEL_HASH;
 	cfg->hflags = HASH_SHA256;

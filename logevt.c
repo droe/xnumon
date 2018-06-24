@@ -77,8 +77,12 @@ logevt_xnumon_ops(logfmt_t *fmt, FILE *f, void *arg0) {
 	fmt->value_bool(f, config->launchd_mode);
 	fmt->dict_item(f, "debug");
 	fmt->value_bool(f, config->debug);
-	fmt->dict_item(f, "limit_nofile");
-	fmt->value_uint(f, config->limit_nofile);
+	fmt->dict_item(f, "events");
+	char *evts = config_events_s(config);
+	fmt->value_string(f, evts);
+	free(evts);
+	fmt->dict_item(f, "stats_interval");
+	fmt->value_uint(f, config->stats_interval);
 	fmt->dict_item(f, "kextlevel");
 	fmt->value_string(f, config_kextlevel_s(config));
 	fmt->dict_item(f, "hashes");
@@ -101,6 +105,8 @@ logevt_xnumon_ops(logfmt_t *fmt, FILE *f, void *arg0) {
 		fmt->value_string(f, config->logfile);
 	else
 		fmt->value_null(f);
+	fmt->dict_item(f, "limit_nofile");
+	fmt->value_uint(f, config->limit_nofile);
 	fmt->dict_item(f, "suppress_image_exec_by_ident");
 	fmt->value_uint(f, strset_size(&config->suppress_image_exec_by_ident));
 	fmt->dict_item(f, "suppress_image_exec_by_path");

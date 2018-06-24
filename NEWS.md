@@ -10,7 +10,7 @@
     stderr.
 -   Add `reload|restart` target to `xnumonctl`, rename `logstats` to `event1`.
 -   Event schema version increased to 2.  Changes affect eventcodes 0 and 1.
-    Eventcode 0 added config.stats_interval, config.debug.
+    Eventcode 0 added config.events, config.stats_interval, config.debug.
     Eventcode 1 removed evtloop.pathbugs, procmon.cwdmiss, procmon.eimiss;
     added evtloop.radar38845422, evtloop.radar39267328, evtloop.radar39623812,
     evtloop.needpath, evtloop.needargv, evtloop.needcwd, procmon.miss.bypid,
