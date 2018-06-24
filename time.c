@@ -13,6 +13,15 @@
 #include <sys/time.h>
 
 bool
+timespec_greater_plus(struct timespec *tv1, struct timespec *tv2, time_t s) {
+	if (tv1->tv_sec == tv2->tv_sec + s) {
+		return (tv1->tv_nsec > tv2->tv_nsec);
+	} else {
+		return (tv1->tv_sec > tv2->tv_sec + s);
+	}
+}
+
+bool
 timespec_greater(struct timespec *tv1, struct timespec *tv2) {
 	if (tv1->tv_sec == tv2->tv_sec) {
 		return (tv1->tv_nsec > tv2->tv_nsec);

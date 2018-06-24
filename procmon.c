@@ -169,8 +169,8 @@ image_exec_open(image_exec_t *image, const audit_attr_t *attr) {
 	int rv;
 
 	if (image->flags & (EIFLAG_STAT|EIFLAG_ATTR)) {
-#ifdef DEBUG_PROCMON
-		fprintf(stderr, "DEBUG_PROCMON: already have stat\n");
+#ifdef DEBUG_EXECIMAGE
+		fprintf(stderr, "DEBUG_EXECIMAGE: already have stat\n");
 #endif
 		return 0;
 	}
@@ -209,8 +209,8 @@ image_exec_open(image_exec_t *image, const audit_attr_t *attr) {
 			image->flags |= EIFLAG_SHEBANG;
 
 	image->flags |= EIFLAG_STAT;
-#ifdef DEBUG_PROCMON
-	fprintf(stderr, "DEBUG_PROCMON: stat from path='%s'\n", image->path);
+#ifdef DEBUG_EXECIMAGE
+	fprintf(stderr, "DEBUG_EXECIMAGE: stat from path=%s\n", image->path);
 #endif
 	return 0;
 
@@ -309,19 +309,19 @@ image_exec_analyze(image_exec_t *image, int kern) {
 			              image->stat.ctime.tv_sec,
 			              image->stat.btime.tv_sec,
 			              &image->hashes);
-#ifdef DEBUG_PROCMON
-			fprintf(stderr, "DEBUG_PROCMON: hashes from path='%s'\n", image->path);
+#ifdef DEBUG_EXECIMAGE
+			fprintf(stderr, "DEBUG_EXECIMAGE: hashes from path=%s\n", image->path);
 #endif
 		}
-#ifdef DEBUG_PROCMON
+#ifdef DEBUG_EXECIMAGE
 		else
-			fprintf(stderr, "DEBUG_PROCMON: hashes from cache\n");
+			fprintf(stderr, "DEBUG_EXECIMAGE: hashes from cache\n");
 #endif
 		image->flags |= EIFLAG_HASHES;
 	}
-#ifdef DEBUG_PROCMON
+#ifdef DEBUG_EXECIMAGE
 	else
-		fprintf(stderr, "DEBUG_PROCMON: already have hashes\n");
+		fprintf(stderr, "DEBUG_EXECIMAGE: already have hashes\n");
 #endif
 
 	/* everything below operates on paths, not open file descriptors */
@@ -341,9 +341,9 @@ image_exec_analyze(image_exec_t *image, int kern) {
 		return 0;
 	}
 
-#ifdef DEBUG_PROCMON
+#ifdef DEBUG_EXECIMAGE
 	if (image->codesign)
-		fprintf(stderr, "DEBUG_PROCMON: already have codesign\n");
+		fprintf(stderr, "DEBUG_EXECIMAGE: already have codesign\n");
 #endif
 	if (!image->codesign && (image->flags & EIFLAG_HASHES)) {
 		image->codesign = cachecsig_get(&image->hashes);
@@ -354,9 +354,9 @@ image_exec_analyze(image_exec_t *image, int kern) {
 				return -1;
 			}
 		}
-#ifdef DEBUG_PROCMON
+#ifdef DEBUG_EXECIMAGE
 		else
-			fprintf(stderr, "DEBUG_PROCMON: codesign from cache\n");
+			fprintf(stderr, "DEBUG_EXECIMAGE: codesign from cache\n");
 #endif
 	}
 	if (!image->codesign && config->codesign) {
@@ -402,8 +402,8 @@ image_exec_analyze(image_exec_t *image, int kern) {
 		}
 
 		cachecsig_put(&image->hashes, image->codesign);
-#ifdef DEBUG_PROCMON
-		fprintf(stderr, "DEBUG_PROCMON: codesign from path='%s'\n",
+#ifdef DEBUG_EXECIMAGE
+		fprintf(stderr, "DEBUG_EXECIMAGE: codesign from path=%s\n",
 		                image->path);
 #endif
 	}
@@ -471,8 +471,8 @@ image_exec_from_pid(pid_t pid) {
 
 	path = sys_pidpath(pid);
 #ifdef DEBUG_PROCMON
-	fprintf(stderr, "DEBUG_PROCMON: image_exec_from_pid(%i) path='%s'\n",
-	                pid, path);
+	DEBUG(config->debug, "image_exec_from_pid",
+	      "pid=%i path=%s", pid, path);
 #endif
 	if (!path) {
 		if (errno == ENOMEM) {
@@ -616,9 +616,9 @@ procmon_fork(struct timespec *tv,
 	proc_t *parent, *child;
 
 #ifdef DEBUG_PROCMON
-	fprintf(stderr, "DEBUG_PROCMON: procmon_fork"
-	                " subject->pid=%i childpid=%i\n",
-	                subject->pid, childpid);
+	DEBUG(config->debug, "procmon_fork",
+	      "subject->pid=%i childpid=%i\n",
+	      subject->pid, childpid);
 #endif
 
 	parent = proctab_find(subject->pid);
@@ -671,9 +671,9 @@ procmon_spawn(struct timespec *tv,
               char *imagepath, audit_attr_t *attr,
               char **argv) {
 #ifdef DEBUG_PROCMON
-	fprintf(stderr, "DEBUG_PROCMON: procmon_spawn"
-	                " subject->pid=%i childpid=%i imagepath='%s'\n",
-	                subject->pid, childpid, imagepath);
+	DEBUG(config->debug, "procmon_spawn",
+	      "subject->pid=%i childpid=%i imagepath=%s",
+	      subject->pid, childpid, imagepath);
 #endif
 
 	procmon_fork(tv, subject, childpid);
@@ -700,9 +700,8 @@ procmon_exec(struct timespec *tv,
 	char *cwd;
 
 #ifdef DEBUG_PROCMON
-	fprintf(stderr, "DEBUG_PROCMON: procmon_exec"
-	                " subject->pid=%i imagepath='%s'\n",
-	                subject->pid, imagepath);
+	DEBUG(config->debug, "procmon_exec",
+	      "subject->pid=%i imagepath=%s", subject->pid, imagepath);
 #endif
 
 	proc = proctab_find(subject->pid);
@@ -712,8 +711,7 @@ procmon_exec(struct timespec *tv,
 			if (errno != ENOMEM) {
 				miss_execsubj++;
 				DEBUG(config->debug, "miss_execsubj",
-				      "subject.pid=%i imagepath='%s' "
-				      "argv[0]='%s'",
+				      "subject.pid=%i imagepath=%s argv[0]=%s",
 				      subject->pid, imagepath,
 				      argv ? argv[0] : NULL);
 			}
@@ -737,17 +735,6 @@ procmon_exec(struct timespec *tv,
 	     node; node = node->next) {
 		image_exec_t *ei = node->data;
 		assert(ei);
-
-		/*
-		 * Check if image is more recent than the auevent; this can
-		 * happen during startup when events get queued up while we are
-		 * checking all the running processes.
-		 *
-		 * Depends on the kernel first performing the vnode KAuth
-		 * callback and send the audit event later after the fact.
-		 */
-		if (timespec_greater(&ei->hdr.tv, tv))
-			break;
 
 		if (!image) {
 			/*
@@ -794,13 +781,14 @@ procmon_exec(struct timespec *tv,
 			}
 		}
 
-#ifdef DEBUG_PREPQUEUE
-		fprintf(stderr, "skipped kqlist for %s[%i] "
-		                "while looking for %s[%i]\n",
-		                ei->path, ei->pid, imagepath, proc->pid);
-#endif
 		kqskip++;
+		DEBUG(config->debug, "prepq_skip",
+		      "looking for %s[%i]: skipped %s[%i]",
+		      imagepath, proc->pid, ei->path, ei->pid);
 		if (++ei->kqttl == MAXKQTTL) {
+			DEBUG(config->debug, "prepq_drop",
+			      "looking for %s[%i]: dropped %s[%i]",
+			      imagepath, proc->pid, ei->path, ei->pid);
 			tommy_list_remove_existing(&kqlist,
 			                           &ei->hdr.node);
 			kqsize--;
@@ -810,20 +798,23 @@ procmon_exec(struct timespec *tv,
 	}
 	assert(!(interp && !image));
 
-#ifdef DEBUG_PROCMON
+#if 0
 	if (image)
-		fprintf(stderr, "DEBUG_PROCMON: found kext image "
+		fprintf(stderr, "found kext image "
 		                "pid=%i path=%s is_script=%i\n",
 		                image->pid, image->path,
 		                image->flags & EIFLAG_SHEBANG);
 	if (interp)
-		fprintf(stderr, "DEBUG_PROCMON: found kext interp "
+		fprintf(stderr, "found kext interp "
 		                "pid=%i path=%s is_script=%i\n",
 		                interp->pid, interp->path,
 		                interp->flags & EIFLAG_SHEBANG);
 #endif
 
 	if (!image) {
+		DEBUG(config->debug, "prepq_miss",
+		      "looking for %s[%i]: not found (image)",
+		      imagepath, proc->pid);
 		kqmiss++;
 		image = image_exec_new(imagepath);
 		if (!image) {
@@ -841,11 +832,15 @@ procmon_exec(struct timespec *tv,
 
 	if (image->flags & EIFLAG_SHEBANG) {
 		if (!interp) {
+			DEBUG(config->debug, "prepq_miss",
+			      "looking for %s[%i]: not found (interp "
+			      "argv[0]=%s)",
+			      imagepath, proc->pid, argv ? argv[0] : NULL);
 			kqmiss++;
 			if (!argv) {
 				miss_execinterp++;
 				DEBUG(config->debug, "miss_execinterp",
-				      "subject.pid=%i imagepath='%s' "
+				      "subject.pid=%i imagepath=%s "
 				      "argv=NULL attr:%s",
 				      subject->pid, imagepath,
 				      attr ? "y" : "n");
@@ -860,8 +855,8 @@ procmon_exec(struct timespec *tv,
 					miss_execinterp++;
 					DEBUG(config->debug,
 					      "miss_execinterp",
-					      "subject.pid=%i imagepath='%s' "
-					      "argv[0]='%s' argv[1]='%s' "
+					      "subject.pid=%i imagepath=%s "
+					      "argv[0]=%s argv[1]=%s "
 					      "attr:%s",
 					      subject->pid, imagepath,
 					      argv[0], argv[1],
@@ -875,8 +870,8 @@ procmon_exec(struct timespec *tv,
 			if (!interp) {
 				miss_execinterp++;
 				DEBUG(config->debug, "miss_execinterp",
-				      "subject.pid=%i imagepath='%s' "
-				      "argv[0]='%s' argv[1]='%s' attr:%s",
+				      "subject.pid=%i imagepath=%s "
+				      "argv[0]=%s argv[1]=%s attr:%s",
 				      subject->pid, imagepath,
 				      argv[0], argv[1],
 				      attr ? "y" : "n");
@@ -936,10 +931,9 @@ procmon_exec(struct timespec *tv,
  */
 void
 procmon_exit(pid_t pid) {
-#ifdef DEBUG_PROCMON
-	fprintf(stderr, "DEBUG_PROCMON: procmon_exit"
-	                " pid=%i\n",
-	                pid);
+#ifdef DEBUG_EXIT
+	DEBUG(config->debug, "procmon_exit",
+	      "pid=%i", pid);
 #endif
 
 	proctab_remove(pid);
@@ -957,10 +951,9 @@ void
 procmon_wait4(pid_t pid) {
 	int rv;
 
-#ifdef DEBUG_PROCMON
-	fprintf(stderr, "DEBUG_PROCMON: procmon_wait4"
-	                " pid=%i\n",
-	                pid);
+#ifdef DEBUG_EXIT
+	DEBUG(config->debug, "procmon_wait4",
+	      "pid=%i", pid);
 #endif
 
 	if ((pid == -1) || (pid == 0))
@@ -982,10 +975,9 @@ void
 procmon_chdir(pid_t pid, char *path) {
 	proc_t *proc;
 
-#ifdef DEBUG_PROCMON
-	fprintf(stderr, "DEBUG_PROCMON: procmon_chdir"
-	                " pid=%i path='%s'\n",
-	                pid, path);
+#ifdef DEBUG_CHDIR
+	DEBUG(config->debug, "procmon_chdir",
+	      "pid=%i path=%s", pid, path);
 #endif
 
 	proc = proctab_find(pid);
@@ -995,7 +987,7 @@ procmon_chdir(pid_t pid, char *path) {
 			if (errno != ENOMEM) {
 				miss_chdirsubj++;
 				DEBUG(config->debug, "miss_chdirsubj",
-				      "pid=%i path='%s'", pid, path);
+				      "pid=%i path=%s", pid, path);
 			}
 			free(path);
 			return;
@@ -1023,9 +1015,8 @@ procmon_kern_preexec(struct timespec *tm, pid_t pid, const char *imagepath) {
 	char *path;
 
 #ifdef DEBUG_PROCMON
-	fprintf(stderr, "DEBUG_PROCMON: procmon_kern_preexec"
-	                " pid=%i imagepath='%s'\n",
-	                pid, imagepath);
+	DEBUG(config->debug, "procmon_kern_preexec",
+	      "pid=%i imagepath=%s", pid, imagepath);
 #endif
 
 	path = strdup(imagepath);
@@ -1050,11 +1041,6 @@ procmon_kern_preexec(struct timespec *tm, pid_t pid, const char *imagepath) {
  */
 void
 procmon_preloadpid(pid_t pid) {
-#ifdef DEBUG_PROCMON
-	fprintf(stderr, "DEBUG_PROCMON: procmon_preloadpid"
-	                " pid=%i\n",
-	                pid);
-#endif
 	/*
 	 * The code should actually work without any preloading too.
 	 */

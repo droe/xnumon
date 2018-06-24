@@ -16,6 +16,8 @@
 #include <time.h>
 #include <stdbool.h>
 
+bool timespec_greater_plus(struct timespec *, struct timespec *, time_t)
+     NONNULL(1,2) WUNRES;
 bool timespec_greater(struct timespec *, struct timespec *) NONNULL(1,2) WUNRES;
 bool timespec_equal(struct timespec *, struct timespec *) NONNULL(1,2) WUNRES;
 int timespec_nanotime(struct timespec *) NONNULL(1) WUNRES;
