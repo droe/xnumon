@@ -447,7 +447,7 @@ image_exec_work(image_exec_t *ei) {
 		image_exec_analyze(ei->script, 0);
 		image_exec_close(ei->script);
 	}
-	if (config->ancestors > 0)
+	if (config->ancestors < SIZE_MAX)
 		image_exec_prune_ancestors(ei, 0);
 	if (ei->flags & EIFLAG_ENOMEM) {
 		atomic64_inc(&ooms);

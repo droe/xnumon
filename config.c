@@ -108,7 +108,10 @@ config_str(config_t *cfg, const char *key, const char *value) {
 	}
 
 	if (!strcmp(key, "ancestors")) {
-		cfg->ancestors = atoi(value);
+		if (!strcmp(value, "unlimited"))
+			cfg->ancestors = SIZE_MAX;
+		else
+			cfg->ancestors = atoi(value);
 		return 0;
 	}
 

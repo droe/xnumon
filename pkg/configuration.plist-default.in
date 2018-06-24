@@ -143,7 +143,8 @@
 
   <!-- Ancestory:
        Number of images to list in subject ancestry, and to remember in memory
-       for each active process.
+       for each active process.  The current image of processes is always
+       shown, independently of this setting.
        If unset, defaults to:   unlimited
        -->
   <!--

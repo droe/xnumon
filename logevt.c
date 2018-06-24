@@ -458,10 +458,11 @@ logevt_process_image_exec_ancestors(logfmt_t *fmt, FILE *f, image_exec_t *ie) {
 
 	fmt->list_begin(f);
 	for (image_exec_t *pie = ie; pie && pie->pid > 0; pie = pie->prev) {
+		if (depth == config->ancestors)
+			break;
 		fmt->list_item(f);
 		logevt_process_image_exec(fmt, f, pie);
-		if (++depth == config->ancestors)
-			break;
+		depth++;
 	}
 	fmt->list_end(f); /* process image exec ancestors */
 }
