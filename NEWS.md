@@ -1,4 +1,4 @@
-### xnumon develop
+### xnumon 0.1.2 2018-06-24
 
 -   Fix handling of `ptrace` and `task_for_pid` audit events for pid 0 or -1.
 -   Fix default hash if unspecified to be sha256 as documented in the default
