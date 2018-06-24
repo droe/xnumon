@@ -702,10 +702,9 @@ static stat_attr_t cfgattr[2];
 static int
 config_timer_fired(UNUSED int ident, void *udata) {
 	config_t *cfg = (config_t *)udata;
-	fprintf(stderr, "config_timer_fired\n");
 	if (sys_pathattr(&cfgattr[1], cfg->path) == -1) {
-		fprintf(stderr, "Configuration file disappeared, exiting\n");
-		sleep(5); /* give deployment some time to finish deploying */
+		fprintf(stderr, "Configuration file disappeared, "
+		                "exiting to reload config\n");
 		running = false;
 		return -1;
 	}
@@ -715,7 +714,8 @@ config_timer_fired(UNUSED int ident, void *udata) {
 	  || (!timespec_equal(&cfgattr[0].mtime, &cfgattr[1].mtime))
 	  || (!timespec_equal(&cfgattr[0].ctime, &cfgattr[1].ctime))
 	  || (!timespec_equal(&cfgattr[0].btime, &cfgattr[1].btime)))) {
-		fprintf(stderr, "Configuration change detected, exiting\n");
+		fprintf(stderr, "Configuration change detected, "
+		                "exiting to reload config\n");
 		running = false;
 		return -1;
 	}
