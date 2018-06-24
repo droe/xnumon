@@ -90,7 +90,10 @@ logevt_xnumon_ops(logfmt_t *fmt, FILE *f, void *arg0) {
 	fmt->dict_item(f, "codesign");
 	fmt->value_bool(f, config->codesign);
 	fmt->dict_item(f, "ancestors");
-	fmt->value_uint(f, config->ancestors);
+	if (config->ancestors < SIZE_MAX)
+		fmt->value_uint(f, config->ancestors);
+	else
+		fmt->value_string(f, "unlimited");
 	fmt->dict_item(f, "logdst");
 	fmt->value_string(f, logdst_s(config));
 	fmt->dict_item(f, "logfmt");

@@ -1,5 +1,7 @@
 ### xnumon develop
 
+-   Fix ancestors default if not set from 0 back to unlimited as documented.
+
 
 ### xnumon 0.1.2 2018-06-24
 

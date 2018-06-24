@@ -303,6 +303,7 @@ config_new(const char *cfgpath) {
 	cfg->kextlevel = KEXTLEVEL_HASH;
 	cfg->hflags = HASH_SHA256;
 	cfg->codesign = true;
+	cfg->ancestors = SIZE_MAX;
 	cfg->logoneline = -1; /* any */
 	if (logfmt_parse(cfg, "json") == -1) {
 		fprintf(stderr, "Failed to set default logfmt 'json'\n");
