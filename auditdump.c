@@ -121,7 +121,12 @@ main(int argc, char *argv[]) {
 	signal(SIGTERM, handle_sig);
 
 	if (classmask & AC_XNUMON) {
-		if (auclass_addmask(AC_XNUMON, auclass_xnumon_events) == -1) {
+		if (auclass_addmask(AC_XNUMON,
+		                    auclass_xnumon_events_procmon) == -1 ||
+		    auclass_addmask(AC_XNUMON,
+		                    auclass_xnumon_events_hackmon) == -1 ||
+		    auclass_addmask(AC_XNUMON,
+		                    auclass_xnumon_events_filemon) == -1) {
 			fprintf(stderr, "%s: addmask(AC_XNUMON) failed\n",
 			                argv0);
 			exit(EXIT_FAILURE);
@@ -179,7 +184,11 @@ main(int argc, char *argv[]) {
 
 	if (clearmask) {
 		if (auclass_removemask(AC_XNUMON,
-		                       auclass_xnumon_events) == -1) {
+		                       auclass_xnumon_events_procmon) == -1 ||
+		    auclass_removemask(AC_XNUMON,
+		                       auclass_xnumon_events_hackmon) == -1 ||
+		    auclass_removemask(AC_XNUMON,
+		                       auclass_xnumon_events_filemon) == -1) {
 			fprintf(stderr, "%s: removemask(AC_XNUMON) failed\n",
 			                argv0);
 			exit(EXIT_FAILURE);

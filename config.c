@@ -47,6 +47,41 @@ select_file(const char *path1, const char *path2, const char *path3) {
 	return path3;
 }
 
+/*
+ * Parse a string of comma-separated eventcodes into a bitmask of events.
+ */
+static int
+config_parse_events(const char *spec) {
+	const char *p;
+	size_t sz;
+	int flags;
+	int i;
+
+	flags = 0;
+	p = spec;
+	for (;;) {
+		sz = 0;
+		while ((p[sz] != '\0') && (p[sz] != ',') && (p[sz] != ' '))
+			sz++;
+		if (sz == 1 && !memcmp(p, "0", sz))
+			flags |= LOGEVT_FLAG(LOGEVT_XNUMON_OPS);
+		else {
+			i = atoi(p);
+			if (i == 0 || i > LOGEVT_SIZE)
+				return -1;
+			flags |= LOGEVT_FLAG(i);
+		}
+		if (!p[sz])
+			break;
+		p += sz + 1;
+		while ((p[sz] != '\0') && (p[sz] == ' '))
+			sz++;
+	}
+	if (flags == 0)
+		return -1;
+	return flags;
+}
+
 static int
 config_set_bool(bool *b, const char *value) {
 	if (!strcmp(value, "true")
@@ -86,6 +121,11 @@ config_str(config_t *cfg, const char *key, const char *value) {
 	if (!strcmp(key, "rlimit_nofile")) {
 		cfg->limit_nofile = atoi(value);
 		return 0;
+	}
+
+	if (!strcmp(key, "events")) {
+		cfg->events = config_parse_events(value);
+		return cfg->events == -1 ? -1 : 0;
 	}
 
 	if (!strcmp(key, "stats_interval")) {
@@ -307,6 +347,12 @@ config_new(const char *cfgpath) {
 	                           plist, CFSTR("ancestors"));
 	if (rv == -1) {
 		fprintf(stderr, "Failed to load 'ancestors'\n");
+		goto errout;
+	}
+	rv = config_str_from_plist(cfg, "events",
+	                           plist, CFSTR("events"));
+	if (rv == -1) {
+		fprintf(stderr, "Failed to load 'events'\n");
 		goto errout;
 	}
 	rv = config_str_from_plist(cfg, "stats_interval",

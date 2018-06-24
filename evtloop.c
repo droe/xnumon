@@ -84,7 +84,8 @@ kextctl_readable(int fd, UNUSED void *udata) {
  * 39623812: audit(4): path not resolved for utimes(2)
  */
 static int
-auef_readable(UNUSED int fd, UNUSED void *udata) {
+auef_readable(UNUSED int fd, void *udata) {
+	config_t *cfg = (config_t *)udata;
 	audit_event_t ev;
 	const char *cwd;
 	char *path;
@@ -288,6 +289,8 @@ auef_readable(UNUSED int fd, UNUSED void *udata) {
 	 */
 
 	case AUE_TASKFORPID:
+		if (!LOGEVT_WANT(cfg->events, LOGEVT_HACKMON))
+			break;
 		assert(ev.return_present);
 		if (ev.return_value) {
 			failedsyscalls++;
@@ -303,6 +306,8 @@ auef_readable(UNUSED int fd, UNUSED void *udata) {
 		break;
 
 	case AUE_PTRACE:
+		if (!LOGEVT_WANT(cfg->events, LOGEVT_HACKMON))
+			break;
 		assert(ev.return_present);
 		if (ev.return_value) {
 			failedsyscalls++;
@@ -322,6 +327,8 @@ auef_readable(UNUSED int fd, UNUSED void *udata) {
 	 */
 
 	case AUE_CLOSE:
+		if (!LOGEVT_WANT(cfg->events, LOGEVT_FILEMON))
+			break;
 		assert(ev.return_present);
 		if (ev.return_value) {
 			failedsyscalls++;
@@ -347,6 +354,8 @@ auef_readable(UNUSED int fd, UNUSED void *udata) {
 
 	case AUE_UTIMES:
 	case AUE_FUTIMES:
+		if (!LOGEVT_WANT(cfg->events, LOGEVT_FILEMON))
+			break;
 		assert(ev.return_present);
 		if (ev.return_value) {
 			failedsyscalls++;
@@ -395,6 +404,8 @@ auef_readable(UNUSED int fd, UNUSED void *udata) {
 
 	case AUE_RENAME:
 	case AUE_RENAMEAT:
+		if (!LOGEVT_WANT(cfg->events, LOGEVT_FILEMON))
+			break;
 		assert(ev.return_present);
 		if (ev.return_value) {
 			failedsyscalls++;
@@ -735,16 +746,16 @@ sigusr1_arrived(UNUSED int sig, UNUSED void *udata) {
 
 int
 evtloop_run(config_t *cfg) {
-	kevent_ctx_t sigquit_ctx = KEVENT_CTX_SIGNAL(sigquit_arrived, NULL);
-	kevent_ctx_t sigtstp_ctx = KEVENT_CTX_SIGNAL(sigtstp_arrived, NULL);
-	kevent_ctx_t siginfo_ctx = KEVENT_CTX_SIGNAL(siginfo_arrived, NULL);
-	kevent_ctx_t sighup_ctx  = KEVENT_CTX_SIGNAL(sighup_arrived, NULL);
-	kevent_ctx_t sigusr1_ctx = KEVENT_CTX_SIGNAL(sigusr1_arrived, NULL);
+	kevent_ctx_t sigquit_ctx = KEVENT_CTX_SIGNAL(sigquit_arrived, cfg);
+	kevent_ctx_t sigtstp_ctx = KEVENT_CTX_SIGNAL(sigtstp_arrived, cfg);
+	kevent_ctx_t siginfo_ctx = KEVENT_CTX_SIGNAL(siginfo_arrived, cfg);
+	kevent_ctx_t sighup_ctx  = KEVENT_CTX_SIGNAL(sighup_arrived, cfg);
+	kevent_ctx_t sigusr1_ctx = KEVENT_CTX_SIGNAL(sigusr1_arrived, cfg);
 	kevent_ctx_t kefd_ctx    = KEVENT_CTX_FD_READ_PRIO(kextctl_readable,
 	                                                   kextctl_priority,
-	                                                   NULL);
-	kevent_ctx_t auef_ctx    = KEVENT_CTX_FD_READ(auef_readable, NULL);
-	kevent_ctx_t sttm_ctx    = KEVENT_CTX_TIMER(stats_timer_fired, NULL);
+	                                                   cfg);
+	kevent_ctx_t auef_ctx    = KEVENT_CTX_FD_READ(auef_readable, cfg);
+	kevent_ctx_t sttm_ctx    = KEVENT_CTX_TIMER(stats_timer_fired, cfg);
 	kevent_ctx_t cftm_ctx    = KEVENT_CTX_TIMER(config_timer_fired, cfg);
 	int pidc;
 	pid_t *pidv;
@@ -781,7 +792,7 @@ evtloop_run(config_t *cfg) {
 		rv = -1;
 		goto errout_silent;
 	}
-	if (work_init() == -1) {
+	if (work_init(cfg) == -1) {
 		fprintf(stderr, "Failed to initialize work queue\n");
 		rv = -1;
 		goto errout_silent;

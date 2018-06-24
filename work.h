@@ -11,6 +11,7 @@
 #ifndef WORK_H
 #define WORK_H
 
+#include "config.h"
 #include "attrib.h"
 
 #include <stdint.h>
@@ -19,7 +20,7 @@ typedef struct {
 	uint32_t qsize;
 } work_stat_t;
 
-int work_init(void) WUNRES;
+int work_init(config_t *) WUNRES;
 void work_fini(void);
 void work_submit(void *) NONNULL(1);
 void work_stats(work_stat_t *) NONNULL(1);

@@ -58,6 +58,27 @@
 
   <!-- EVENTS -->
 
+  <!-- Events:
+       The events that should be produced.  Available eventcodes are:
+       0 * xnumon-ops       agent start and stop, with active configuration
+       1 * xnumon-stats     agent metrics for in-band health monitoring
+       2 * image-exec       a process executed an executable image
+       3 * process-access   a process has accessed another process using
+                            task_for_pid or ptrace
+       4   launchd-add      a process has added or modified a Launch Agent or
+                            Launch Daemon plist; incurs file close audit load
+       The agent will only monitor the audit events that are needed to produce
+       the selected events.  Disabling events that use hotter audit events is
+       one way to reduce load.  The events marked with * are recommended to
+       keep enabled, disabling them does not result in a significant reduction
+       of load.
+       If unset, defaults to:   0,1,2,3,4
+       -->
+  <!--
+  <key>events</key>
+  <string>0,1,2,3,4</string>
+  -->
+
   <!-- Stats interval:
        Generate a xnumon-stats[1] event with operational metrics every this
        many seconds.

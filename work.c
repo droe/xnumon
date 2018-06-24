@@ -13,7 +13,6 @@
 #include "logevt.h"
 #include "queue.h"
 #include "log.h"
-#include "attrib.h"
 #include "policy.h"
 
 #include <stdio.h>
@@ -24,6 +23,8 @@
 static queue_t work_queue;
 static pthread_t work_thr;
 static logevt_header_t work_sentinel;
+
+static config_t *config = NULL;
 
 void
 work_submit(void *data) {
@@ -53,27 +54,29 @@ work_thread(UNUSED void *arg) {
 				continue;
 			}
 		}
+		if (!LOGEVT_WANT(config->events, LOGEVT_FLAG(hdr->code))) {
+			hdr->le_free(hdr);
+			continue;
+		}
 		log_submit(hdr);
 	}
 	return NULL;
 }
 
-static int work_initialized = 0;
-
 int
-work_init(void) {
+work_init(config_t *cfg) {
 	queue_init(&work_queue);
 	if (pthread_create(&work_thr, NULL, work_thread, NULL) != 0) {
 		queue_destroy(&work_queue);
 		return -1;
 	}
-	work_initialized = 1;
+	config = cfg;
 	return 0;
 }
 
 void
 work_fini(void) {
-	if (!work_initialized)
+	if (!config)
 		return;
 
 	bzero(&work_sentinel, sizeof(work_sentinel));
@@ -84,7 +87,7 @@ work_fini(void) {
 	}
 	assert(queue_size(&work_queue) == 0);
 	queue_destroy(&work_queue);
-	work_initialized = 0;
+	config = NULL;
 }
 
 void

@@ -80,7 +80,7 @@ launchd_add_new(char *path) {
 	}
 	bzero(ldadd, sizeof(*ldadd));
 	ldadd->plist_path = path;
-	ldadd->hdr.type = LOGEVT_LAUNCHD_ADD;
+	ldadd->hdr.code = LOGEVT_LAUNCHD_ADD;
 	ldadd->hdr.le_work = (__typeof__(ldadd->hdr.le_work))launchd_add_work;
 	ldadd->hdr.le_free = (__typeof__(ldadd->hdr.le_free))launchd_add_free;
 	return ldadd;

@@ -43,7 +43,9 @@
 #define AC_FILE         (AC_FREAD |AC_FWRITE|AC_FATTRA|AC_FATTRM|\
                          AC_FCREAT|AC_FDELET|AC_FCLOSE)
 
-extern const uint16_t auclass_xnumon_events[];
+extern const uint16_t auclass_xnumon_events_procmon[];
+extern const uint16_t auclass_xnumon_events_hackmon[];
+extern const uint16_t auclass_xnumon_events_filemon[];
 int auclass_addmask(unsigned int, const uint16_t[]) NONNULL(2);
 int auclass_removemask(unsigned int, const uint16_t[]) NONNULL(2);
 

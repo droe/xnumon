@@ -36,7 +36,7 @@ logevt_header(logfmt_t *fmt, FILE *f, logevt_header_t *hdr) {
 	fmt->dict_item(f, "time");
 	fmt->value_timespec(f, &hdr->tv);
 	fmt->dict_item(f, "eventcode");
-	fmt->value_uint(f, hdr->type);
+	fmt->value_uint(f, hdr->code);
 }
 
 static void

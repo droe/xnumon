@@ -41,7 +41,7 @@
 typedef int (*logevt_work_func_t)(void *);
 typedef void (*logevt_free_func_t)(void *);
 typedef struct {
-	uint64_t type;
+	uint64_t code;
 #define LOGEVT_XNUMON_OPS       0       /* xnumon_ops_t */
 #define LOGEVT_XNUMON_STATS     1       /* evtloop_stat_t */
 #define LOGEVT_IMAGE_EXEC       2       /* image_exec_t */
@@ -53,6 +53,11 @@ typedef struct {
 	logevt_free_func_t le_free;
 	tommy_node node;
 } logevt_header_t;
+
+#define LOGEVT_FLAG(E) (1 << (E))
+#define LOGEVT_WANT(F,E) ((E) & (F))
+#define LOGEVT_HACKMON LOGEVT_FLAG(LOGEVT_PROCESS_ACCESS)
+#define LOGEVT_FILEMON LOGEVT_FLAG(LOGEVT_LAUNCHD_ADD)
 
 typedef struct {
 	logevt_header_t hdr;

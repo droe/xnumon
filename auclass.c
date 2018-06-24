@@ -21,7 +21,7 @@
  * The events that are configured to be part of the custom AC_XNUMON class.
  * This list needs to be in line with what is actually handled in evtloop.c.
  */
-const uint16_t auclass_xnumon_events[] = {
+const uint16_t auclass_xnumon_events_procmon[] = {
 	/* process tracking */
 	AUE_FORK,       /* fork */
 	AUE_VFORK,      /* vfork */
@@ -37,17 +37,22 @@ const uint16_t auclass_xnumon_events[] = {
 	 * AUE_FEXECVE        - syscall not implemented on macOS
 	 * Mach task_create   - RPC via mach_msg syscall, always fails
 	 */
-
 	/* cwd tracking for handling of relative-path interpreters et al */
 	AUE_CHDIR,      /* chdir */
 	AUE_FCHDIR,     /* fchdir */
+	0
+};
 
+const uint16_t auclass_xnumon_events_hackmon[] = {
 	/* tracking of inter-process access for potential manipulation */
 	AUE_PTRACE,     /* ptrace */
 	AUE_TASKFORPID, /* task_for_pid */
 	                /* processor_set_tasks cannot be audited (40755284);
 	                 * but seems to be disarmed in 10.14 */
+	0
+};
 
+const uint16_t auclass_xnumon_events_filemon[] = {
 	/* file modification tracking for monitoring launch daemons */
 	AUE_CLOSE,      /* close, close_nocancel, guarded_close_np */
 	AUE_RENAME,     /* rename */
@@ -60,7 +65,6 @@ const uint16_t auclass_xnumon_events[] = {
 	 * AUE_LUTIMES        - syscall not implemented on macOS
 	 * AUE_DARWIN_FUTIMES - syscall not implemented on macOS
 	 */
-
 	0
 };
 

@@ -202,7 +202,19 @@ main(int argc, char *argv[]) {
 		goto errout;
 	}
 
-	if (auclass_addmask(AC_XNUMON, auclass_xnumon_events) == -1) {
+	if (auclass_addmask(AC_XNUMON, auclass_xnumon_events_procmon) == -1) {
+		fprintf(stderr, "Failed to configure AC_XNUMON class mask\n");
+		rv = -1;
+		goto errout;
+	}
+	if (LOGEVT_WANT(cfg->events, LOGEVT_HACKMON) &&
+	    auclass_addmask(AC_XNUMON, auclass_xnumon_events_hackmon) == -1) {
+		fprintf(stderr, "Failed to configure AC_XNUMON class mask\n");
+		rv = -1;
+		goto errout;
+	}
+	if (LOGEVT_WANT(cfg->events, LOGEVT_FILEMON) &&
+	    auclass_addmask(AC_XNUMON, auclass_xnumon_events_filemon) == -1) {
 		fprintf(stderr, "Failed to configure AC_XNUMON class mask\n");
 		rv = -1;
 		goto errout;
@@ -254,7 +266,12 @@ main(int argc, char *argv[]) {
 		fprintf(stderr, "Event loop returned error\n");
 	}
 	/* this is system-global, only run this if holding pidfile */
-	if (auclass_removemask(AC_XNUMON, auclass_xnumon_events) == -1) {
+	if (auclass_removemask(AC_XNUMON,
+	                       auclass_xnumon_events_procmon) == -1 ||
+	    auclass_removemask(AC_XNUMON,
+	                       auclass_xnumon_events_hackmon) == -1 ||
+	    auclass_removemask(AC_XNUMON,
+	                       auclass_xnumon_events_filemon) == -1) {
 		fprintf(stderr, "Failed to configure AC_XNUMON class mask\n");
 	}
 errout:

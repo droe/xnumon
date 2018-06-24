@@ -159,14 +159,14 @@ log_log(logevt_header_t *hdr) {
 
 	assert(logdst != -1);
 	assert(logfmt != -1);
-	assert(hdr->type >= 0 && hdr->type < LOGEVT_SIZE);
+	assert(hdr->code >= 0 && hdr->code < LOGEVT_SIZE);
 
 	f = logdsttab[logdst].ld_open();
 	if (!f)
 		return -1;
-	rv = le_logevt[hdr->type](logfmttab[logfmt], f, hdr);
+	rv = le_logevt[hdr->code](logfmttab[logfmt], f, hdr);
 	if (rv == 0)
-		counts[hdr->type]++;
+		counts[hdr->code]++;
 	else
 		errors++;
 	if (logdsttab[logdst].ld_close(f) == -1)
@@ -273,8 +273,8 @@ log_submit(void *data) {
 	logevt_header_t *hdr = data;
 
 	assert(hdr);
-	assert(hdr->type >= 0);
-	assert(hdr->type <= LOGEVT_SIZE);
+	assert(hdr->code >= 0);
+	assert(hdr->code <= LOGEVT_SIZE);
 	assert(hdr->tv.tv_sec > 0);
 	assert(hdr->le_free);
 	queue_enqueue(&log_queue, &hdr->node, hdr);
@@ -305,11 +305,10 @@ log_version(FILE *f) {
 		fprintf(f, " %s", logdsttab[i].ld_name);
 	}
 	fprintf(f, "\n");
-
 }
 
 /*
- * Convenience function to generate and submit a xnumon-start event.
+ * Convenience function to generate and submit a xnumon-ops event.
  */
 static int
 log_event_xnumon_ops(const char *subtype) {
@@ -319,7 +318,7 @@ log_event_xnumon_ops(const char *subtype) {
 	if (!evt)
 		return -1;
 	bzero(evt, sizeof(xnumon_ops_t));
-	evt->hdr.type = LOGEVT_XNUMON_OPS;
+	evt->hdr.code = LOGEVT_XNUMON_OPS;
 	if (timespec_nanotime(&evt->hdr.tv) == -1) {
 		free(evt);
 		return -1;
@@ -331,7 +330,7 @@ log_event_xnumon_ops(const char *subtype) {
 }
 
 /*
- * Convenience function to generate and submit a xnumon-start event.
+ * Convenience function to generate and submit a xnumon-ops(start) event.
  */
 int
 log_event_xnumon_start(void) {
@@ -339,7 +338,7 @@ log_event_xnumon_start(void) {
 }
 
 /*
- * Convenience function to generate and submit a xnumon-stop event.
+ * Convenience function to generate and submit a xnumon-ops(stop) event.
  */
 int
 log_event_xnumon_stop(void) {
@@ -358,7 +357,7 @@ log_event_xnumon_stats(void) {
 		return -1;
 	bzero(st, sizeof(evtloop_stat_t));
 	evtloop_stats(st);
-	st->hdr.type = LOGEVT_XNUMON_STATS;
+	st->hdr.code = LOGEVT_XNUMON_STATS;
 	if (timespec_nanotime(&st->hdr.tv) == -1) {
 		free(st);
 		return -1;

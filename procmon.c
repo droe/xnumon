@@ -86,7 +86,7 @@ image_exec_new(char *path) {
 #endif
 	image->path = path;
 	image->fd = -1;
-	image->hdr.type = LOGEVT_IMAGE_EXEC;
+	image->hdr.code = LOGEVT_IMAGE_EXEC;
 	image->hdr.le_work = (__typeof__(image->hdr.le_work))image_exec_work;
 	image->hdr.le_free = (__typeof__(image->hdr.le_free))image_exec_free;
 	atomic32_inc(&images);

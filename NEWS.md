@@ -3,6 +3,7 @@
 -   Fix handling of `ptrace` and `task_for_pid` audit events for pid 0 or -1.
 -   Fix default hash if unspecified to be sha256 as documented in the default
     config.
+-   Add `events` config option to configure the desired eventcodes (issue #1).
 -   Add `stats_interval` config option to control how often xnumon-stats[1]
     events are generated.
 -   Add `debug` config option to control whether debug messages are logged to

@@ -40,7 +40,7 @@ process_access_new() {
 	if (!pa)
 		return NULL;
 	bzero(pa, sizeof(*pa));
-	pa->hdr.type = LOGEVT_PROCESS_ACCESS;
+	pa->hdr.code = LOGEVT_PROCESS_ACCESS;
 	pa->hdr.le_work = (__typeof__(pa->hdr.le_work))process_access_work;
 	pa->hdr.le_free = (__typeof__(pa->hdr.le_free))process_access_free;
 	return pa;
