@@ -36,10 +36,10 @@ typedef struct {
 	uint64_t miss_getcwd;
 	uint64_t ooms;
 	uint64_t kqsize;
-	uint64_t kqlookups;
-	uint64_t kqnotfounds;
-	uint64_t kqtimeouts;
-	uint64_t kqskips;
+	uint64_t kqlookup;
+	uint64_t kqmiss;
+	uint64_t kqdrop;
+	uint64_t kqskip;
 } procmon_stat_t;
 
 void procmon_fork(struct timespec *, audit_proc_t *, pid_t) NONNULL(1,2);

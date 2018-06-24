@@ -41,10 +41,10 @@ static config_t *config;
 
 static tommy_list kqlist;
 static uint64_t kqsize;         /* current number of elements in kqlist */
-static uint64_t kqlookups;      /* counts total number of lookups in kq */
-static uint64_t kqnotfounds;    /* counts no preloaded image found in kq */
-static uint64_t kqtimeouts;     /* counts preloaded imgs removed due max TTL */
-static uint64_t kqskips;        /* counts non-matching entries skipped in kq */
+static uint64_t kqlookup;       /* counts total number of lookups in kq */
+static uint64_t kqmiss;         /* counts no preloaded image found in kq */
+static uint64_t kqdrop;         /* counts preloaded imgs removed due max TTL */
+static uint64_t kqskip;         /* counts non-matching entries skipped in kq */
 
 static atomic32_t images;
 static uint64_t miss_bypid;     /* counts various miss conditions */
@@ -731,7 +731,7 @@ procmon_exec(struct timespec *tv,
 	 * the correct kext events even when events are being lost for some
 	 * reason is probably the most tricky part of all of this.
 	 */
-	kqlookups++;
+	kqlookup++;
 	image_exec_t *image = NULL, *interp = NULL;
 	for (tommy_node *node = tommy_list_head(&kqlist);
 	     node; node = node->next) {
@@ -794,18 +794,18 @@ procmon_exec(struct timespec *tv,
 			}
 		}
 
-		kqskips++;
 #ifdef DEBUG_PREPQUEUE
 		fprintf(stderr, "skipped kqlist for %s[%i] "
 		                "while looking for %s[%i]\n",
 		                ei->path, ei->pid, imagepath, proc->pid);
 #endif
+		kqskip++;
 		if (++ei->kqttl == MAXKQTTL) {
 			tommy_list_remove_existing(&kqlist,
 			                           &ei->hdr.node);
 			kqsize--;
 			image_exec_free(ei);
-			kqtimeouts++;
+			kqdrop++;
 		}
 	}
 	assert(!(interp && !image));
@@ -824,7 +824,7 @@ procmon_exec(struct timespec *tv,
 #endif
 
 	if (!image) {
-		kqnotfounds++;
+		kqmiss++;
 		image = image_exec_new(imagepath);
 		if (!image) {
 			/* no counter, oom is the only reason this can happen */
@@ -841,7 +841,7 @@ procmon_exec(struct timespec *tv,
 
 	if (image->flags & EIFLAG_SHEBANG) {
 		if (!interp) {
-			kqnotfounds++;
+			kqmiss++;
 			if (!argv) {
 				miss_execinterp++;
 				DEBUG(config->debug, "miss_execinterp",
@@ -1095,10 +1095,10 @@ procmon_init(config_t *cfg) {
 	miss_chdirsubj = 0;
 	miss_getcwd = 0;
 	ooms = 0;
-	kqlookups = 0;
-	kqnotfounds = 0;
-	kqtimeouts = 0;
-	kqskips = 0;
+	kqlookup = 0;
+	kqmiss = 0;
+	kqdrop = 0;
+	kqskip = 0;
 	kqsize = 0;
 	tommy_list_init(&kqlist);
 	suppress_image_exec_by_ident = &cfg->suppress_image_exec_by_ident;
@@ -1136,10 +1136,10 @@ procmon_stats(procmon_stat_t *st) {
 	st->miss_chdirsubj = miss_chdirsubj;
 	st->miss_getcwd = miss_getcwd;
 	st->ooms = (uint64_t)ooms;
-	st->kqlookups = kqlookups;
-	st->kqnotfounds = kqnotfounds;
-	st->kqtimeouts = kqtimeouts;
-	st->kqskips = kqskips;
+	st->kqlookup = kqlookup;
+	st->kqmiss = kqmiss;
+	st->kqdrop = kqdrop;
+	st->kqskip = kqskip;
 	st->kqsize = kqsize;
 }
 

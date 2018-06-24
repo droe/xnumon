@@ -223,13 +223,13 @@ logevt_xnumon_stats(logfmt_t *fmt, FILE *f, void *arg0) {
 	fmt->dict_item(f, "buckets");
 	fmt->value_uint(f, st->pm.kqsize);
 	fmt->dict_item(f, "lookup");
-	fmt->value_uint(f, st->pm.kqlookups);
+	fmt->value_uint(f, st->pm.kqlookup);
 	fmt->dict_item(f, "miss");
-	fmt->value_uint(f, st->pm.kqnotfounds);
+	fmt->value_uint(f, st->pm.kqmiss);
 	fmt->dict_item(f, "drop");
-	fmt->value_uint(f, st->pm.kqtimeouts);
+	fmt->value_uint(f, st->pm.kqdrop);
 	fmt->dict_item(f, "bktskip");
-	fmt->value_uint(f, st->pm.kqskips);
+	fmt->value_uint(f, st->pm.kqskip);
 	fmt->dict_end(f); /* prep-queue */
 
 	fmt->dict_item(f, "aupi_cdevq");

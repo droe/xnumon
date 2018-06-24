@@ -595,10 +595,10 @@ siginfo_arrived(UNUSED int sig, UNUSED void *udata) {
 		                "drop:%"PRIu64" "       /* too many ooo */
 		                "bktskip:%"PRIu64"\n",  /* ooo arrival search */
 		                st.pm.kqsize,
-		                st.pm.kqlookups,
-		                st.pm.kqnotfounds,
-		                st.pm.kqtimeouts,
-		                st.pm.kqskips);
+		                st.pm.kqlookup,
+		                st.pm.kqmiss,
+		                st.pm.kqdrop,
+		                st.pm.kqskip);
 	}
 
 	fprintf(stderr, "aupi cdevq "
