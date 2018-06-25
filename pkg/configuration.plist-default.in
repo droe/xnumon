@@ -47,7 +47,8 @@
   <!-- Log mode:
        oneline      One line per event.
        multiline    Multiple lines per event, indented where applicable.
-       If unset, defaults to:   multiline if stdout is TTY, otherwise oneline.
+       If unset, defaults to:   multiline iff log_destination is - and stdout
+                                is a TTY, otherwise oneline.
        -->
   <!--
   <key>log_mode</key>
@@ -97,23 +98,34 @@
                     any delay, but acquisition of images may fail for processes
                     writing to or unlinking their executable image on disk,
                     resulting in log events without hashes or codesign info.
+                    While care has been taken to avoid acquiring wrong hashes
+                    or codesign info, there is still a race condition that
+                    cannot be avoided without kernel help.  If an executable
+                    modifies its executable image after exec, before xnumon
+                    receives and processes the audit event and stats the image,
+                    then the acquired hash and code signature will be different
+                    from the one actually activated during exec.
        1 open       Synchroniously open and stat executable image before the
                     process is allowed to execute in the new image.
                     This incurs only a minimal delay before the new process may
                     execute, but processes writing to their own exec image may
                     cause subsequent hashes and codesign acquisition to fail,
                     resulting in log events without hashes or codesign info.
-                    Processes unlinking but not modifying their own executable
-                    image on disk will have hashes acquired successfully.
+                    The acquired hashes and code signature information can
+                    never be wrong, only missing.  Processes unlinking but not
+                    modifying their own executable image on disk will have
+                    hashes acquired successfully.
        2 hashes     Synchroniously acquire hashes of the executable image
                     before the process is allowed to execute in the new image.
                     Incurs a delay of a few milliseconds depending on image
                     size, but ensures we have hashes for all exec images.  For
                     processes modifying or unlinking their own image on disk,
                     the subsequent acquisition of codesign information may
-                    fail, resulting in log events without codesign info.
-                    The delay for hash acquisition is minimal if hashes for the
-                    same binary have been cached from a previous execution.
+                    fail, resulting in log events without codesign info.  The
+                    acquired code signature information can never be wrong,
+                    only missing.  The delay for hash acquisition is minimal if
+                    hashes for the same binary have been cached from a previous
+                    execution.
        3 codesign   Synchroniously acquire hashes and code signature info
                     before the process is allowed to execute in the new image.
                     Incurs a significant delay of tens of milliseconds even for
@@ -163,7 +175,7 @@
 
   <!-- LEVEL OF DETAIL -->
 
-  <!-- Ancestory:
+  <!-- Ancestors:
        Number of images to list in subject ancestry, and to remember in memory
        for each active process.  The current image of processes is always
        shown, independently of this setting.
@@ -178,9 +190,15 @@
   <!-- SUPPRESSIONS -->
 
   <!-- Suppress exec image events by ident:
-       Code signing ident strings to exclude from logging image-exec[3] events.
-       Unsigned binaries or broken signature binaries have no ident string so
-       never match an identifier in this list.
+       Execution of images whose code signature ident strings matches this list
+       will not generate image-exec[3] events.  Unsigned binaries or broken
+       signature binaries have no ident string so never match an identifier.
+       In order to not lose relationship information, it is recommended to not
+       disable ancestors completely when suppressing image exec events.
+       This requires codesign to be enabled.  If codesign is false, suppression
+       by ident is disabled.
+       Generally, we want to suppress exec events for binaries that execute
+       often, but don't add any significant information.
        If unset, defaults to:   no suppressions
        -->
   <key>suppress_image_exec_by_ident</key>
@@ -190,8 +208,14 @@
   </array>
 
   <!-- Suppress exec image events by path:
-       Executable image paths to exclude from logging image-exec[3] events.
-       It is generally preferable to use suppress_image_exec_by_ident instead.
+       Execution of images whose path matches this list will not generate
+       image-exec[3] events.
+       In order to not lose relationship information, it is recommended to not
+       disable ancestors completely when suppressing image exec events.
+       It is generally preferable to use suppress_image_exec_by_ident instead,
+       unless the binaries to suppress are unsigned or codesign is false.
+       Generally, we want to suppress exec events for binaries that execute
+       often, but don't add any significant information.
        If unset, defaults to:   no suppressions
        -->
   <key>suppress_image_exec_by_path</key>
@@ -204,10 +228,14 @@
   </array>
 
   <!-- Suppress process access events by ident:
-       Code signing ident strings to exclude from logging process-access[4]
-       events.
-       Unsigned binaries or broken signature binaries have no ident string so
-       never match an identifier in this list.
+       Subjects with code signing ident strings matching this list will be
+       excluded from logging process-access[4] events when they access other
+       processes.  Unsigned binaries or broken signature binaries have no ident
+       string so never match an identifier in this list.
+       This requires codesign to be enabled.  If codesign is false, suppression
+       by ident is disabled.
+       Generally, we want to suppress process access events from binaries which
+       legitimately access other processes, generating high volumes of events.
        If unset, defaults to:   no suppressions
        -->
   <key>suppress_process_access_by_ident</key>
@@ -215,12 +243,18 @@
     <string>com.apple.coreservicesd</string>
     <string>com.apple.spindump</string>
     <string>com.apple.sysmond</string>
+    <string>com.apple.ps</string>
   </array>
 
   <!-- Suppress process access events by path:
-       Executable image paths to exclude from logging process-access[4] events.
+       Subject processes with executable image paths matching this list will be
+       excluded from logging process-access[4] events when they access other
+       processes.
        It is generally preferable to use suppress_process_access_by_ident
-       instead.
+       instead, unless the binaries to suppress are unsigned or codesign is
+       disabled.
+       Generally, we want to suppress process access events from binaries which
+       legitimately access other processes, generating high volumes of events.
        If unset, defaults to:   no suppressions
        -->
   <key>suppress_process_access_by_path</key>
@@ -229,6 +263,7 @@
     <string>/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/CarbonCore.framework/Versions/A/Support/coreservicesd</string>
     <string>/usr/sbin/spindump</string>
     <string>/usr/libexec/sysmond</string>
+    <string>/bin/ps</string>
     -->
   </array>
 
