@@ -1,6 +1,9 @@
 ### xnumon develop
 
 -   Fix ancestors default if not set from 0 back to unlimited as documented.
+-   Event schema version increased to 3.  Changes affect eventcode 1.
+    Eventcode 1 added evtloop.radar38845784.
+-   Minor bugfixes and improvements.
 
 
 ### xnumon 0.1.2 2018-06-24

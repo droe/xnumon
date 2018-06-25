@@ -38,6 +38,7 @@ static pid_t xnumon_pid;
 static uint64_t aueunknowns = 0;
 static uint64_t failedsyscalls = 0;
 static uint64_t radar38845422 = 0;
+static uint64_t radar38845784 = 0;
 static uint64_t radar39267328 = 0;
 static uint64_t radar39623812 = 0;
 static uint64_t needpath = 0; /* unknown missing path bug */
@@ -220,9 +221,13 @@ auef_readable(UNUSED int fd, void *udata) {
 		 *
 		 * Reported to Apple as bug 38845784 on 2018-03-25.
 		 */
-		if (ev.return_present && ev.return_value > INT_MAX) {
-			failedsyscalls++;
-			break;
+		if (ev.return_present) {
+			if (ev.return_value > INT_MAX) {
+				failedsyscalls++;
+				break;
+			} else if (ev.return_value != 0) {
+				radar38845784++;
+			}
 		}
 		assert(ev.subject_present);
 		if (!ev.path[0]) {
@@ -503,6 +508,7 @@ evtloop_stats(evtloop_stat_t *st) {
 	st->el_aueunknowns = aueunknowns;
 	st->el_failedsyscalls = failedsyscalls;
 	st->el_radar38845422 = radar38845422;
+	st->el_radar38845784 = radar38845784;
 	st->el_radar39623812 = radar39623812;
 	st->el_radar39267328 = radar39267328;
 	st->el_needpath = needpath;
@@ -530,6 +536,7 @@ siginfo_arrived(UNUSED int sig, UNUSED void *udata) {
 	                "aueunknown:%"PRIu64" "
 	                "failedsyscalls:%"PRIu64"\n        "
 	                "radar38845422:%"PRIu64" "
+	                "radar38845784:%"PRIu64" "
 	                "radar39267328:%"PRIu64" "
 	                "radar39623812:%"PRIu64"\n        "
 	                "needpath:%"PRIu64" "
@@ -539,6 +546,7 @@ siginfo_arrived(UNUSED int sig, UNUSED void *udata) {
 	                st.el_aueunknowns,
 	                st.el_failedsyscalls,
 	                st.el_radar38845422,
+	                st.el_radar38845784,
 	                st.el_radar39267328,
 	                st.el_radar39623812,
 	                st.el_needpath,
@@ -766,6 +774,7 @@ evtloop_run(config_t *cfg) {
 	aueunknowns = 0;
 	failedsyscalls = 0;
 	radar38845422 = 0;
+	radar38845784 = 0;
 	radar39267328 = 0;
 	radar39623812 = 0;
 	needpath = 0;

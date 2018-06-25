@@ -150,6 +150,8 @@ logevt_xnumon_stats(logfmt_t *fmt, FILE *f, void *arg0) {
 	fmt->value_uint(f, st->el_failedsyscalls);
 	fmt->dict_item(f, "radar38845422");
 	fmt->value_uint(f, st->el_radar38845422);
+	fmt->dict_item(f, "radar38845784");
+	fmt->value_uint(f, st->el_radar38845784);
 	fmt->dict_item(f, "radar39267328");
 	fmt->value_uint(f, st->el_radar39267328);
 	fmt->dict_item(f, "radar39623812");

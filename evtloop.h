@@ -36,6 +36,7 @@ typedef struct {
 	uint64_t el_aueunknowns;
 	uint64_t el_failedsyscalls;
 	uint64_t el_radar38845422;
+	uint64_t el_radar38845784;
 	uint64_t el_radar39267328;
 	uint64_t el_radar39623812;
 	uint64_t el_needpath;
