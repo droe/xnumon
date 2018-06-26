@@ -30,6 +30,11 @@ cf_is_array(CFTypeRef unknown) {
 	return (CFArrayGetTypeID() == CFGetTypeID(unknown));
 }
 
+bool
+cf_is_cert(CFTypeRef unknown) {
+	return (SecCertificateGetTypeID() == CFGetTypeID(unknown));
+}
+
 char *
 cf_cstr(CFStringRef str) {
 	if (!str)

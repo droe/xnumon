@@ -1,11 +1,13 @@
 ### xnumon develop
 
 -   Fix ancestors default if not set from 0 back to unlimited as documented.
--   Event schema version increased to 3.  Changes affect eventcode 1.
+-   Event schema version increased to 3.  Changes affect all event codes.
     Eventcode 1 removed evtloop.needargv, evtloop.needcwd, evtloop.needpath.
     Eventcode 1 added evtloop.radar38845784, evtloop.radar38845422_fatal,
     evtloop.radar39267328_fatal, evtloop.radar39623812_fatal,
     evtloop.missingtoken.
+    Eventcode 2 added image.teamid.
+    All eventcodes added subject.image.teamid and subject.ancestors[].teamid.
 -   Minor bugfixes and improvements.
 
 

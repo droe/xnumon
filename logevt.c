@@ -389,6 +389,10 @@ logevt_image_exec_image(logfmt_t *fmt, FILE *f, image_exec_t *ei) {
 			fmt->dict_item(f, "ident");
 			fmt->value_string(f, ei->codesign->ident);
 		}
+		if (ei->codesign->teamid) {
+			fmt->dict_item(f, "teamid");
+			fmt->value_string(f, ei->codesign->teamid);
+		}
 		if (ei->codesign->crtc > 0) {
 			fmt->dict_item(f, "cert");
 			fmt->value_string(f, ei->codesign->crtv[0]);
@@ -437,6 +441,10 @@ logevt_process_image_exec(logfmt_t *fmt, FILE *f, image_exec_t *ie) {
 	if (ie->codesign && ie->codesign->ident) {
 		fmt->dict_item(f, "ident");
 		fmt->value_string(f, ie->codesign->ident);
+	}
+	if (ie->codesign && ie->codesign->teamid) {
+		fmt->dict_item(f, "teamid");
+		fmt->value_string(f, ie->codesign->teamid);
 	}
 	if (ie->script) {
 		fmt->dict_item(f, "script");

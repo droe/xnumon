@@ -17,6 +17,7 @@ typedef struct {
 	char *result;
 	long error;
 	char *ident;
+	char *teamid;
 	int crtc;
 	char **crtv;
 } codesign_t;

@@ -24,6 +24,8 @@ codesign_free(codesign_t *cs) {
 		free(cs->result);
 	if (cs->ident)
 		free(cs->ident);
+	if (cs->teamid)
+		free(cs->teamid);
 	for (int i = 0; i < cs->crtc; i++)
 		if (cs->crtv[i])
 			free(cs->crtv[i]);
@@ -136,7 +138,9 @@ codesign_new(const char *cpath) {
 	/* retrieve information */
 	CFDictionaryRef dict = NULL;
 	rv = SecCodeCopySigningInformation(scode,
-	                                   kSecCSSigningInformation,
+	                                   kSecCSSigningInformation/**/|
+	                                   kSecCSInternalInformation|
+	                                   kSecCSRequirementInformation/**/,
 	                                   &dict);
 	CFRelease(scode);
 	if (rv != noErr) {
@@ -150,42 +154,58 @@ codesign_new(const char *cpath) {
 	}
 
 	CFStringRef ident = CFDictionaryGetValue(dict, kSecCodeInfoIdentifier);
-	cs->ident = cf_cstr(ident);
-	if (!cs->ident) {
-		CFRelease(dict);
-		goto enomemout;
+	if (ident && cf_is_string(ident)) {
+		cs->ident = cf_cstr(ident);
+		if (!cs->ident) {
+			CFRelease(dict);
+			goto enomemout;
+		}
+	}
+
+	CFStringRef teamid = CFDictionaryGetValue(dict,
+	                                          kSecCodeInfoTeamIdentifier);
+	if (teamid && cf_is_string(teamid)) {
+		cs->teamid = cf_cstr(teamid);
+		if (!cs->teamid) {
+			CFRelease(dict);
+			goto enomemout;
+		}
 	}
 
 	CFArrayRef chain = CFDictionaryGetValue(dict, kSecCodeInfoCertificates);
-	CFIndex count = CFArrayGetCount(chain);
-	cs->crtv = malloc(count*sizeof(void*));
-	if (!cs->crtv) {
-		CFRelease(dict);
-		goto enomemout;
-	}
-
-	for (CFIndex i = 0; i < count; i++) {
-		SecCertificateRef cert = (SecCertificateRef)
-		                         CFArrayGetValueAtIndex(chain, i);
-		if (!cert) {
-			cs->crtv[i] = NULL;
-		} else {
-			CFStringRef ss = SecCertificateCopySubjectSummary(cert);
-			if (!ss) {
-				CFRelease(dict);
-				goto enomemout;
-			}
-			cs->crtv[i] = cf_cstr(ss);
-			CFRelease(ss);
-			if (!cs->crtv[i]) {
-				CFRelease(dict);
-				goto enomemout;
-			}
+	if (chain && cf_is_array(chain)) {
+		CFIndex count = CFArrayGetCount(chain);
+		cs->crtv = malloc(count*sizeof(void*));
+		if (!cs->crtv) {
+			CFRelease(dict);
+			goto enomemout;
 		}
-		cs->crtc++;
-	}
-	CFRelease(dict);
 
+		for (CFIndex i = 0; i < count; i++) {
+			SecCertificateRef cert =
+			        (SecCertificateRef)
+			        CFArrayGetValueAtIndex(chain, i);
+			if (!cert || !cf_is_cert(cert)) {
+				cs->crtv[i] = NULL;
+			} else {
+				CFStringRef ss =
+				        SecCertificateCopySubjectSummary(cert);
+				if (!ss) {
+					CFRelease(dict);
+					goto enomemout;
+				}
+				cs->crtv[i] = cf_cstr(ss);
+				CFRelease(ss);
+				if (!cs->crtv[i]) {
+					CFRelease(dict);
+					goto enomemout;
+				}
+			}
+			cs->crtc++;
+		}
+	}
+
+	CFRelease(dict);
 	cs->result = strdup("good");
 	if (!cs->result)
 		goto enomemout;
