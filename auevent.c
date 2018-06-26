@@ -85,10 +85,8 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], FILE *f) {
 		                strerror(errno), errno);
 		return -1;
 	}
-	if (reclen == 0) {
-		free(recbuf);
-		return 0;
-	}
+	if (reclen == 0)
+		goto skip_rec;
 
 	for (int recpos = 0; recpos < reclen;) {
 		rv = au_fetch_tok(&tok, recbuf+recpos, reclen-recpos);
@@ -99,18 +97,15 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], FILE *f) {
 			 * partial records gracefully (praudit does not). */
 			fprintf(stderr, "au_fetch_tok() returns error,"
 			                " skipping partial record\n");
-			free(recbuf);
-			return 0;
+			goto skip_rec;
 		}
 
 		switch (tok.id) {
 		/* record header and trailer */
 		case AUT_HEADER32:
 			ev->type = tok.tt.hdr32.e_type;
-			if (aues && !auevent_type_in_typelist(ev->type, aues)) {
-				free(recbuf);
-				return 0;
-			}
+			if (aues && !auevent_type_in_typelist(ev->type, aues))
+				goto skip_rec;
 			ev->mod = tok.tt.hdr32.e_mod;
 			ev->tv.tv_sec = (time_t)tok.tt.hdr32.s;
 			ev->tv.tv_nsec = (long)tok.tt.hdr32.ms*1000000;
@@ -118,10 +113,8 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], FILE *f) {
 			break;
 		case AUT_HEADER32_EX:
 			ev->type = tok.tt.hdr32_ex.e_type;
-			if (aues && !auevent_type_in_typelist(ev->type, aues)) {
-				free(recbuf);
-				return 0;
-			}
+			if (aues && !auevent_type_in_typelist(ev->type, aues))
+				goto skip_rec;
 			ev->mod = tok.tt.hdr32_ex.e_mod;
 			ev->tv.tv_sec = (time_t)tok.tt.hdr32_ex.s;
 			ev->tv.tv_nsec = (long)tok.tt.hdr32_ex.ms*1000000;
@@ -129,10 +122,8 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], FILE *f) {
 			break;
 		case AUT_HEADER64:
 			ev->type = tok.tt.hdr64.e_type;
-			if (aues && !auevent_type_in_typelist(ev->type, aues)) {
-				free(recbuf);
-				return 0;
-			}
+			if (aues && !auevent_type_in_typelist(ev->type, aues))
+				goto skip_rec;
 			ev->mod = tok.tt.hdr64.e_mod;
 			ev->tv.tv_sec = (time_t)tok.tt.hdr64.s;
 			ev->tv.tv_nsec = (long)tok.tt.hdr64.ms;
@@ -140,10 +131,8 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], FILE *f) {
 			break;
 		case AUT_HEADER64_EX:
 			ev->type = tok.tt.hdr64_ex.e_type;
-			if (aues && !auevent_type_in_typelist(ev->type, aues)) {
-				free(recbuf);
-				return 0;
-			}
+			if (aues && !auevent_type_in_typelist(ev->type, aues))
+				goto skip_rec;
 			ev->mod = tok.tt.hdr64_ex.e_mod;
 			ev->tv.tv_sec = (time_t)tok.tt.hdr64_ex.s;
 			ev->tv.tv_nsec = (long)tok.tt.hdr64_ex.ms;
@@ -369,7 +358,11 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], FILE *f) {
 			 * with two path arguments, we store a maximum of four
 			 * path arguments.
 			 */
-			assert(pathc < sizeof(ev->path)/sizeof(ev->path[0]));
+			if (!(pathc < sizeof(ev->path)/sizeof(ev->path[0]))) {
+				fprintf(stderr, "Too many path tokens, "
+				                "skipping record\n");
+				goto skip_rec;
+			}
 			ev->path[pathc] = tok.tt.path.path;
 			if (!ev->path[pathc])
 				ev->flags |= AEFLAG_ENOMEM;
@@ -399,6 +392,8 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], FILE *f) {
 		/* exec argv */
 		case AUT_EXEC_ARGS:
 			assert(ev->execarg == NULL);
+			if (ev->execarg)
+				free(ev->execarg);
 			ev->execarg = aev_new(tok.tt.execarg.count,
 			                      tok.tt.execarg.text);
 			if (!ev->execarg)
@@ -407,6 +402,8 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], FILE *f) {
 		/* exec env */
 		case AUT_EXEC_ENV:
 			assert(ev->execenv == NULL);
+			if (ev->execenv)
+				free(ev->execenv);
 			ev->execenv = aev_new(tok.tt.execenv.count,
 			                      tok.tt.execenv.text);
 			if (!ev->execenv)
@@ -441,6 +438,10 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], FILE *f) {
 
 	free(recbuf);
 	return (ev->flags & AEFLAG_ENOMEM) ? -1 : 1;
+
+skip_rec:
+	free(recbuf);
+	return 0;
 }
 
 #ifdef DEBUG_AUDITPIPE
