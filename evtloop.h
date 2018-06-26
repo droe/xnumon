@@ -42,7 +42,7 @@ typedef struct {
 	uint64_t el_radar39267328;
 	uint64_t el_radar39623812_fatal;
 	uint64_t el_radar39623812;
-	uint64_t el_needpath;
+	uint64_t el_missingtoken;
 	uint64_t el_ooms;
 	aupipe_stat_t ap;
 	work_stat_t wq;

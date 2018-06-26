@@ -44,7 +44,7 @@ static uint64_t radar39267328 = 0;
 static uint64_t radar39267328_fatal = 0;
 static uint64_t radar39623812 = 0;
 static uint64_t radar39623812_fatal = 0;
-static uint64_t needpath = 0; /* unknown missing path bug */
+static uint64_t missingtoken = 0;
 static uint64_t ooms = 0;
 
 /* return 1 if kextctl should be treated with priority */
@@ -85,6 +85,13 @@ kextctl_readable(int fd, UNUSED void *udata) {
  * 39267328: audit(4): target path not resolved for rename(2)
  * 39623812: audit(4): path not resolved for utimes(2)
  */
+#define TOKEN_ASSERT(EVENT, TOKEN, COND) \
+	if (!(COND)) { \
+		missingtoken++; \
+		DEBUG(cfg->debug, "missingtoken", \
+		      "event=" EVENT " token=" TOKEN); \
+		break; \
+	}
 static int
 auef_readable(UNUSED int fd, void *udata) {
 	config_t *cfg = (config_t *)udata;
@@ -114,17 +121,17 @@ auef_readable(UNUSED int fd, void *udata) {
 
 	case AUE_FORK:
 	case AUE_VFORK:
-		assert(ev.return_present);
+		TOKEN_ASSERT("fork", "return", ev.return_present);
 		if (ev.return_value > INT_MAX) {
 			failedsyscalls++;
 			break;
 		}
-		assert(ev.subject_present);
+		TOKEN_ASSERT("fork", "subject", ev.subject_present);
 		procmon_fork(&ev.tv, &ev.subject, ev.return_value);
 		break;
 
 	case AUE_POSIX_SPAWN:
-		assert(ev.return_present);
+		TOKEN_ASSERT("posix_spawn", "return", ev.return_present);
 		if (ev.return_value) {
 			/* posix_spawnp spams an event for each directory in
 			 * $PATH with return_value==2 until it finds the actual
@@ -132,7 +139,7 @@ auef_readable(UNUSED int fd, void *udata) {
 			failedsyscalls++;
 			break;
 		}
-		assert(ev.subject_present);
+		TOKEN_ASSERT("posix_spawn", "subject", ev.subject_present);
 		/*
 		 * On at least 10.11.6 and 10.12.6, the following happens:
 		 * path is /dev/console when launchd spawns xpcproxy,
@@ -214,7 +221,7 @@ auef_readable(UNUSED int fd, void *udata) {
 			ev.execarg = NULL; /* pass ownership to procmon */
 			break;
 		}
-		assert(ev.args[0].present);
+		TOKEN_ASSERT("execve", "args[0]", ev.args[0].present);
 		procmon_spawn(&ev.tv,
 		              &ev.subject,
 		              ev.args[0].value,
@@ -227,6 +234,7 @@ auef_readable(UNUSED int fd, void *udata) {
 	case AUE_EXEC:
 	case AUE_EXECVE:
 	case AUE_MAC_EXECVE:
+		TOKEN_ASSERT("execve", "subject", ev.subject_present);
 		/*
 		 * On at least 10.11.6, audit records for successful execve
 		 * invocations sometimes have a pid as return value, for
@@ -243,16 +251,7 @@ auef_readable(UNUSED int fd, void *udata) {
 				radar38845784++;
 			}
 		}
-		assert(ev.subject_present);
-		if (!ev.path[0]) {
-			needpath++;
-			DEBUG(cfg->debug,
-			      "needpath",
-			      "event=execve "
-			      "pid=%i ",
-			      ev.subject.pid);
-			break;
-		}
+		TOKEN_ASSERT("execve", "path", ev.path[0]);
 		path = (char *)(ev.path[1] ? ev.path[1] : ev.path[0]);
 		assert(path);
 		path = strdup(path);
@@ -269,14 +268,14 @@ auef_readable(UNUSED int fd, void *udata) {
 		break;
 
 	case AUE_EXIT:
+		TOKEN_ASSERT("exit", "subject", ev.subject_present);
 		/* exit never fails; audit event not triggered if process got
 		 * terminated in other ways than calling exit() */
-		assert(ev.subject_present);
 		procmon_exit(ev.subject.pid);
 		break;
 
 	case AUE_WAIT4:
-		assert(ev.return_present);
+		TOKEN_ASSERT("wait4", "return", ev.return_present);
 		if (ev.return_value == 0 || ev.return_value > INT_MAX) {
 			failedsyscalls++;
 			break;
@@ -287,21 +286,13 @@ auef_readable(UNUSED int fd, void *udata) {
 
 	case AUE_CHDIR:
 	case AUE_FCHDIR:
-		assert(ev.return_present);
+		TOKEN_ASSERT("chdir", "return", ev.return_present);
 		if (ev.return_value) {
 			failedsyscalls++;
 			break;
 		}
-		assert(ev.subject_present);
-		if (!ev.path[0]) {
-			needpath++;
-			DEBUG(cfg->debug,
-			      "needpath",
-			      "event=chdir "
-			      "pid=%i ",
-			      ev.subject.pid);
-			break;
-		}
+		TOKEN_ASSERT("chdir", "subject", ev.subject_present);
+		TOKEN_ASSERT("chdir", "path", ev.path[0]);
 		path = (char *)(ev.path[1] ? ev.path[1] : ev.path[0]);
 		assert(path);
 		path = strdup(path);
@@ -320,15 +311,16 @@ auef_readable(UNUSED int fd, void *udata) {
 	case AUE_TASKFORPID:
 		if (!LOGEVT_WANT(cfg->events, LOGEVT_HACKMON))
 			break;
-		assert(ev.return_present);
+		TOKEN_ASSERT("task_for_pid", "return", ev.return_present);
 		if (ev.return_value) {
 			failedsyscalls++;
 			break;
 		}
-		assert(ev.subject_present);
+		TOKEN_ASSERT("task_for_pid", "subject", ev.subject_present);
 		/* The PROCESS_PID_TOKENS macro in XNU creates a process token
 		 * from pid arg 2 only if pid > 0. */
-		assert(ev.process_present || ev.args[2].present);
+		TOKEN_ASSERT("task_for_pid", "process",
+		             ev.process_present || ev.args[2].present);
 		hackmon_taskforpid(&ev.tv, &ev.subject,
 		                   ev.process_present ? &ev.process : NULL,
 		                   ev.args[2].present ? ev.args[2].value : -1);
@@ -337,15 +329,16 @@ auef_readable(UNUSED int fd, void *udata) {
 	case AUE_PTRACE:
 		if (!LOGEVT_WANT(cfg->events, LOGEVT_HACKMON))
 			break;
-		assert(ev.return_present);
+		TOKEN_ASSERT("ptrace", "return", ev.return_present);
 		if (ev.return_value) {
 			failedsyscalls++;
 			break;
 		}
-		assert(ev.subject_present);
+		TOKEN_ASSERT("ptrace", "subject", ev.subject_present);
 		/* The PROCESS_PID_TOKENS macro in XNU creates a process token
 		 * from pid arg 2 only if pid > 0. */
-		assert(ev.process_present || ev.args[2].present);
+		TOKEN_ASSERT("ptrace", "process",
+		             ev.process_present || ev.args[2].present);
 		hackmon_ptrace(&ev.tv, &ev.subject,
 		               ev.process_present ? &ev.process : NULL,
 		               ev.args[2].present ? ev.args[2].value : -1);
@@ -358,7 +351,7 @@ auef_readable(UNUSED int fd, void *udata) {
 	case AUE_CLOSE:
 		if (!LOGEVT_WANT(cfg->events, LOGEVT_FILEMON))
 			break;
-		assert(ev.return_present);
+		TOKEN_ASSERT("close", "return", ev.return_present);
 		if (ev.return_value) {
 			failedsyscalls++;
 			break;
@@ -367,7 +360,7 @@ auef_readable(UNUSED int fd, void *udata) {
 			/* closed file descriptor does not point to vnode */
 			break;
 		}
-		assert(ev.subject_present);
+		TOKEN_ASSERT("close", "subject", ev.subject_present);
 		/* avoid reacting on our own close invocations */
 		if (ev.subject.pid == xnumon_pid)
 			break;
@@ -385,12 +378,12 @@ auef_readable(UNUSED int fd, void *udata) {
 	case AUE_FUTIMES:
 		if (!LOGEVT_WANT(cfg->events, LOGEVT_FILEMON))
 			break;
-		assert(ev.return_present);
+		TOKEN_ASSERT("utimes", "return", ev.return_present);
 		if (ev.return_value) {
 			failedsyscalls++;
 			break;
 		}
-		assert(ev.subject_present);
+		TOKEN_ASSERT("utimes", "subject", ev.subject_present);
 		/*
 		 * On at least 10.11.6, records include only an unresolved
 		 * path.
@@ -432,12 +425,9 @@ auef_readable(UNUSED int fd, void *udata) {
 			}
 		} else {
 			path = NULL;
-			needpath++;
-			DEBUG(cfg->debug,
-			      "needpath",
-			      "event=utimes "
-			      "pid=%i ",
-			      ev.subject.pid);
+			missingtoken++;
+			DEBUG(cfg->debug, "missingtoken",
+			      "event=utimes token=path");
 		}
 		if (!path)
 			/* counted above */
@@ -449,12 +439,12 @@ auef_readable(UNUSED int fd, void *udata) {
 	case AUE_RENAMEAT:
 		if (!LOGEVT_WANT(cfg->events, LOGEVT_FILEMON))
 			break;
-		assert(ev.return_present);
+		TOKEN_ASSERT("rename", "return", ev.return_present);
 		if (ev.return_value) {
 			failedsyscalls++;
 			break;
 		}
-		assert(ev.subject_present);
+		TOKEN_ASSERT("rename", "subject", ev.subject_present);
 		/*
 		 * On at least 10.11.6, records include only an unresolved
 		 * target path.
@@ -495,12 +485,9 @@ auef_readable(UNUSED int fd, void *udata) {
 			}
 		} else {
 			path = NULL;
-			needpath++;
-			DEBUG(cfg->debug,
-			      "needpath",
-			      "event=rename "
-			      "pid=%i ",
-			      ev.subject.pid);
+			missingtoken++;
+			DEBUG(cfg->debug, "missingtoken",
+			      "event=rename token=path");
 		}
 		if (!path)
 			/* counted above */
@@ -529,6 +516,7 @@ auef_readable(UNUSED int fd, void *udata) {
 	auevent_destroy(&ev); /* free all allocated members not NULLed above */
 	return 0;
 }
+#undef TOKEN_ASSERT
 
 /*
  * Handles SIGTERM, SIGQUIT and SIGINT.
@@ -566,7 +554,7 @@ evtloop_stats(evtloop_stat_t *st) {
 	st->el_radar39623812 = radar39623812;
 	st->el_radar39267328_fatal = radar39267328_fatal;
 	st->el_radar39267328 = radar39267328;
-	st->el_needpath = needpath;
+	st->el_missingtoken = missingtoken;
 	st->el_ooms = ooms;
 	aupipe_stats(fileno(auef), &st->ap);
 	work_stats(&st->wq);
@@ -592,7 +580,7 @@ siginfo_arrived(UNUSED int sig, UNUSED void *udata) {
 	                "radar38845784:0/%"PRIu64" "
 	                "radar39267328:%"PRIu64"/%"PRIu64" "
 	                "radar39623812:%"PRIu64"/%"PRIu64"\n        "
-	                "needpath:%"PRIu64" "
+	                "missingtoken:%"PRIu64" "
 	                "oom:%"PRIu64"\n",
 	                st.el_aueunknowns,
 	                st.el_failedsyscalls,
@@ -603,7 +591,7 @@ siginfo_arrived(UNUSED int sig, UNUSED void *udata) {
 	                st.el_radar39267328,
 	                st.el_radar39623812_fatal,
 	                st.el_radar39623812,
-	                st.el_needpath,
+	                st.el_missingtoken,
 	                st.el_ooms);
 
 	fprintf(stderr, "procmon "
@@ -832,7 +820,7 @@ evtloop_run(config_t *cfg) {
 	radar39267328 = 0;
 	radar39623812_fatal = 0;
 	radar39623812 = 0;
-	needpath = 0;
+	missingtoken = 0;
 	ooms = 0;
 	xnumon_pid = getpid();
 
