@@ -63,7 +63,7 @@ char * config_events_s(config_t *) NONNULL(1);
 #define DEBUG(cond, topic, fmt, ...) \
 	if (cond) { \
 		fprintf(stderr, "%s %s " fmt "\n", \
-		                __func__, topic, __VA_ARGS__); \
+		                __func__, topic, ##__VA_ARGS__); \
 	}
 
 #endif
