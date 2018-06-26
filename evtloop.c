@@ -38,12 +38,13 @@ static pid_t xnumon_pid;
 static uint64_t aueunknowns = 0;
 static uint64_t failedsyscalls = 0;
 static uint64_t radar38845422 = 0;
+static uint64_t radar38845422_fatal = 0;
 static uint64_t radar38845784 = 0;
 static uint64_t radar39267328 = 0;
+static uint64_t radar39267328_fatal = 0;
 static uint64_t radar39623812 = 0;
+static uint64_t radar39623812_fatal = 0;
 static uint64_t needpath = 0; /* unknown missing path bug */
-static uint64_t needargv = 0; /* need argv to recover from path bug */
-static uint64_t needcwd = 0;  /* need cwd to recover from path bug */
 static uint64_t ooms = 0;
 
 /* return 1 if kextctl should be treated with priority */
@@ -155,7 +156,20 @@ auef_readable(UNUSED int fd, void *udata) {
 			                   ev.args[0].value : ev.subject.pid);
 			if (!path) {
 				if (!ev.execarg) {
-					needargv++;
+					radar38845422_fatal++;
+					DEBUG(cfg->debug,
+					      "radar38845422_fatal",
+					      "path[0]=%s "
+					      "path[1]=%s "
+					      "args[0]=%i "
+					      "pid=%i "
+					      "sys_pidpath(args[0]||pid)=>%s",
+					      ev.path[0],
+					      ev.path[1],
+					      ev.args[0].present
+					      ? (int)ev.args[0].value : -1,
+					      ev.subject.pid,
+					      cwd);
 					break;
 				}
 				/* When launchd spawns the xpcproxy exec
@@ -232,6 +246,11 @@ auef_readable(UNUSED int fd, void *udata) {
 		assert(ev.subject_present);
 		if (!ev.path[0]) {
 			needpath++;
+			DEBUG(cfg->debug,
+			      "needpath",
+			      "event=execve "
+			      "pid=%i ",
+			      ev.subject.pid);
 			break;
 		}
 		path = (char *)(ev.path[1] ? ev.path[1] : ev.path[0]);
@@ -276,6 +295,11 @@ auef_readable(UNUSED int fd, void *udata) {
 		assert(ev.subject_present);
 		if (!ev.path[0]) {
 			needpath++;
+			DEBUG(cfg->debug,
+			      "needpath",
+			      "event=chdir "
+			      "pid=%i ",
+			      ev.subject.pid);
 			break;
 		}
 		path = (char *)(ev.path[1] ? ev.path[1] : ev.path[0]);
@@ -393,13 +417,27 @@ auef_readable(UNUSED int fd, void *udata) {
 				if (!path) {
 					if (errno == ENOMEM)
 						ooms++;
-					else
-						needcwd++;
+					else {
+						radar39623812_fatal++;
+						DEBUG(cfg->debug,
+						      "radar39623812_fatal",
+						      "path[0]=%s "
+						      "pid=%i "
+						      "procmon_getcwd(pid)=>%s",
+						      ev.path[0],
+						      ev.subject.pid,
+						      cwd);
+					}
 				}
 			}
 		} else {
 			path = NULL;
 			needpath++;
+			DEBUG(cfg->debug,
+			      "needpath",
+			      "event=utimes "
+			      "pid=%i ",
+			      ev.subject.pid);
 		}
 		if (!path)
 			/* counted above */
@@ -443,12 +481,26 @@ auef_readable(UNUSED int fd, void *udata) {
 			if (!path) {
 				if (errno == ENOMEM)
 					ooms++;
-				else
-					needcwd++;
+				else {
+					radar39267328_fatal++;
+					DEBUG(cfg->debug,
+					      "radar39267328_fatal",
+					      "path[2]=%s "
+					      "pid=%i "
+					      "procmon_getcwd(pid)=>%s",
+					      ev.path[2],
+					      ev.subject.pid,
+					      cwd);
+				}
 			}
 		} else {
 			path = NULL;
 			needpath++;
+			DEBUG(cfg->debug,
+			      "needpath",
+			      "event=rename "
+			      "pid=%i ",
+			      ev.subject.pid);
 		}
 		if (!path)
 			/* counted above */
@@ -507,13 +559,14 @@ evtloop_stats(evtloop_stat_t *st) {
 	filemon_stats(&st->fm);
 	st->el_aueunknowns = aueunknowns;
 	st->el_failedsyscalls = failedsyscalls;
+	st->el_radar38845422_fatal = radar38845422_fatal;
 	st->el_radar38845422 = radar38845422;
 	st->el_radar38845784 = radar38845784;
+	st->el_radar39623812_fatal = radar39623812_fatal;
 	st->el_radar39623812 = radar39623812;
+	st->el_radar39267328_fatal = radar39267328_fatal;
 	st->el_radar39267328 = radar39267328;
 	st->el_needpath = needpath;
-	st->el_needargv = needargv;
-	st->el_needcwd  = needcwd;
 	st->el_ooms = ooms;
 	aupipe_stats(fileno(auef), &st->ap);
 	work_stats(&st->wq);
@@ -535,23 +588,22 @@ siginfo_arrived(UNUSED int sig, UNUSED void *udata) {
 	fprintf(stderr, "evtloop "
 	                "aueunknown:%"PRIu64" "
 	                "failedsyscalls:%"PRIu64"\n        "
-	                "radar38845422:%"PRIu64" "
-	                "radar38845784:%"PRIu64" "
-	                "radar39267328:%"PRIu64" "
-	                "radar39623812:%"PRIu64"\n        "
+	                "radar38845422:%"PRIu64"/%"PRIu64" "
+	                "radar38845784:0/%"PRIu64" "
+	                "radar39267328:%"PRIu64"/%"PRIu64" "
+	                "radar39623812:%"PRIu64"/%"PRIu64"\n        "
 	                "needpath:%"PRIu64" "
-	                "needargv:%"PRIu64" "
-	                "needcwd:%"PRIu64" "
 	                "oom:%"PRIu64"\n",
 	                st.el_aueunknowns,
 	                st.el_failedsyscalls,
+	                st.el_radar38845422_fatal,
 	                st.el_radar38845422,
 	                st.el_radar38845784,
+	                st.el_radar39267328_fatal,
 	                st.el_radar39267328,
+	                st.el_radar39623812_fatal,
 	                st.el_radar39623812,
 	                st.el_needpath,
-	                st.el_needargv,
-	                st.el_needcwd,
 	                st.el_ooms);
 
 	fprintf(stderr, "procmon "
@@ -773,13 +825,14 @@ evtloop_run(config_t *cfg) {
 	auef = NULL;
 	aueunknowns = 0;
 	failedsyscalls = 0;
+	radar38845422_fatal = 0;
 	radar38845422 = 0;
 	radar38845784 = 0;
+	radar39267328_fatal = 0;
 	radar39267328 = 0;
+	radar39623812_fatal = 0;
 	radar39623812 = 0;
 	needpath = 0;
-	needargv = 0;
-	needcwd = 0;
 	ooms = 0;
 	xnumon_pid = getpid();
 

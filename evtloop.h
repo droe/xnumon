@@ -35,13 +35,14 @@ typedef struct {
 	xnumon_stat_t ke;
 	uint64_t el_aueunknowns;
 	uint64_t el_failedsyscalls;
+	uint64_t el_radar38845422_fatal;
 	uint64_t el_radar38845422;
 	uint64_t el_radar38845784;
+	uint64_t el_radar39267328_fatal;
 	uint64_t el_radar39267328;
+	uint64_t el_radar39623812_fatal;
 	uint64_t el_radar39623812;
 	uint64_t el_needpath;
-	uint64_t el_needargv;
-	uint64_t el_needcwd;
 	uint64_t el_ooms;
 	aupipe_stat_t ap;
 	work_stat_t wq;

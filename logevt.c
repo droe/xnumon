@@ -150,18 +150,20 @@ logevt_xnumon_stats(logfmt_t *fmt, FILE *f, void *arg0) {
 	fmt->value_uint(f, st->el_failedsyscalls);
 	fmt->dict_item(f, "radar38845422");
 	fmt->value_uint(f, st->el_radar38845422);
+	fmt->dict_item(f, "radar38845422_fatal");
+	fmt->value_uint(f, st->el_radar38845422_fatal);
 	fmt->dict_item(f, "radar38845784");
 	fmt->value_uint(f, st->el_radar38845784);
 	fmt->dict_item(f, "radar39267328");
 	fmt->value_uint(f, st->el_radar39267328);
+	fmt->dict_item(f, "radar39267328_fatal");
+	fmt->value_uint(f, st->el_radar39267328_fatal);
 	fmt->dict_item(f, "radar39623812");
 	fmt->value_uint(f, st->el_radar39623812);
+	fmt->dict_item(f, "radar39623812_fatal");
+	fmt->value_uint(f, st->el_radar39623812_fatal);
 	fmt->dict_item(f, "needpath");
 	fmt->value_uint(f, st->el_needpath);
-	fmt->dict_item(f, "needargv");
-	fmt->value_uint(f, st->el_needargv);
-	fmt->dict_item(f, "needcwd");
-	fmt->value_uint(f, st->el_needcwd);
 	fmt->dict_item(f, "oom");
 	fmt->value_uint(f, st->el_ooms);
 	fmt->dict_end(f); /* evtloop */

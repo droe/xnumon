@@ -2,7 +2,9 @@
 
 -   Fix ancestors default if not set from 0 back to unlimited as documented.
 -   Event schema version increased to 3.  Changes affect eventcode 1.
-    Eventcode 1 added evtloop.radar38845784.
+    Eventcode 1 removed evtloop.needargv, evtloop.needcwd.
+    Eventcode 1 added evtloop.radar38845784, evtloop.radar38845422_fatal,
+    evtloop.radar39267328_fatal, evtloop.radar39623812_fatal.
 -   Minor bugfixes and improvements.
 
 
