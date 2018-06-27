@@ -138,9 +138,9 @@ codesign_new(const char *cpath) {
 	/* retrieve information */
 	CFDictionaryRef dict = NULL;
 	rv = SecCodeCopySigningInformation(scode,
-	                                   kSecCSSigningInformation/**/|
+	                                   kSecCSSigningInformation|
 	                                   kSecCSInternalInformation|
-	                                   kSecCSRequirementInformation/**/,
+	                                   kSecCSRequirementInformation,
 	                                   &dict);
 	CFRelease(scode);
 	if (rv != noErr) {
