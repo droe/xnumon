@@ -111,12 +111,13 @@ command line tools.  The userland binary requires only the CoreFoundation and
 Security frameworks and libbsm; there are no third-party dependencies.
 
 Building a signed userland binary requires an Application Developer ID
-certificate.
+certificate from Apple.
 
-Building a signed kernel extension requires an Kext Developer ID certificate.
+Building a signed kernel extension requires a Kext Developer ID certificate
+from Apple.
 
 Building signed binary packages requires `pandoc` and an Installer Developer ID
-certificate.
+certificate from Apple.
 
 
 ## Copyright and License
