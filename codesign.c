@@ -99,6 +99,7 @@ codesign_new(const char *cpath) {
 		return cs;
 	}
 
+	/* verify signature using embedded designated requirement */
 	SecRequirementRef req = NULL;
 	rv = SecCodeCopyDesignatedRequirement(scode, kSecCSDefaultFlags, &req);
 	switch (rv) {
@@ -135,33 +136,70 @@ codesign_new(const char *cpath) {
 		return cs;
 	}
 
-	/* retrieve information */
+	/* retrieve information from signature */
 	CFDictionaryRef dict = NULL;
 	rv = SecCodeCopySigningInformation(scode,
 	                                   kSecCSSigningInformation|
 	                                   kSecCSInternalInformation|
 	                                   kSecCSRequirementInformation,
 	                                   &dict);
-	CFRelease(scode);
-	if (rv != noErr) {
+	if (rv != noErr || !dict) {
+		CFRelease(scode);
 		cs->error = rv;
 		cs->result = strdup("error");
-		if (!cs->result) {
-			CFRelease(dict);
+		if (!cs->result)
 			goto enomemout;
-		}
 		return cs;
 	}
 
+	/* copy ident string; signed implies ident string is present */
 	CFStringRef ident = CFDictionaryGetValue(dict, kSecCodeInfoIdentifier);
 	if (ident && cf_is_string(ident)) {
 		cs->ident = cf_cstr(ident);
 		if (!cs->ident) {
+			CFRelease(scode);
 			CFRelease(dict);
 			goto enomemout;
 		}
+	} else {
+		CFRelease(scode);
+		CFRelease(dict);
+		cs->result = strdup("bad");
+		if (!cs->result)
+			goto enomemout;
+		return cs;
+	}
+	assert(ident && cs->ident);
+
+	/* verify signing certificate was issued by appropriate Apple CA; this
+	 * ensures that a non-Apple binary cannot carry an com.apple ident */
+	CFStringRef anchor;
+	if (CFStringHasPrefix(ident, CFSTR("com.apple."))) {
+		anchor = CFSTR("anchor apple");
+	} else {
+		anchor = CFSTR("anchor apple generic");
+	}
+	req = NULL;
+	rv = SecRequirementCreateWithString(anchor, kSecCSDefaultFlags, &req);
+	if (rv != errSecSuccess || !req) {
+		CFRelease(scode);
+		CFRelease(dict);
+		goto enomemout;
+	}
+	rv = SecStaticCodeCheckValidity(scode, kSecCSDefaultFlags, req);
+	CFRelease(scode);
+	CFRelease(req);
+	if (rv != errSecSuccess) {
+		CFRelease(dict);
+		free(cs->ident);
+		cs->ident = NULL;
+		cs->result = strdup("bad");
+		if (!cs->result)
+			goto enomemout;
+		return cs;
 	}
 
+	/* extract Team ID associated with the signing Developer ID */
 	CFStringRef teamid = CFDictionaryGetValue(dict,
 	                                          kSecCodeInfoTeamIdentifier);
 	if (teamid && cf_is_string(teamid)) {
@@ -172,6 +210,7 @@ codesign_new(const char *cpath) {
 		}
 	}
 
+	/* extract certificate chain */
 	CFArrayRef chain = CFDictionaryGetValue(dict, kSecCodeInfoCertificates);
 	if (chain && cf_is_array(chain)) {
 		CFIndex count = CFArrayGetCount(chain);

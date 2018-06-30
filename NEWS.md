@@ -2,12 +2,13 @@
 
 -   Fix ancestors default if not set from 0 back to unlimited as documented.
 -   Extract team ID from code signatures.
+-   Verify that signatures on Apple binaries are anchored at the Apple root.
 -   Event schema version increased to 3.  Changes affect all event codes.
     Eventcode 1 removed evtloop.needargv, evtloop.needcwd, evtloop.needpath.
     Eventcode 1 added evtloop.radar38845784, evtloop.radar38845422_fatal,
     evtloop.radar39267328_fatal, evtloop.radar39623812_fatal,
     evtloop.missingtoken.
-    Eventcode 2 added image.teamid.
+    Eventcode 2 added image.codesign.teamid.
     All eventcodes added subject.image.teamid and subject.ancestors[].teamid.
 -   Minor bugfixes and improvements.
 
