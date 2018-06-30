@@ -186,7 +186,12 @@ codesign_new(const char *cpath) {
 		CFRelease(dict);
 		goto enomemout;
 	}
-	rv = SecStaticCodeCheckValidity(scode, kSecCSDefaultFlags, req);
+	/* reduced set of flags, we are only checking the anchor here */
+	rv = SecStaticCodeCheckValidity(scode,
+	                                kSecCSDefaultFlags|
+	                                kSecCSCheckAllArchitectures|
+	                                kSecCSStrictValidate,
+	                                req);
 	CFRelease(scode);
 	CFRelease(req);
 	if (rv != errSecSuccess) {
