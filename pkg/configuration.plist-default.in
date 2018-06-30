@@ -175,6 +175,25 @@
 
   <!-- LEVEL OF DETAIL -->
 
+  <!-- Omit Apple hashes:
+       If enabled (<true/>), omit executable image hashes for verified Apple
+       binaries in the image node of eventcode 2 events and in subject image
+       and ancestors for all events.  If disabled (<false/>), always include
+       hashes, even for Apple-signed binaries.
+       The idea is that for Apple-signed binaries, the ident string serves the
+       purpose of identifying a binary well enough, even though the hashes will
+       differ across different patchlevels and releases.
+       Only has an effect if codesign is true.  When code signatures are not
+       acquired, then no binaries will be identified as Apple binaries, and
+       hence hashes will be included for all executable images.
+       If unset, defaults to:   true
+       -->
+  <!--
+  <key>omit_apple_hashes</key>
+  <true/>
+  <false/>
+  -->
+
   <!-- Ancestors:
        Number of images to list in subject ancestry, and to remember in memory
        for each active process.  The current image of processes is always

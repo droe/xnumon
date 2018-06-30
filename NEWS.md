@@ -3,9 +3,11 @@
 -   Fix ancestors default if not set from 0 back to unlimited as documented.
 -   Streamlined code signature information now includes developer ID and
     team ID instead of the full certificate chain, which results in lower heap
-    usage and lower log size for essentially the same information.
+    usage and lower log volume for essentially the same information.
 -   Verify that signatures on Apple binaries are anchored at the Apple root.
--   Event schema version increased to 3.  Changes affect all event codes.
+-   Add `omit_apple_hashes` config option to omit hashes for Apple-signed
+    binaries, enabled by default (issue #2).
+-   Event schema version increased to 3.  Changes affect all eventcodes.
     Eventcode 1 removed evtloop.needargv, evtloop.needcwd, evtloop.needpath.
     Eventcode 1 added evtloop.radar38845784, evtloop.radar38845422_fatal,
     evtloop.radar39267328_fatal, evtloop.radar39623812_fatal,

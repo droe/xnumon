@@ -216,7 +216,8 @@ codesign_new(const char *cpath) {
 
 out:
 	CFRelease(dict);
-	cs->result = CODESIGN_RESULT_GOOD;
+	/* avoid clearing CODESIGN_RESULT_APPLE */
+	cs->result |= CODESIGN_RESULT_GOOD;
 	return cs;
 
 enomemout:
@@ -241,5 +242,15 @@ codesign_result_s(codesign_t *cs) {
 		/* this should never happen */
 		return "undefined";
 	}
+}
+
+/*
+ * Returns true iff the code signature is a genuine Apple binary, i.e. code
+ * originating at Apple, not from developers part of the Developer ID program.
+ */
+bool
+codesign_is_apple(codesign_t *cs) {
+	return (cs->result & CODESIGN_RESULT_GOOD) &&
+	       (cs->result & CODESIGN_RESULT_APPLE);
 }
 

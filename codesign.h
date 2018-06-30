@@ -13,6 +13,8 @@
 
 #include "attrib.h"
 
+#include <stdbool.h>
+
 typedef struct {
 	int result;
 #define CODESIGN_RESULT_UNSIGNED        1
@@ -31,6 +33,7 @@ codesign_t * codesign_dup(const codesign_t *) MALLOC NONNULL(1);
 void codesign_free(codesign_t *) NONNULL(1);
 
 const char * codesign_result_s(codesign_t *) NONNULL(1);
+bool codesign_is_apple(codesign_t *) NONNULL(1);
 
 #endif
 

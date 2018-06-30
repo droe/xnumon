@@ -8,6 +8,11 @@
  * Licensed under the Open Software License version 3.0.
  */
 
+/*
+ * General design decisions:
+ * - only use null values for configuration, not for data
+ */
+
 #include "logevt.h"
 
 #include "build.h"
@@ -89,6 +94,8 @@ logevt_xnumon_ops(logfmt_t *fmt, FILE *f, void *arg0) {
 	fmt->value_string(f, hashes_flags_s(config->hflags));
 	fmt->dict_item(f, "codesign");
 	fmt->value_bool(f, config->codesign);
+	fmt->dict_item(f, "omit_apple_hashes");
+	fmt->value_bool(f, config->omit_apple_hashes);
 	fmt->dict_item(f, "ancestors");
 	if (config->ancestors < SIZE_MAX)
 		fmt->value_uint(f, config->ancestors);
@@ -361,7 +368,10 @@ logevt_image_exec_image(logfmt_t *fmt, FILE *f, image_exec_t *ei) {
 		fmt->dict_item(f, "btime");
 		fmt->value_timespec(f, &ei->stat.btime);
 	}
-	if (ei->flags & EIFLAG_HASHES) {
+	if ((ei->flags & EIFLAG_HASHES) &&
+	    (!config->omit_apple_hashes ||
+	     !ei->codesign ||
+	     !codesign_is_apple(ei->codesign))) {
 		if (config->hflags & HASH_MD5) {
 			fmt->dict_item(f, "md5");
 			fmt->value_buf_hex(f, ei->hashes.md5, MD5SZ);
@@ -406,7 +416,10 @@ logevt_process_image_exec(logfmt_t *fmt, FILE *f, image_exec_t *ie) {
 	fmt->value_int(f, ie->pid);
 	fmt->dict_item(f, "path");
 	fmt->value_string(f, ie->path);
-	if (ie->flags & EIFLAG_HASHES) {
+	if ((ie->flags & EIFLAG_HASHES) &&
+	    (!config->omit_apple_hashes ||
+	     !ie->codesign ||
+	     !codesign_is_apple(ie->codesign))) {
 		if (config->hflags & HASH_MD5) {
 			fmt->dict_item(f, "md5");
 			fmt->value_buf_hex(f, ie->hashes.md5, MD5SZ);
@@ -433,6 +446,7 @@ logevt_process_image_exec(logfmt_t *fmt, FILE *f, image_exec_t *ie) {
 		fmt->dict_begin(f);
 		fmt->dict_item(f, "path");
 		fmt->value_string(f, ie->script->path);
+		assert(!ie->script->codesign);
 		if (ie->script->flags & EIFLAG_HASHES) {
 			if (config->hflags & HASH_MD5) {
 				fmt->dict_item(f, "md5");

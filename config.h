@@ -37,6 +37,7 @@ typedef struct {
 	/* HASH_* see hashes.h */
 	bool codesign;
 
+	bool omit_apple_hashes;
 	size_t ancestors;       /* 0 unlimited, > 0 limited */
 
 	int logdst;

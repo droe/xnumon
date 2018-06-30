@@ -179,6 +179,12 @@ config_str(config_t *cfg, const char *key, const char *value) {
 		return 0;
 	}
 
+	if (!strcmp(key, "omit_apple_hashes")) {
+		if (config_set_bool(&cfg->omit_apple_hashes, value) == -1)
+			return -1;
+		return 0;
+	}
+
 	if (!strcmp(key, "ancestors")) {
 		if (!strcmp(value, "unlimited"))
 			cfg->ancestors = SIZE_MAX;
@@ -303,6 +309,7 @@ config_new(const char *cfgpath) {
 	cfg->kextlevel = KEXTLEVEL_HASH;
 	cfg->hflags = HASH_SHA256;
 	cfg->codesign = true;
+	cfg->omit_apple_hashes = true;
 	cfg->ancestors = SIZE_MAX;
 	cfg->logoneline = -1; /* any */
 	if (logfmt_parse(cfg, "json") == -1) {
@@ -375,6 +382,12 @@ config_new(const char *cfgpath) {
 	                            plist, CFSTR("codesign"));
 	if (rv == -1) {
 		fprintf(stderr, "Failed to load 'codesign'\n");
+		goto errout;
+	}
+	rv = config_bool_from_plist(cfg, "omit_apple_hashes",
+	                            plist, CFSTR("omit_apple_hashes"));
+	if (rv == -1) {
+		fprintf(stderr, "Failed to load 'omit_apple_hashes'\n");
 		goto errout;
 	}
 	rv = config_str_from_plist(cfg, "ancestors",
