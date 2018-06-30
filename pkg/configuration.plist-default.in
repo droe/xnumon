@@ -224,6 +224,7 @@
   <array>
     <string>com.apple.xpc.proxy</string>
     <string>com.apple.mdworker</string>
+    <string>com.apple.mdworker32</string>
   </array>
 
   <!-- Suppress exec image events by path:
@@ -242,6 +243,7 @@
   <!--
     <string>/usr/libexec/xpcproxy</string>
     <string>/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mdworker</string>
+    <string>/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mdworker32</string>
     <string>/Applications/Splunk/bin/splunk-optimize</string>
     -->
   </array>
