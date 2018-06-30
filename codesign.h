@@ -19,6 +19,7 @@ typedef struct {
 #define CODESIGN_RESULT_GOOD            2
 #define CODESIGN_RESULT_BAD             4
 #define CODESIGN_RESULT_ERROR           8
+#define CODESIGN_RESULT_APPLE          16 /* set for com.apple binaries */
 	long error;
 	char *ident;
 	char *teamid;

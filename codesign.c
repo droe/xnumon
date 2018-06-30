@@ -80,7 +80,7 @@ codesign_new(const char *cpath) {
 	SecStaticCodeRef scode = NULL;
 	rv = SecStaticCodeCreateWithPath(url, kSecCSDefaultFlags, &scode);
 	CFRelease(url);
-	if (rv != noErr) {
+	if (rv != errSecSuccess) {
 		cs->error = rv;
 		cs->result = CODESIGN_RESULT_ERROR;
 		return cs;
@@ -90,7 +90,7 @@ codesign_new(const char *cpath) {
 	SecRequirementRef req = NULL;
 	rv = SecCodeCopyDesignatedRequirement(scode, kSecCSDefaultFlags, &req);
 	switch (rv) {
-	case noErr:
+	case errSecSuccess:
 		break;
 	case errSecCSUnsigned:
 		cs->result = CODESIGN_RESULT_UNSIGNED;
@@ -111,7 +111,7 @@ codesign_new(const char *cpath) {
 	                                kSecCSConsiderExpiration,
 	                                req);
 	CFRelease(req);
-	if (rv != noErr) {
+	if (rv != errSecSuccess) {
 		cs->result = CODESIGN_RESULT_BAD;
 		CFRelease(scode);
 		return cs;
@@ -124,7 +124,7 @@ codesign_new(const char *cpath) {
 	                                   kSecCSInternalInformation|
 	                                   kSecCSRequirementInformation,
 	                                   &dict);
-	if (rv != noErr || !dict) {
+	if (rv != errSecSuccess || !dict) {
 		CFRelease(scode);
 		cs->error = rv;
 		cs->result = CODESIGN_RESULT_ERROR;
@@ -152,6 +152,7 @@ codesign_new(const char *cpath) {
 	 * ensures that a non-Apple binary cannot carry an com.apple ident */
 	CFStringRef anchor;
 	if (CFStringHasPrefix(ident, CFSTR("com.apple."))) {
+		cs->result |= CODESIGN_RESULT_APPLE;
 		anchor = CFSTR("anchor apple");
 	} else {
 		anchor = CFSTR("anchor apple generic");
@@ -179,6 +180,9 @@ codesign_new(const char *cpath) {
 		return cs;
 	}
 
+	if (cs->result & CODESIGN_RESULT_APPLE)
+		goto out;
+
 	/* extract Team ID associated with the signing Developer ID */
 	CFStringRef teamid = CFDictionaryGetValue(dict,
 	                                          kSecCodeInfoTeamIdentifier);
@@ -190,7 +194,7 @@ codesign_new(const char *cpath) {
 		}
 	}
 
-	/* extract first certificate in chain */
+	/* extract Developer ID from CN of first certificate in chain */
 	CFArrayRef chain = CFDictionaryGetValue(dict, kSecCodeInfoCertificates);
 	if (chain && cf_is_array(chain) && CFArrayGetCount(chain) >= 1) {
 		SecCertificateRef crt =
@@ -210,6 +214,7 @@ codesign_new(const char *cpath) {
 		}
 	}
 
+out:
 	CFRelease(dict);
 	cs->result = CODESIGN_RESULT_GOOD;
 	return cs;
