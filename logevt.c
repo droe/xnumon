@@ -377,14 +377,8 @@ logevt_image_exec_image(logfmt_t *fmt, FILE *f, image_exec_t *ei) {
 	}
 
 	if (ei->codesign) {
-		fmt->dict_item(f, "codesign");
-		fmt->dict_begin(f);
-		fmt->dict_item(f, "result");
+		fmt->dict_item(f, "signature");
 		fmt->value_string(f, codesign_result_s(ei->codesign));
-		if (ei->codesign->error) {
-			fmt->dict_item(f, "error");
-			fmt->value_int(f, ei->codesign->error);
-		}
 		if (ei->codesign->ident) {
 			fmt->dict_item(f, "ident");
 			fmt->value_string(f, ei->codesign->ident);
@@ -397,7 +391,6 @@ logevt_image_exec_image(logfmt_t *fmt, FILE *f, image_exec_t *ei) {
 			fmt->dict_item(f, "devid");
 			fmt->value_string(f, ei->codesign->devid);
 		}
-		fmt->dict_end(f); /* codesign */
 	}
 	fmt->dict_end(f); /* image */
 }

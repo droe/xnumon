@@ -1,16 +1,18 @@
 ### xnumon develop
 
 -   Fix ancestors default if not set from 0 back to unlimited as documented.
--   Extract team ID from code signatures.
+-   Streamlined code signature information now includes developer ID and
+    team ID instead of the full certificate chain, which results in lower heap
+    usage and lower log size for essentially the same information.
 -   Verify that signatures on Apple binaries are anchored at the Apple root.
 -   Event schema version increased to 3.  Changes affect all event codes.
     Eventcode 1 removed evtloop.needargv, evtloop.needcwd, evtloop.needpath.
     Eventcode 1 added evtloop.radar38845784, evtloop.radar38845422_fatal,
     evtloop.radar39267328_fatal, evtloop.radar39623812_fatal,
     evtloop.missingtoken.
-    Eventcode 2 added image.codesign.teamid.
-    All eventcodes added subject.image.teamid and subject.ancestors[].teamid.
--   Minor bugfixes and improvements.
+    Eventcode 2 removed image.codesign.result, image.codesign.cert,
+    image.codesign.chain; added image.signature, image.teamid, image.devid.
+    All eventcodes added subject.image.teamid, subject.ancestors[].teamid.
 
 
 ### xnumon 0.1.2 2018-06-24
@@ -31,7 +33,6 @@
     evtloop.needpath, evtloop.needargv, evtloop.needcwd, procmon.miss.bypid,
     procmon.miss.forksubj, procmon.miss.execsubj, procmon.miss.execinterp,
     procmon.miss.chdirsubj, procmon.miss.getcwd.
--   Minor bugfixes and improvements.
 
 
 ### xnumon 0.1.1 2018-06-17
