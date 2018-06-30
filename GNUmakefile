@@ -91,7 +91,7 @@ sign: $(TARGETS:=.signed)
 %.signed: %
 	cp $^ $@
 	#strip $@
-	$(CODESIGN) -s $(DEVIDAPPL) -f $@
+	$(CODESIGN) -s $(DEVIDAPPL) -i ch.roe.$^ -f $@
 
 copyright: $(filter-out $(EXTSRCS),$(wildcard *.c *.h)) kext/*.c kext/*.h
 	Mk/bin/copyright.py $^
