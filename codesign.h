@@ -14,17 +14,22 @@
 #include "attrib.h"
 
 typedef struct {
-	char *result;
+	int result;
+#define CODESIGN_RESULT_UNSIGNED        1
+#define CODESIGN_RESULT_GOOD            2
+#define CODESIGN_RESULT_BAD             4
+#define CODESIGN_RESULT_ERROR           8
 	long error;
 	char *ident;
 	char *teamid;
-	int crtc;
-	char **crtv;
+	char *devid;
 } codesign_t;
 
 codesign_t * codesign_new(const char *) MALLOC NONNULL(1);
 codesign_t * codesign_dup(const codesign_t *) MALLOC NONNULL(1);
 void codesign_free(codesign_t *) NONNULL(1);
+
+const char * codesign_result_s(codesign_t *) NONNULL(1);
 
 #endif
 

@@ -20,17 +20,12 @@
 
 void
 codesign_free(codesign_t *cs) {
-	if (cs->result)
-		free(cs->result);
 	if (cs->ident)
 		free(cs->ident);
 	if (cs->teamid)
 		free(cs->teamid);
-	for (int i = 0; i < cs->crtc; i++)
-		if (cs->crtv[i])
-			free(cs->crtv[i]);
-	if (cs->crtv)
-		free(cs->crtv);
+	if (cs->devid)
+		free(cs->devid);
 	free(cs);
 }
 
@@ -43,28 +38,22 @@ codesign_dup(const codesign_t *other) {
 		return NULL;
 	bzero(cs, sizeof(codesign_t));
 
-	if (other->result) {
-		cs->result = strdup(other->result);
-		if (!cs->result)
-			goto errout;
-	}
+	cs->result = other->result;
 	cs->error = other->error;
 	if (other->ident) {
 		cs->ident = strdup(other->ident);
 		if (!cs->ident)
 			goto errout;
 	}
-	if (other->crtv) {
-		cs->crtc = other->crtc;
-		cs->crtv = (char**)malloc(cs->crtc*sizeof(void*));
-		if (!cs->crtv)
+	if (other->teamid) {
+		cs->teamid = strdup(other->teamid);
+		if (!cs->teamid)
 			goto errout;
-		bzero(cs->crtv, cs->crtc);
-		for (int i = 0; i < cs->crtc; i++) {
-			cs->crtv[i] = strdup(other->crtv[i]);
-			if (!cs->crtv[i])
-				goto errout;
-		}
+	}
+	if (other->devid) {
+		cs->devid = strdup(other->devid);
+		if (!cs->devid)
+			goto errout;
 	}
 	return cs;
 errout:
@@ -93,9 +82,7 @@ codesign_new(const char *cpath) {
 	CFRelease(url);
 	if (rv != noErr) {
 		cs->error = rv;
-		cs->result = strdup("error");
-		if (!cs->result)
-			goto enomemout;
+		cs->result = CODESIGN_RESULT_ERROR;
 		return cs;
 	}
 
@@ -106,17 +93,13 @@ codesign_new(const char *cpath) {
 	case noErr:
 		break;
 	case errSecCSUnsigned:
-		cs->result = strdup("unsigned");
+		cs->result = CODESIGN_RESULT_UNSIGNED;
 		CFRelease(scode);
-		if (!cs->result)
-			goto enomemout;
 		return cs;
 	default:
 		cs->error = rv;
-		cs->result = strdup("error");
+		cs->result = CODESIGN_RESULT_ERROR;
 		CFRelease(scode);
-		if (!cs->result)
-			goto enomemout;
 		return cs;
 	}
 	rv = SecStaticCodeCheckValidity(scode,
@@ -129,10 +112,8 @@ codesign_new(const char *cpath) {
 	                                req);
 	CFRelease(req);
 	if (rv != noErr) {
-		cs->result = strdup("bad");
+		cs->result = CODESIGN_RESULT_BAD;
 		CFRelease(scode);
-		if (!cs->result)
-			goto enomemout;
 		return cs;
 	}
 
@@ -146,9 +127,7 @@ codesign_new(const char *cpath) {
 	if (rv != noErr || !dict) {
 		CFRelease(scode);
 		cs->error = rv;
-		cs->result = strdup("error");
-		if (!cs->result)
-			goto enomemout;
+		cs->result = CODESIGN_RESULT_ERROR;
 		return cs;
 	}
 
@@ -164,9 +143,7 @@ codesign_new(const char *cpath) {
 	} else {
 		CFRelease(scode);
 		CFRelease(dict);
-		cs->result = strdup("bad");
-		if (!cs->result)
-			goto enomemout;
+		cs->result = CODESIGN_RESULT_BAD;
 		return cs;
 	}
 	assert(ident && cs->ident);
@@ -198,9 +175,7 @@ codesign_new(const char *cpath) {
 		CFRelease(dict);
 		free(cs->ident);
 		cs->ident = NULL;
-		cs->result = strdup("bad");
-		if (!cs->result)
-			goto enomemout;
+		cs->result = CODESIGN_RESULT_BAD;
 		return cs;
 	}
 
@@ -215,44 +190,28 @@ codesign_new(const char *cpath) {
 		}
 	}
 
-	/* extract certificate chain */
+	/* extract first certificate in chain */
 	CFArrayRef chain = CFDictionaryGetValue(dict, kSecCodeInfoCertificates);
-	if (chain && cf_is_array(chain)) {
-		CFIndex count = CFArrayGetCount(chain);
-		cs->crtv = malloc(count*sizeof(void*));
-		if (!cs->crtv) {
-			CFRelease(dict);
-			goto enomemout;
-		}
-
-		for (CFIndex i = 0; i < count; i++) {
-			SecCertificateRef cert =
-			        (SecCertificateRef)
-			        CFArrayGetValueAtIndex(chain, i);
-			if (!cert || !cf_is_cert(cert)) {
-				cs->crtv[i] = NULL;
-			} else {
-				CFStringRef ss =
-				        SecCertificateCopySubjectSummary(cert);
-				if (!ss) {
-					CFRelease(dict);
-					goto enomemout;
-				}
-				cs->crtv[i] = cf_cstr(ss);
-				CFRelease(ss);
-				if (!cs->crtv[i]) {
-					CFRelease(dict);
-					goto enomemout;
-				}
+	if (chain && cf_is_array(chain) && CFArrayGetCount(chain) >= 1) {
+		SecCertificateRef crt =
+		        (SecCertificateRef)CFArrayGetValueAtIndex(chain, 0);
+		if (crt && cf_is_cert(crt)) {
+			CFStringRef s = SecCertificateCopySubjectSummary(crt);
+			if (!s) {
+				CFRelease(dict);
+				goto enomemout;
 			}
-			cs->crtc++;
+			cs->devid = cf_cstr(s);
+			CFRelease(s);
+			if (!cs->devid) {
+				CFRelease(dict);
+				goto enomemout;
+			}
 		}
 	}
 
 	CFRelease(dict);
-	cs->result = strdup("good");
-	if (!cs->result)
-		goto enomemout;
+	cs->result = CODESIGN_RESULT_GOOD;
 	return cs;
 
 enomemout:
@@ -260,5 +219,22 @@ enomemout:
 		codesign_free(cs);
 	errno = ENOMEM;
 	return NULL;
+}
+
+const char *
+codesign_result_s(codesign_t *cs) {
+	switch (cs->result) {
+	case CODESIGN_RESULT_UNSIGNED:
+		return "unsigned";
+	case CODESIGN_RESULT_GOOD:
+		return "good";
+	case CODESIGN_RESULT_BAD:
+		return "bad";
+	case CODESIGN_RESULT_ERROR:
+		return "error";
+	default:
+		/* this should never happen */
+		return "undefined";
+	}
 }
 

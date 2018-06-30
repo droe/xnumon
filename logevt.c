@@ -380,7 +380,7 @@ logevt_image_exec_image(logfmt_t *fmt, FILE *f, image_exec_t *ei) {
 		fmt->dict_item(f, "codesign");
 		fmt->dict_begin(f);
 		fmt->dict_item(f, "result");
-		fmt->value_string(f, ei->codesign->result);
+		fmt->value_string(f, codesign_result_s(ei->codesign));
 		if (ei->codesign->error) {
 			fmt->dict_item(f, "error");
 			fmt->value_int(f, ei->codesign->error);
@@ -393,20 +393,9 @@ logevt_image_exec_image(logfmt_t *fmt, FILE *f, image_exec_t *ei) {
 			fmt->dict_item(f, "teamid");
 			fmt->value_string(f, ei->codesign->teamid);
 		}
-		if (ei->codesign->crtc > 0) {
-			fmt->dict_item(f, "cert");
-			fmt->value_string(f, ei->codesign->crtv[0]);
-			fmt->dict_item(f, "chain");
-			fmt->list_begin(f);
-			for (int i = 1; i < ei->codesign->crtc; i++) {
-				fmt->list_item(f);
-				if (ei->codesign->crtv[i])
-					fmt->value_string(f,
-					        ei->codesign->crtv[i]);
-				else
-					fmt->value_null(f);
-			}
-			fmt->list_end(f); /* certchain */
+		if (ei->codesign->devid) {
+			fmt->dict_item(f, "devid");
+			fmt->value_string(f, ei->codesign->devid);
 		}
 		fmt->dict_end(f); /* codesign */
 	}
