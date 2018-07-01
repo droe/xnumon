@@ -244,11 +244,11 @@
     <string>/usr/libexec/xpcproxy</string>
     <string>/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mdworker</string>
     <string>/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mdworker32</string>
-    <string>/Applications/Splunk/bin/splunk-optimize</string>
     -->
+    <string>/Applications/Splunk/bin/splunk-optimize</string>
   </array>
 
-  <!-- Suppress process access events by ident:
+  <!-- Suppress process access events by subject ident:
        Subjects with code signing ident strings matching this list will be
        excluded from logging process-access[4] events when they access other
        processes.  Unsigned binaries or broken signature binaries have no ident
@@ -259,7 +259,7 @@
        legitimately access other processes, generating high volumes of events.
        If unset, defaults to:   no suppressions
        -->
-  <key>suppress_process_access_by_ident</key>
+  <key>suppress_process_access_by_subject_ident</key>
   <array>
     <string>com.apple.coreservicesd</string>
     <string>com.apple.spindump</string>
@@ -267,7 +267,7 @@
     <string>com.apple.ps</string>
   </array>
 
-  <!-- Suppress process access events by path:
+  <!-- Suppress process access events by subject path:
        Subject processes with executable image paths matching this list will be
        excluded from logging process-access[4] events when they access other
        processes.
@@ -278,7 +278,7 @@
        legitimately access other processes, generating high volumes of events.
        If unset, defaults to:   no suppressions
        -->
-  <key>suppress_process_access_by_path</key>
+  <key>suppress_process_access_by_subject_path</key>
   <array>
     <!--
     <string>/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/CarbonCore.framework/Versions/A/Support/coreservicesd</string>
