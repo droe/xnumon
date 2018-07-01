@@ -82,6 +82,7 @@ typedef struct image_exec {
 #define EIFLAG_DONE         0x0040UL  /* set if processing is complete */
 #define EIFLAG_ENOMEM       0x0080UL  /* set if parts missing due to ENOMEM */
 #define EIFLAG_NOLOG        0x0100UL  /* do not submit this for logging */
+#define EIFLAG_NOLOG_KIDS   0x0200UL  /* do not submit children to logging */
 
 	/* open/analysis/close state */
 	int fd;

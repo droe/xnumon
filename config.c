@@ -423,20 +423,40 @@ config_new(const char *cfgpath) {
 
 	/* The strset initializations must be called even if we were to allow
 	 * xnumon to run without a config file; they handle plist==NULL. */
-	rv = config_strset_from_plist(&cfg->suppress_image_exec_by_ident,
-	                              plist,
-	                              CFSTR("suppress_image_exec_by_ident"));
+	rv = config_strset_from_plist(
+			&cfg->suppress_image_exec_by_ident,
+			plist,
+			CFSTR("suppress_image_exec_by_ident"));
 	if (rv == -1) {
-		fprintf(stderr,
-		        "Failed to load suppress_image_exec_by_ident\n");
+		fprintf(stderr, "Failed to load "
+		                "suppress_image_exec_by_ident\n");
 		goto errout;
 	}
-	rv = config_strset_from_plist(&cfg->suppress_image_exec_by_path,
-	                              plist,
-	                              CFSTR("suppress_image_exec_by_path"));
+	rv = config_strset_from_plist(
+			&cfg->suppress_image_exec_by_path,
+			plist,
+			CFSTR("suppress_image_exec_by_path"));
 	if (rv == -1) {
-		fprintf(stderr,
-		        "Failed to load suppress_image_exec_by_path\n");
+		fprintf(stderr, "Failed to load "
+		                "suppress_image_exec_by_path\n");
+		goto errout;
+	}
+	rv = config_strset_from_plist(
+			&cfg->suppress_image_exec_by_ancestor_ident,
+			plist,
+			CFSTR("suppress_image_exec_by_ancestor_ident"));
+	if (rv == -1) {
+		fprintf(stderr, "Failed to load "
+		                "suppress_image_exec_by_ancestor_ident\n");
+		goto errout;
+	}
+	rv = config_strset_from_plist(
+			&cfg->suppress_image_exec_by_ancestor_path,
+			plist,
+			CFSTR("suppress_image_exec_by_ancestor_path"));
+	if (rv == -1) {
+		fprintf(stderr, "Failed to load "
+		                "suppress_image_exec_by_ancestor_path\n");
 		goto errout;
 	}
 	rv = config_strset_from_plist(
@@ -475,6 +495,8 @@ config_free(config_t *cfg) {
 
 	strset_destroy(&cfg->suppress_image_exec_by_ident);
 	strset_destroy(&cfg->suppress_image_exec_by_path);
+	strset_destroy(&cfg->suppress_image_exec_by_ancestor_ident);
+	strset_destroy(&cfg->suppress_image_exec_by_ancestor_path);
 	strset_destroy(&cfg->suppress_process_access_by_subject_ident);
 	strset_destroy(&cfg->suppress_process_access_by_subject_path);
 	if (cfg->path)

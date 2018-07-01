@@ -248,6 +248,36 @@
     <string>/Applications/Splunk/bin/splunk-optimize</string>
   </array>
 
+  <!-- Suppress exec image events by ancestor ident:
+       Execution of child images of images whose code signature ident strings
+       match this list will not generate image-exec[3] events.
+       Unsigned binaries or broken signature binaries have no ident string so
+       never match an identifier.
+       This requires codesign to be enabled.  If codesign is false, suppression
+       by ident is disabled.
+       This suppression type is suitable for suppressing things like MacPorts,
+       that spawn many subprocesses when doing their thing.
+       If unset, defaults to:   no suppressions
+       -->
+  <key>suppress_image_exec_by_ancestor_ident</key>
+  <array>
+  </array>
+
+  <!-- Suppress exec image events by ancestor path:
+       Execution of child images of images whose image path or script path
+       match this list will not generate image-exec[3] events.
+       It is generally preferable to use suppress_image_exec_by_ancestor_ident
+       instead, unless the binaries to suppress are unsigned or codesign is
+       false.
+       This suppression type is suitable for suppressing things like MacPorts,
+       that spawn many subprocesses when doing their thing.
+       If unset, defaults to:   no suppressions
+       -->
+  <key>suppress_image_exec_by_ancestor_path</key>
+  <array>
+    <string>/opt/local/bin/port</string>
+  </array>
+
   <!-- Suppress process access events by subject ident:
        Subjects with code signing ident strings matching this list will be
        excluded from logging process-access[4] events when they access other

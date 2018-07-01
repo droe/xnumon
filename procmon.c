@@ -57,6 +57,8 @@ static atomic64_t ooms;         /* counts events impaired due to OOM */
 
 strset_t *suppress_image_exec_by_ident;
 strset_t *suppress_image_exec_by_path;
+strset_t *suppress_image_exec_by_ancestor_ident;
+strset_t *suppress_image_exec_by_ancestor_path;
 
 static int image_exec_work(image_exec_t *);
 
@@ -413,24 +415,23 @@ image_exec_analyze(image_exec_t *image, int kern) {
 }
 
 /*
- * Return true iff the exec event should not be logged (i.e. filtered).
+ * Return true iff exec image matches either one of the idents in by_ident or
+ * one of the paths in by_path.
  */
 static bool
-image_exec_filter(image_exec_t *ei) {
+image_exec_match_suppressions(image_exec_t *ei,
+                              strset_t *by_ident, strset_t *by_path) {
 	if (ei->codesign && ei->codesign->ident) {
 		/* presence of ident implies that signature is good */
-		if (strset_contains(suppress_image_exec_by_ident,
-		                    ei->codesign->ident))
+		if (strset_contains(by_ident, ei->codesign->ident))
 			return true;
 	}
 	if (ei->path) {
-		if (strset_contains(suppress_image_exec_by_path,
-		                    ei->path))
+		if (strset_contains(by_path, ei->path))
 			return true;
 	}
 	if (ei->script && ei->script->path) {
-		if (strset_contains(suppress_image_exec_by_path,
-		                    ei->script->path))
+		if (strset_contains(by_path, ei->script->path))
 			return true;
 	}
 	return false;
@@ -461,7 +462,8 @@ image_exec_work(image_exec_t *ei) {
 	}
 	if (ei->flags & EIFLAG_NOLOG)
 		return -1;
-	if (image_exec_filter(ei))
+	if (image_exec_match_suppressions(ei, suppress_image_exec_by_ident,
+	                                      suppress_image_exec_by_path))
 		return -1;
 	return 0;
 }
@@ -920,6 +922,14 @@ procmon_exec(struct timespec *tv,
 	proc->image_exec->argv = argv;
 	proc->image_exec->cwd = cwd;
 	proc->image_exec->prev = prev_image_exec;
+
+	if (proc->image_exec->prev->flags & EIFLAG_NOLOG_KIDS)
+		proc->image_exec->flags |= EIFLAG_NOLOG | EIFLAG_NOLOG_KIDS;
+	else if (image_exec_match_suppressions(proc->image_exec,
+				suppress_image_exec_by_ancestor_ident,
+				suppress_image_exec_by_ancestor_path))
+		proc->image_exec->flags |= EIFLAG_NOLOG_KIDS;
+
 #ifdef DEBUG_REFS
 	fprintf(stderr, "DEBUG_REFS: work_submit(%p)\n",
 	                proc->image_exec);
@@ -1095,6 +1105,10 @@ procmon_init(config_t *cfg) {
 	tommy_list_init(&kqlist);
 	suppress_image_exec_by_ident = &cfg->suppress_image_exec_by_ident;
 	suppress_image_exec_by_path = &cfg->suppress_image_exec_by_path;
+	suppress_image_exec_by_ancestor_ident =
+		&cfg->suppress_image_exec_by_ancestor_ident;
+	suppress_image_exec_by_ancestor_path =
+		&cfg->suppress_image_exec_by_ancestor_path;
 	return 0;
 }
 

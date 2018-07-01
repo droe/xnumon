@@ -47,6 +47,8 @@ typedef struct {
 
 	strset_t suppress_image_exec_by_ident;
 	strset_t suppress_image_exec_by_path;
+	strset_t suppress_image_exec_by_ancestor_ident;
+	strset_t suppress_image_exec_by_ancestor_path;
 	strset_t suppress_process_access_by_subject_ident;
 	strset_t suppress_process_access_by_subject_path;
 } config_t;

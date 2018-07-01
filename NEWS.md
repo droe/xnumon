@@ -14,6 +14,9 @@ Configuration changes:
     `suppress_process_access_by_path` to
     `suppress_process_access_by_subject_ident` and
     `suppress_process_access_by_subject_path` for clarity.
+-   Add `suppress_image_exec_by_ancestor_ident` and
+    `suppress_image_exec_by_ancestor_path` to facilitate suppressing all
+    child images of an image.
 -   Add `omit_apple_hashes` config option to omit hashes for Apple-signed
     binaries, enabled by default (issue #2).
 
