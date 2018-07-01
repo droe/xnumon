@@ -76,6 +76,11 @@ process_access_filter(process_access_t *pa) {
 		                    ie->path))
 			return true;
 	}
+	if (ie->script && ie->script->path) {
+		if (strset_contains(suppress_process_access_by_path,
+		                    ie->script->path))
+			return true;
+	}
 	return false;
 }
 

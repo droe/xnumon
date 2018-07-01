@@ -424,7 +424,13 @@ image_exec_filter(image_exec_t *ei) {
 			return true;
 	}
 	if (ei->path) {
-		if (strset_contains(suppress_image_exec_by_path, ei->path))
+		if (strset_contains(suppress_image_exec_by_path,
+		                    ei->path))
+			return true;
+	}
+	if (ei->script && ei->script->path) {
+		if (strset_contains(suppress_image_exec_by_path,
+		                    ei->script->path))
 			return true;
 	}
 	return false;

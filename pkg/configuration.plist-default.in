@@ -228,8 +228,8 @@
   </array>
 
   <!-- Suppress exec image events by path:
-       Execution of images whose path matches this list will not generate
-       image-exec[3] events.
+       Execution of images whose image path or script path matches this list
+       will not generate image-exec[3] events.
        In order to not lose relationship information, it is recommended to not
        disable ancestors completely when suppressing image exec events.
        It is generally preferable to use suppress_image_exec_by_ident instead,

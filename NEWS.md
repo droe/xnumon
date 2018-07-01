@@ -1,6 +1,8 @@
 ### xnumon develop
 
 -   Fix ancestors default if not set from 0 back to unlimited as documented.
+-   Suppressions by path now also match the script path, not only the image or
+    interpreter path.
 -   Streamlined code signature information now includes developer ID and
     team ID instead of the full certificate chain, which results in lower heap
     usage and lower log volume for essentially the same information.
