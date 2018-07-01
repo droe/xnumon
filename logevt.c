@@ -121,12 +121,12 @@ logevt_xnumon_ops(logfmt_t *fmt, FILE *f, void *arg0) {
 	fmt->value_uint(f, strset_size(&config->suppress_image_exec_by_ident));
 	fmt->dict_item(f, "suppress_image_exec_by_path");
 	fmt->value_uint(f, strset_size(&config->suppress_image_exec_by_path));
-	fmt->dict_item(f, "suppress_process_access_by_ident");
+	fmt->dict_item(f, "suppress_process_access_by_subject_ident");
 	fmt->value_uint(f,
-	                strset_size(&config->suppress_process_access_by_ident));
-	fmt->dict_item(f, "suppress_process_access_by_path");
+		strset_size(&config->suppress_process_access_by_subject_ident));
+	fmt->dict_item(f, "suppress_process_access_by_subject_path");
 	fmt->value_uint(f,
-	                strset_size(&config->suppress_process_access_by_path));
+		strset_size(&config->suppress_process_access_by_subject_path));
 	fmt->dict_end(f); /* config */
 
 	fmt->dict_item(f, "system");

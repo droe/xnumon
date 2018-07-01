@@ -7,8 +7,18 @@
     team ID instead of the full certificate chain, which results in lower heap
     usage and lower log volume for essentially the same information.
 -   Verify that signatures on Apple binaries are anchored at the Apple root.
+
+Configuration changes:
+
+-   Rename `suppress_process_access_by_ident` and
+    `suppress_process_access_by_path` to
+    `suppress_process_access_by_subject_ident` and
+    `suppress_process_access_by_subject_path` for clarity.
 -   Add `omit_apple_hashes` config option to omit hashes for Apple-signed
     binaries, enabled by default (issue #2).
+
+Event schema changes:
+
 -   Event schema version increased to 3.  Changes affect all eventcodes.
     Eventcode 1 removed evtloop.needargv, evtloop.needcwd, evtloop.needpath.
     Eventcode 1 added evtloop.radar38845784, evtloop.radar38845422_fatal,
@@ -24,12 +34,18 @@
 -   Fix handling of `ptrace` and `task_for_pid` audit events for pid 0 or -1.
 -   Fix default hash if unspecified to be sha256 as documented in the default
     config.
+
+Configuration changes:
+
 -   Add `events` config option to configure the desired eventcodes (issue #1).
 -   Add `stats_interval` config option to control how often xnumon-stats[1]
     events are generated.
 -   Add `debug` config option to control whether debug messages are logged to
     stderr.
 -   Add `reload|restart` target to `xnumonctl`, rename `logstats` to `event1`.
+
+Event schema changes:
+
 -   Event schema version increased to 2.  Changes affect eventcodes 0 and 1.
     Eventcode 0 added config.events, config.stats_interval, config.debug.
     Eventcode 1 removed evtloop.pathbugs, procmon.cwdmiss, procmon.eimiss;

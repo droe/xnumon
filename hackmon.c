@@ -26,8 +26,8 @@ static uint64_t events_received;    /* number of events received */
 static uint64_t events_processed;   /* number of events processed */
 static atomic64_t ooms;             /* counts events impaired due to OOM */
 
-strset_t *suppress_process_access_by_ident;
-strset_t *suppress_process_access_by_path;
+strset_t *suppress_process_access_by_subject_ident;
+strset_t *suppress_process_access_by_subject_path;
 
 static void process_access_free(process_access_t *);
 static int process_access_work(process_access_t *);
@@ -67,17 +67,17 @@ process_access_filter(process_access_t *pa) {
 	ie = pa->subject_image_exec;
 	if (ie->codesign && ie->codesign->ident) {
 		/* presence of ident implies that signature is good */
-		if (strset_contains(suppress_process_access_by_ident,
+		if (strset_contains(suppress_process_access_by_subject_ident,
 		                    ie->codesign->ident))
 			return true;
 	}
 	if (ie->path) {
-		if (strset_contains(suppress_process_access_by_path,
+		if (strset_contains(suppress_process_access_by_subject_path,
 		                    ie->path))
 			return true;
 	}
 	if (ie->script && ie->script->path) {
-		if (strset_contains(suppress_process_access_by_path,
+		if (strset_contains(suppress_process_access_by_subject_path,
 		                    ie->script->path))
 			return true;
 	}
@@ -166,10 +166,10 @@ hackmon_init(config_t *cfg) {
 	ooms = 0;
 	events_received = 0;
 	events_processed = 0;
-	suppress_process_access_by_ident =
-		&cfg->suppress_process_access_by_ident;
-	suppress_process_access_by_path =
-		&cfg->suppress_process_access_by_path;
+	suppress_process_access_by_subject_ident =
+		&cfg->suppress_process_access_by_subject_ident;
+	suppress_process_access_by_subject_path =
+		&cfg->suppress_process_access_by_subject_path;
 }
 
 void
