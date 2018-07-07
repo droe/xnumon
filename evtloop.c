@@ -19,6 +19,7 @@
 #include "str.h"
 #include "time.h"
 #include "os.h"
+#include "debug.h"
 #include "attrib.h"
 
 #include <stdint.h>

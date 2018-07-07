@@ -19,6 +19,7 @@
 #include "codesign.h"
 #include "log.h"
 #include "logevt.h"
+#include "debug.h"
 #include "attrib.h"
 
 #include <unistd.h>
