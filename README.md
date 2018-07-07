@@ -120,6 +120,25 @@ Building signed binary packages requires `pandoc` and an Installer Developer ID
 certificate from Apple.
 
 
+## Debugging
+
+Use the metrics in eventcode 1 events to monitor xnumon internals, possibly
+reducing the interval it gets generated in the configuration.
+
+Enable `debug` in the configuration and run `xnumonctl logstderr` to change
+the launchd plist for xnumon to send stderr to `/var/log/xnumon.stderr`.
+This will allow you to get context information for fatal events that would
+otherwise only be visible in one of the eventcode 1 metrics.
+
+For short-term debugging during development you can also just unload xnumon
+using `xnumonctl unload` and run xnumon with `-o debug=true` on the command
+line.
+
+Pass `DEBUG=1` to make in order to build a debug version of xnumon that
+includes symbols and optionally has additional debugging code.  See make file
+for details.
+
+
 ## Copyright and License
 
 Copyright (c) 2017-2018, [Daniel Roethlisberger](//daniel.roe.ch/).  
