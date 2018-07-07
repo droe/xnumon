@@ -13,6 +13,7 @@
 
 #include "attrib.h"
 
+#include <sys/types.h>
 #include <stdbool.h>
 
 typedef struct {
@@ -24,6 +25,8 @@ typedef struct {
 #define CODESIGN_RESULT_APPLE          16 /* set for com.apple binaries */
 	long error;
 	char *ident;
+	unsigned char *cdhash;
+	size_t cdhashsz;
 	char *teamid;
 	char *devid;
 } codesign_t;

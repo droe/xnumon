@@ -3,9 +3,11 @@
 -   Fix ancestors default if not set from 0 back to unlimited as documented.
 -   Suppressions by path now also match the script path, not only the image or
     interpreter path.
--   Streamlined code signature information now includes developer ID and
-    team ID instead of the full certificate chain, which results in lower heap
-    usage and lower log volume for essentially the same information.
+-   Streamlined signer information from code signatures now includes
+    developer ID and team ID instead of the full certificate chain, which
+    results in lower heap usage and lower log volume for essentially the same
+    information.
+-   Extract CDHash from code signatures (issue #21).
 -   Verify that signatures on Apple binaries are anchored at the Apple root.
 
 Configuration changes:
@@ -30,6 +32,7 @@ Event schema changes:
 -   Eventcode 2 replaced `image.codesign.result`, `image.codesign.cert`,
     `image.codesign.chain` with `image.signature`, `image.teamid` and
     `image.devid`.
+-   Eventcode 2 added `image.cdhash`.
 -   All eventcodes added `subject.image.teamid` and
     `subject.ancestors[].teamid`.
 

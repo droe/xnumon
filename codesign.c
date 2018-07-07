@@ -22,6 +22,8 @@ void
 codesign_free(codesign_t *cs) {
 	if (cs->ident)
 		free(cs->ident);
+	if (cs->cdhash)
+		free(cs->cdhash);
 	if (cs->teamid)
 		free(cs->teamid);
 	if (cs->devid)
@@ -44,6 +46,13 @@ codesign_dup(const codesign_t *other) {
 		cs->ident = strdup(other->ident);
 		if (!cs->ident)
 			goto errout;
+	}
+	if (other->cdhash) {
+		cs->cdhashsz = other->cdhashsz;
+		cs->cdhash = malloc(cs->cdhashsz);
+		if (!cs->cdhash)
+			goto errout;
+		memcpy(cs->cdhash, other->cdhash, cs->cdhashsz);
 	}
 	if (other->teamid) {
 		cs->teamid = strdup(other->teamid);
@@ -176,10 +185,23 @@ codesign_new(const char *cpath) {
 		CFRelease(dict);
 		free(cs->ident);
 		cs->ident = NULL;
-		cs->result = CODESIGN_RESULT_BAD;
+		cs->result = CODESIGN_RESULT_BAD; /* also clears _APPLE */
 		return cs;
 	}
 
+	/* extract CDHash */
+	CFDataRef cdhash = CFDictionaryGetValue(dict, kSecCodeInfoUnique);
+	if (cdhash && cf_is_data(cdhash)) {
+		cs->cdhashsz = CFDataGetLength(cdhash);
+		cs->cdhash = malloc(cs->cdhashsz);
+		if (!cs->cdhash) {
+			CFRelease(dict);
+			goto enomemout;
+		}
+		memcpy(cs->cdhash, CFDataGetBytePtr(cdhash), cs->cdhashsz);
+	}
+
+	/* Apple binaries have no Team ID or Developer ID */
 	if (cs->result & CODESIGN_RESULT_APPLE)
 		goto out;
 
@@ -195,7 +217,8 @@ codesign_new(const char *cpath) {
 	}
 
 	/* extract Developer ID from CN of first certificate in chain */
-	CFArrayRef chain = CFDictionaryGetValue(dict, kSecCodeInfoCertificates);
+	CFArrayRef chain = CFDictionaryGetValue(dict,
+	                                        kSecCodeInfoCertificates);
 	if (chain && cf_is_array(chain) && CFArrayGetCount(chain) >= 1) {
 		SecCertificateRef crt =
 		        (SecCertificateRef)CFArrayGetValueAtIndex(chain, 0);
@@ -247,6 +270,8 @@ codesign_result_s(codesign_t *cs) {
 /*
  * Returns true iff the code signature is a genuine Apple binary, i.e. code
  * originating at Apple, not from developers part of the Developer ID program.
+ * CODESIGN_RESULT_APPLE should only be set on good signatures, but for defense
+ * in depth we are testing both flags anyway.
  */
 bool
 codesign_is_apple(codesign_t *cs) {

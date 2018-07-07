@@ -399,6 +399,11 @@ logevt_image_exec_image(logfmt_t *fmt, FILE *f, image_exec_t *ei) {
 			fmt->dict_item(f, "ident");
 			fmt->value_string(f, ei->codesign->ident);
 		}
+		if (ei->codesign->cdhash) {
+			fmt->dict_item(f, "cdhash");
+			fmt->value_buf_hex(f, ei->codesign->cdhash,
+			                      ei->codesign->cdhashsz);
+		}
 		if (ei->codesign->teamid) {
 			fmt->dict_item(f, "teamid");
 			fmt->value_string(f, ei->codesign->teamid);

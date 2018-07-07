@@ -26,6 +26,11 @@ cf_is_string(CFTypeRef unknown) {
 }
 
 bool
+cf_is_data(CFTypeRef unknown) {
+	return (CFDataGetTypeID() == CFGetTypeID(unknown));
+}
+
+bool
 cf_is_array(CFTypeRef unknown) {
 	return (CFArrayGetTypeID() == CFGetTypeID(unknown));
 }
