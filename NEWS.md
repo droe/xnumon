@@ -23,14 +23,17 @@ Configuration changes:
 Event schema changes:
 
 -   Event schema version increased to 3.  Changes affect all eventcodes.
-    Eventcode 1 removed evtloop.needargv, evtloop.needcwd, evtloop.needpath.
-    Eventcode 1 added evtloop.radar38845784, evtloop.radar38845422_fatal,
-    evtloop.radar39267328_fatal, evtloop.radar39623812_fatal,
-    evtloop.missingtoken.
-    Eventcode 2 removed image.codesign.result, image.codesign.cert,
-    image.codesign.chain; added image.signature, image.teamid, image.devid.
-    All eventcodes added subject.image.teamid, subject.ancestors[].teamid.
+-   Eventcode 1 replaced `evtloop.needargv`, `evtloop.needcwd` and
+    `evtloop.needpath` with `evtloop.radar38845422_fatal`,
+    `evtloop.radar39267328_fatal` and `evtloop.radar39623812_fatal`.
+-   Eventcode 1 added `evtloop.missingtoken` and `evtloop.radar38845784`.
+-   Eventcode 2 replaced `image.codesign.result`, `image.codesign.cert`,
+    `image.codesign.chain` with `image.signature`, `image.teamid` and
+    `image.devid`.
+-   All eventcodes added `subject.image.teamid` and
+    `subject.ancestors[].teamid`.
 
+---
 
 ### xnumon 0.1.2 2018-06-24
 
@@ -57,6 +60,7 @@ Event schema changes:
     procmon.miss.forksubj, procmon.miss.execsubj, procmon.miss.execinterp,
     procmon.miss.chdirsubj, procmon.miss.getcwd.
 
+---
 
 ### xnumon 0.1.1 2018-06-17
 
@@ -67,6 +71,7 @@ Event schema changes:
 -   Fix installer package scripts for installing on external disks.
 -   Harden permissions on default configuration file and directory.
 
+---
 
 ### xnumon 0.1.0 2018-06-15
 
