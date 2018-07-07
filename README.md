@@ -20,7 +20,7 @@ Currently implemented are the following log events:
 -   **process-access[3]**: a process has accessed and possibly manipulated
     another process using either the task_for_pid or ptrace(2) syscalls.
 -   **launchd-add[4]**: a process has added or modified a launch daemon or
-    launch agent plist.
+    launch agent plist. (experimental)
 
 xnumon provides context information such as executable image hashes, code
 signing meta-data, script shebang handling, and the history of previous
