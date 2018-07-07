@@ -118,12 +118,14 @@ static int
 config_set_bool(bool *b, const char *value) {
 	if (!strcmp(value, "true")
 	 || !strcmp(value, "yes")
+	 || !strcmp(value, "y")
 	 || !strcmp(value, "1")) {
 		*b = true;
 		return 0;
 	}
 	if (!strcmp(value, "false")
 	 || !strcmp(value, "no")
+	 || !strcmp(value, "n")
 	 || !strcmp(value, "0")) {
 		*b = false;
 		return 0;
