@@ -1,6 +1,7 @@
 ### xnumon develop
 
--   Fix ancestors default if not set from 0 back to unlimited as documented.
+-   Fix ancestors default if not set from 0 back to unlimited as documented and
+    omit ancestors array entirely if ancestors is 0.
 -   Suppressions by path now also match the script path, not only the image or
     interpreter path.
 -   Streamlined signer information from code signatures now includes

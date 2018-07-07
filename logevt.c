@@ -530,8 +530,10 @@ logevt_process(logfmt_t *fmt, FILE *f,
 	if (ie) {
 		fmt->dict_item(f, "image");
 		logevt_process_image_exec(fmt, f, ie);
-		fmt->dict_item(f, "ancestors");
-		logevt_process_image_exec_ancestors(fmt, f, ie->prev);
+		if (config->ancestors > 0) {
+			fmt->dict_item(f, "ancestors");
+			logevt_process_image_exec_ancestors(fmt, f, ie->prev);
+		}
 	}
 	fmt->dict_end(f); /* process */
 }
