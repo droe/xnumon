@@ -1,14 +1,19 @@
-### xnumon develop
+### xnumon 0.1.3 2018-07-07
 
 -   Fix ancestors default if not set from 0 back to unlimited as documented and
     omit ancestors array entirely if ancestors is 0.
 -   Suppressions by path now also match the script path, not only the image or
     interpreter path.
+-   Add ability to suppress child image exec events by ancestor ident or path
+    in order to be able to suppress noisy things like MacPorts builds
+    (issue #22).
 -   Streamlined signer information from code signatures now includes
     developer ID and team ID instead of the full certificate chain, which
     results in lower heap usage and lower log volume for essentially the same
-    information.
+    information (issue #20).
 -   Extract CDHash from code signatures (issue #21).
+-   Add ability to omit hashes for Apple-signed binaries, enabled by default
+    (issue #2).
 -   Verify that signatures on Apple binaries are anchored at the Apple root.
 
 Configuration changes:
@@ -16,12 +21,10 @@ Configuration changes:
 -   Rename `suppress_process_access_by_ident` and
     `suppress_process_access_by_path` to
     `suppress_process_access_by_subject_ident` and
-    `suppress_process_access_by_subject_path` for clarity.
+    `suppress_process_access_by_subject_path`.
 -   Add `suppress_image_exec_by_ancestor_ident` and
-    `suppress_image_exec_by_ancestor_path` to facilitate suppressing all
-    child images of an image.
--   Add `omit_apple_hashes` config option to omit hashes for Apple-signed
-    binaries, enabled by default (issue #2).
+    `suppress_image_exec_by_ancestor_path`.
+-   Add `omit_apple_hashes`.
 
 Event schema changes:
 
