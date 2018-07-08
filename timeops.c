@@ -189,7 +189,11 @@ main(int argc, char *argv[]) {
 	}
 
 	const char *paths[] = {
+#if 1
 		"/usr/sbin/php-fpm",
+#else
+		"/Applications/Microsoft Word.app/Contents/MacOS/Microsoft Word",
+#endif
 		"/usr/sbin/coreaudiod",
 		"/usr/sbin/mkpassdb",
 		"/usr/bin/iotop"
