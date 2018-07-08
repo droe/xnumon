@@ -583,24 +583,24 @@ siginfo_arrived(UNUSED int sig, UNUSED void *udata) {
 
 	fprintf(stderr, "evtloop "
 	                "aueunknown:%"PRIu64" "
-	                "failedsyscalls:%"PRIu64"\n        "
-	                "radar38845422:%"PRIu64"/%"PRIu64" "
-	                "radar38845784:0/%"PRIu64" "
-	                "radar39267328:%"PRIu64"/%"PRIu64" "
-	                "radar39623812:%"PRIu64"/%"PRIu64"\n        "
+	                "failedsyscalls:%"PRIu64" "
 	                "missingtoken:%"PRIu64" "
-	                "oom:%"PRIu64"\n",
+	                "oom:%"PRIu64"\n        "
+	                "r38845422:%"PRIu64"/%"PRIu64" "
+	                "r38845784:0/%"PRIu64" "
+	                "r39267328:%"PRIu64"/%"PRIu64" "
+	                "r39623812:%"PRIu64"/%"PRIu64"\n",
 	                st.el_aueunknowns,
 	                st.el_failedsyscalls,
+	                st.el_missingtoken,
+	                st.el_ooms,
 	                st.el_radar38845422_fatal,
 	                st.el_radar38845422,
 	                st.el_radar38845784,
 	                st.el_radar39267328_fatal,
 	                st.el_radar39267328,
 	                st.el_radar39623812_fatal,
-	                st.el_radar39623812,
-	                st.el_missingtoken,
-	                st.el_ooms);
+	                st.el_radar39623812);
 
 	fprintf(stderr, "procmon "
 	                "actprocs:%"PRIu32" "
@@ -685,11 +685,11 @@ siginfo_arrived(UNUSED int sig, UNUSED void *udata) {
 
 	fprintf(stderr, "log  queue "
 	                "buckets:%"PRIu32"/~ "
+	                "[0]:%"PRIu64" "
 	                "[1]:%"PRIu64" "
 	                "[2]:%"PRIu64" "
 	                "[3]:%"PRIu64" "
 	                "[4]:%"PRIu64" "
-	                "[5]:%"PRIu64" "
 	                "err:%"PRIu64"\n",
 	                st.lq.qsize,
 	                st.lq.counts[LOGEVT_XNUMON_OPS],
