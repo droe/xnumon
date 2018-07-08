@@ -444,7 +444,6 @@ skip_rec:
 	return 0;
 }
 
-#ifdef DEBUG_AUDITPIPE
 void
 auevent_fprint(FILE *f, audit_event_t *ev) {
 	struct au_event_ent *aue_ent;
@@ -495,9 +494,14 @@ auevent_fprint(FILE *f, audit_event_t *ev) {
 	}
 	for (int i = 0; i < ev->args_count; i++) {
 		if (ev->args[i].present) {
+#ifdef DEBUG_AUDITPIPE
 			fprintf(f, " args[%i:%s]=%"PRIu64, i,
 			        ev->args[i].text,
 			        ev->args[i].value);
+#else
+			fprintf(f, " args[%i]=%"PRIu64, i,
+			        ev->args[i].value);
+#endif
 		}
 	}
 	if (ev->return_present) {
@@ -544,7 +548,6 @@ auevent_fprint(FILE *f, audit_event_t *ev) {
 	}
 	fprintf(f, "\n");
 }
-#endif /* DEBUG_AUDITPIPE */
 
 void
 auevent_init(audit_event_t *ev) {

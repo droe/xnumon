@@ -90,9 +90,7 @@ typedef struct {
 void auevent_init(audit_event_t *) NONNULL(1);
 ssize_t auevent_fread(audit_event_t *ev, const uint16_t[], FILE *) NONNULL(1,3);
 void auevent_destroy(audit_event_t *) NONNULL(1);
-#ifdef DEBUG_AUDITPIPE
 void auevent_fprint(FILE *, audit_event_t *) NONNULL(1,2);
-#endif
 
 #endif
 
