@@ -91,6 +91,8 @@ kextctl_readable(int fd, UNUSED void *udata) {
 		missingtoken++; \
 		DEBUG(cfg->debug, "missingtoken", \
 		      "event=" EVENT " token=" TOKEN); \
+		if (cfg->debug) \
+			auevent_fprint(stderr, &ev); \
 		break; \
 	}
 static int
@@ -429,6 +431,8 @@ auef_readable(UNUSED int fd, void *udata) {
 			missingtoken++;
 			DEBUG(cfg->debug, "missingtoken",
 			      "event=utimes token=path");
+			if (cfg->debug)
+				auevent_fprint(stderr, &ev);
 		}
 		if (!path)
 			/* counted above */
@@ -488,7 +492,10 @@ auef_readable(UNUSED int fd, void *udata) {
 			path = NULL;
 			missingtoken++;
 			DEBUG(cfg->debug, "missingtoken",
-			      "event=rename token=path");
+			      "event=rename%s token=path",
+			      (ev.type == AUE_RENAMEAT ? "at" : ""));
+			if (cfg->debug)
+				auevent_fprint(stderr, &ev);
 		}
 		if (!path)
 			/* counted above */
