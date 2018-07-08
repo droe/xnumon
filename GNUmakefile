@@ -33,8 +33,11 @@ endif
 CPPFLAGS+=	$(FEATURES)
 ifndef DEBUG
 CPPFLAGS+=	-DNDEBUG
+CFLAGS+=	-O3
+LDFLAGS+=	-O3
 else
 CFLAGS+=	-g
+LDFLAGS+=	-g
 endif
 
 ifdef MACOSX_VERSION_MIN
