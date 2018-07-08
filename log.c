@@ -43,9 +43,10 @@ _Static_assert(LOGEVT_SIZE == 5, "number of logevt types initialized above");
 /*
  * Log formats.
  */
-#define LOGFMTS 2
+#define LOGFMTS 3
 static logfmt_t *logfmttab[LOGFMTS] = {
 	&logfmtjson,
+	&logfmtjsonseq,
 	&logfmtyaml
 };
 

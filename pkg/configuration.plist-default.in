@@ -29,6 +29,9 @@
   <!-- Log format:
        json         JSON objects separated by newlines.  Equivalent to JSON
                     Lines format if used in oneline mode.
+       json-seq     RFC 7464 JSON text sequence format.  JSON objects are each
+                    prefixed by an ASCII Record Separator and terminated by an
+                    ASCII Line Feed character.
        yaml         YAML documents.  Only supports multiline mode.
        If unset, defaults to:   json
        -->

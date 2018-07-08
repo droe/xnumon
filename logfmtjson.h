@@ -14,6 +14,7 @@
 #include "logfmt.h"
 
 logfmt_t logfmtjson;
+logfmt_t logfmtjsonseq;
 
 #endif
 

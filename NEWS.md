@@ -1,5 +1,9 @@
 ### xnumon develop
 
+-   Add `json-seq` log format, as defined in RFC 7464:  JSON objects are each
+    prefixed by an ASCII Record Separator and terminated by an ASCII Line Feed
+    character (issue #13).
+
 ---
 
 ### xnumon 0.1.3 2018-07-07

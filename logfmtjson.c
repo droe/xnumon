@@ -69,6 +69,11 @@ logfmtjson_record_begin(UNUSED FILE *f) {
 }
 
 static void
+logfmtjsonseq_record_begin(FILE *f) {
+	fprintf(f, "\x1E");
+}
+
+static void
 logfmtjson_record_end(FILE *f) {
 	fprintf(f, "\n");
 }
@@ -206,6 +211,28 @@ logfmt_t logfmtjson = {
 	"json", 1, 1,
 	logfmtjson_init,
 	logfmtjson_record_begin,
+	logfmtjson_record_end,
+	logfmtjson_dict_begin,
+	logfmtjson_dict_end,
+	logfmtjson_dict_item,
+	logfmtjson_list_begin,
+	logfmtjson_list_end,
+	logfmtjson_list_item,
+	logfmtjson_value_null,
+	logfmtjson_value_bool,
+	logfmtjson_value_int,
+	logfmtjson_value_uint,
+	logfmtjson_value_uint_oct,
+	logfmtjson_value_timespec,
+	logfmtjson_value_ttydev,
+	logfmtjson_value_buf_hex,
+	logfmtjson_value_string
+};
+
+logfmt_t logfmtjsonseq = {
+	"json-seq", 1, 1,
+	logfmtjson_init,
+	logfmtjsonseq_record_begin,
 	logfmtjson_record_end,
 	logfmtjson_dict_begin,
 	logfmtjson_dict_end,
