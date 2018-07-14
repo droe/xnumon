@@ -103,19 +103,19 @@ fetch: $(EXTSRCS)
 
 map.h:
 	wget $(GITHUBRAW)/swansontec/map-macro/$(MAPTAG)/$@
-	xattr -d user.xdg.origin.url $@
+	xattr -c $@
 
 memstream.h memstream.c:
 	wget http://piumarta.com/software/memstream/memstream-0.1/$@
-	xattr -d user.xdg.origin.url $@
+	xattr -c $@
 
 tommy%.h:
 	wget $(GITHUBRAW)/amadvance/tommyds/$(TOMMYTAG)/tommyds/$@
-	xattr -d user.xdg.origin.url $@
+	xattr -c $@
 
 tommy%.c:
 	wget $(GITHUBRAW)/amadvance/tommyds/$(TOMMYTAG)/tommyds/$@
-	xattr -d user.xdg.origin.url $@
+	xattr -c $@
 
 clean:
 	rm -rf $(TARGETS) *.signed *.o *.dSYM
