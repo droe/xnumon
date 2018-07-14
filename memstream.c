@@ -46,7 +46,7 @@
 
 #include "memstream.h"
 
-#ifdef WANT_MEMSTREAM
+#if _POSIX_C_SOURCE < 200809L
 
 #include <stddef.h>
 #include <stdlib.h>
@@ -174,4 +174,4 @@ FILE *open_memstream(char **ptr, size_t *sizeloc)
     return 0;
 }
 
-#endif /* WANT_MEMSTREAM */
+#endif /* _POSIX_C_SOURCE < 200809L */
