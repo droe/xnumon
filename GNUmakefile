@@ -126,6 +126,8 @@ kext:
 kextclean:
 	$(MAKE) -C kext clean
 
+travis: all kext
+
 pkg: $(PKGNAME)-$(BUILD_VERSION).pkg
 
 LICENSE_HTML_SRCS:=	pkg/resources/license.header.html \
