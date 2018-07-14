@@ -46,7 +46,10 @@ endif
 CFLAGS+=	-arch x86_64
 CFLAGS+=	-std=c11 \
 		-Wall -Wextra -pedantic
+#ifdnef DEBUG
+CFLAGS+=	-Wno-unknown-pragmas # open_memstream
 CFLAGS+=	-Wno-gnu # minmax.h
+#endif
 CFLAGS+=	-D_FORTIFY_SOURCE=2 -fstack-protector-all
 
 ifdef MACOSX_VERSION_MIN

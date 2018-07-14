@@ -25,7 +25,10 @@ static size_t sz;
 
 FILE *
 logdstsyslog_open(void) {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunguarded-availability"
 	return open_memstream(&msg, &sz);
+#pragma clang diagnostic pop
 }
 
 int

@@ -92,7 +92,10 @@ config_events_s(config_t *cfg) {
 	size_t sz;
 	FILE *f;
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunguarded-availability"
 	f = open_memstream(&msg, &sz);
+#pragma clang diagnostic pop
 	if (!f)
 		return NULL;
 
