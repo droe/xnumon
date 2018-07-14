@@ -3,6 +3,7 @@
 -   Add `json-seq` log format, as defined in RFC 7464:  JSON objects are each
     prefixed by an ASCII Record Separator and terminated by an ASCII Line Feed
     character (issue #13).
+-   Use travis-ci.com for continuous integration on supported macOS versions.
 
 ---
 
