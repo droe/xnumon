@@ -130,6 +130,7 @@ kextclean:
 	$(MAKE) -C kext clean
 
 travis: all kext
+	./xnumon -V
 
 pkg: $(PKGNAME)-$(BUILD_VERSION).pkg
 

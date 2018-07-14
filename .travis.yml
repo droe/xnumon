@@ -1,6 +1,6 @@
 language: c
 os: osx
-script: make travis && ./xnumon -V
+script: make travis
 matrix:
   include:
     - os: osx
