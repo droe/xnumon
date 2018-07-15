@@ -352,65 +352,65 @@ logevt_xnumon_stats(logfmt_t *fmt, FILE *f, void *arg0) {
 }
 
 static void
-logevt_image_exec_image(logfmt_t *fmt, FILE *f, image_exec_t *ei) {
+logevt_image_exec_image(logfmt_t *fmt, FILE *f, image_exec_t *ie) {
 	fmt->dict_begin(f);
 	fmt->dict_item(f, "path");
-	fmt->value_string(f, ei->path);
-	if (ei->flags & (EIFLAG_STAT|EIFLAG_ATTR)) {
+	fmt->value_string(f, ie->path);
+	if (ie->flags & (EIFLAG_STAT|EIFLAG_ATTR)) {
 		fmt->dict_item(f, "mode");
-		fmt->value_uint_oct(f, ei->stat.mode);
+		fmt->value_uint_oct(f, ie->stat.mode);
 		fmt->dict_item(f, "uid");
-		fmt->value_uint(f, ei->stat.uid);
+		fmt->value_uint(f, ie->stat.uid);
 		fmt->dict_item(f, "gid");
-		fmt->value_uint(f, ei->stat.gid);
+		fmt->value_uint(f, ie->stat.gid);
 	}
-	if (ei->flags & EIFLAG_STAT) {
+	if (ie->flags & EIFLAG_STAT) {
 		fmt->dict_item(f, "size");
-		fmt->value_uint(f, ei->stat.size);
+		fmt->value_uint(f, ie->stat.size);
 		fmt->dict_item(f, "mtime");
-		fmt->value_timespec(f, &ei->stat.mtime);
+		fmt->value_timespec(f, &ie->stat.mtime);
 		fmt->dict_item(f, "ctime");
-		fmt->value_timespec(f, &ei->stat.ctime);
+		fmt->value_timespec(f, &ie->stat.ctime);
 		fmt->dict_item(f, "btime");
-		fmt->value_timespec(f, &ei->stat.btime);
+		fmt->value_timespec(f, &ie->stat.btime);
 	}
-	if ((ei->flags & EIFLAG_HASHES) &&
+	if ((ie->flags & EIFLAG_HASHES) &&
 	    (!config->omit_apple_hashes ||
-	     !ei->codesign ||
-	     !codesign_is_apple(ei->codesign))) {
+	     !ie->codesign ||
+	     !codesign_is_apple(ie->codesign))) {
 		if (config->hflags & HASH_MD5) {
 			fmt->dict_item(f, "md5");
-			fmt->value_buf_hex(f, ei->hashes.md5, MD5SZ);
+			fmt->value_buf_hex(f, ie->hashes.md5, MD5SZ);
 		}
 		if (config->hflags & HASH_SHA1) {
 			fmt->dict_item(f, "sha1");
-			fmt->value_buf_hex(f, ei->hashes.sha1, SHA1SZ);
+			fmt->value_buf_hex(f, ie->hashes.sha1, SHA1SZ);
 		}
 		if (config->hflags & HASH_SHA256) {
 			fmt->dict_item(f, "sha256");
-			fmt->value_buf_hex(f, ei->hashes.sha256, SHA256SZ);
+			fmt->value_buf_hex(f, ie->hashes.sha256, SHA256SZ);
 		}
 	}
 
-	if (ei->codesign) {
+	if (ie->codesign) {
 		fmt->dict_item(f, "signature");
-		fmt->value_string(f, codesign_result_s(ei->codesign));
-		if (ei->codesign->ident) {
+		fmt->value_string(f, codesign_result_s(ie->codesign));
+		if (ie->codesign->ident) {
 			fmt->dict_item(f, "ident");
-			fmt->value_string(f, ei->codesign->ident);
+			fmt->value_string(f, ie->codesign->ident);
 		}
-		if (ei->codesign->cdhash) {
+		if (ie->codesign->cdhash) {
 			fmt->dict_item(f, "cdhash");
-			fmt->value_buf_hex(f, ei->codesign->cdhash,
-			                      ei->codesign->cdhashsz);
+			fmt->value_buf_hex(f, ie->codesign->cdhash,
+			                      ie->codesign->cdhashsz);
 		}
-		if (ei->codesign->teamid) {
+		if (ie->codesign->teamid) {
 			fmt->dict_item(f, "teamid");
-			fmt->value_string(f, ei->codesign->teamid);
+			fmt->value_string(f, ie->codesign->teamid);
 		}
-		if (ei->codesign->devid) {
+		if (ie->codesign->devid) {
 			fmt->dict_item(f, "devid");
-			fmt->value_string(f, ei->codesign->devid);
+			fmt->value_string(f, ie->codesign->devid);
 		}
 	}
 	fmt->dict_end(f); /* image */
@@ -540,38 +540,38 @@ logevt_process(logfmt_t *fmt, FILE *f,
 
 int
 logevt_image_exec(logfmt_t *fmt, FILE *f, void *arg0) {
-	image_exec_t *ei = (image_exec_t *)arg0;
+	image_exec_t *ie = (image_exec_t *)arg0;
 
 	logevt_header(fmt, f, (logevt_header_t *)arg0);
 
-	if (ei->argv) {
+	if (ie->argv) {
 		fmt->dict_item(f, "argv");
 		fmt->list_begin(f);
-		for (int i = 0; ei->argv[i]; i++) {
+		for (int i = 0; ie->argv[i]; i++) {
 			fmt->list_item(f);
-			fmt->value_string(f, ei->argv[i]);
+			fmt->value_string(f, ie->argv[i]);
 		}
 		fmt->list_end(f); /* argv */
 	}
 
-	if (ei->cwd) {
+	if (ie->cwd) {
 		fmt->dict_item(f, "cwd");
-		fmt->value_string(f, ei->cwd);
+		fmt->value_string(f, ie->cwd);
 	}
 
 	fmt->dict_item(f, "image");
-	logevt_image_exec_image(fmt, f, ei);
+	logevt_image_exec_image(fmt, f, ie);
 
-	if (ei->script) {
+	if (ie->script) {
 		fmt->dict_item(f, "script");
-		logevt_image_exec_image(fmt, f, ei->script);
+		logevt_image_exec_image(fmt, f, ie->script);
 	}
 
 	fmt->dict_item(f, "subject");
 	logevt_process(fmt, f,
-	               (ei->flags & EIFLAG_PIDLOOKUP) ? NULL : &ei->subject,
-	               &ei->fork_tv,
-	               ei->prev);
+	               (ie->flags & EIFLAG_PIDLOOKUP) ? NULL : &ie->subject,
+	               &ie->fork_tv,
+	               ie->prev);
 
 	logevt_footer(fmt, f);
 	return 0;
