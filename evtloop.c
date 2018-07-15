@@ -764,6 +764,18 @@ stats_timer_fired(UNUSED int ident, UNUSED void *udata) {
 static stat_attr_t cfgattr[2];
 
 /*
+ * Capture the initial reference stat of the config file.
+ *
+ * Will be called before any other initialization, so cannot use code that
+ * requires initialization.
+ */
+static void
+config_timer_init(void) {
+	bzero(cfgattr, 2*sizeof(stat_attr_t));
+	(void)config_timer_fired(TIMER_CONFIG, cfg);
+}
+
+/*
  * Called by config timer, every five minutes.
  */
 static int
@@ -839,13 +851,10 @@ evtloop_run(config_t *cfg) {
 		fprintf(stderr, "Failed to load kernel extension\n");
 	}
 
-	if (cfg->launchd_mode) {
-		/* capture reference stat of config file */
-		bzero(cfgattr, 2*sizeof(stat_attr_t));
-		(void)config_timer_fired(TIMER_CONFIG, cfg);
-	}
-
 	/* initialize */
+	if (cfg->launchd_mode) {
+		config_timer_init();
+	}
 	cachehash_init();
 	cachecsig_init();
 	cacheldpl_init();
