@@ -764,18 +764,6 @@ stats_timer_fired(UNUSED int ident, UNUSED void *udata) {
 static stat_attr_t cfgattr[2];
 
 /*
- * Capture the initial reference stat of the config file.
- *
- * Will be called before any other initialization, so cannot use code that
- * requires initialization.
- */
-static void
-config_timer_init(void) {
-	bzero(cfgattr, 2*sizeof(stat_attr_t));
-	(void)config_timer_fired(TIMER_CONFIG, cfg);
-}
-
-/*
  * Called by config timer, every five minutes.
  */
 static int
@@ -800,6 +788,18 @@ config_timer_fired(UNUSED int ident, void *udata) {
 	}
 	cfgattr[0] = cfgattr[1];
 	return 0;
+}
+
+/*
+ * Capture the initial reference stat of the config file.
+ *
+ * Will be called before any other initialization, so cannot use code that
+ * requires initialization.
+ */
+static void
+config_timer_init(config_t *cfg, int ident) {
+	bzero(cfgattr, 2*sizeof(stat_attr_t));
+	(void)config_timer_fired(ident, cfg);
 }
 
 /*
@@ -853,7 +853,7 @@ evtloop_run(config_t *cfg) {
 
 	/* initialize */
 	if (cfg->launchd_mode) {
-		config_timer_init();
+		config_timer_init(cfg, TIMER_CONFIG);
 	}
 	cachehash_init();
 	cachecsig_init();
