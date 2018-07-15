@@ -252,7 +252,7 @@ enomemout:
 
 const char *
 codesign_result_s(codesign_t *cs) {
-	switch (cs->result) {
+	switch (cs->result & CODESIGN_RESULT_MASK) {
 	case CODESIGN_RESULT_UNSIGNED:
 		return "unsigned";
 	case CODESIGN_RESULT_GOOD:

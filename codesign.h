@@ -18,11 +18,12 @@
 
 typedef struct {
 	int result;
-#define CODESIGN_RESULT_UNSIGNED        1
-#define CODESIGN_RESULT_GOOD            2
-#define CODESIGN_RESULT_BAD             4
-#define CODESIGN_RESULT_ERROR           8
-#define CODESIGN_RESULT_APPLE          16 /* set for com.apple binaries */
+#define CODESIGN_RESULT_UNSIGNED      0x01
+#define CODESIGN_RESULT_GOOD          0x02
+#define CODESIGN_RESULT_BAD           0x04
+#define CODESIGN_RESULT_ERROR         0x08
+#define CODESIGN_RESULT_MASK          0x0F /* actual result flags */
+#define CODESIGN_RESULT_APPLE         0x10 /* set for com.apple binaries */
 	long error;
 	char *ident;
 	unsigned char *cdhash;
