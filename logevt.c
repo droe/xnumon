@@ -117,6 +117,8 @@ logevt_xnumon_ops(logfmt_t *fmt, FILE *f, void *arg0) {
 		fmt->value_null(f);
 	fmt->dict_item(f, "limit_nofile");
 	fmt->value_uint(f, config->limit_nofile);
+	fmt->dict_item(f, "suppress_image_exec_at_start");
+	fmt->value_bool(f, config->suppress_image_exec_at_start);
 	fmt->dict_item(f, "suppress_image_exec_by_ident");
 	fmt->value_uint(f, strset_size(&config->suppress_image_exec_by_ident));
 	fmt->dict_item(f, "suppress_image_exec_by_path");
@@ -419,7 +421,7 @@ logevt_image_exec_image(logfmt_t *fmt, FILE *f, image_exec_t *ie) {
 static void
 logevt_process_image_exec(logfmt_t *fmt, FILE *f, image_exec_t *ie) {
 	fmt->dict_begin(f);
-	if (ie->hdr.tv.tv_sec) {
+	if (!(ie->flags & EIFLAG_PIDLOOKUP)) {
 		fmt->dict_item(f, "exec_time");
 		fmt->value_timespec(f, &ie->hdr.tv);
 	}
@@ -501,6 +503,10 @@ logevt_process(logfmt_t *fmt, FILE *f,
                struct timespec *fork_tv,
                image_exec_t *ie) {
 	fmt->dict_begin(f);
+	if (ie->flags & EIFLAG_PIDLOOKUP) {
+		fmt->dict_item(f, "reconstructed");
+		fmt->value_bool(f, true);
+	}
 	if (process) {
 		fmt->dict_item(f, "pid");
 		fmt->value_int(f, process->pid);
@@ -523,7 +529,7 @@ logevt_process(logfmt_t *fmt, FILE *f,
 			fmt->value_string(f, ipaddrtoa(&process->addr, NULL));
 		}
 	}
-	if (fork_tv) {
+	if (fork_tv && fork_tv->tv_sec > 0) {
 		fmt->dict_item(f, "fork_time");
 		fmt->value_timespec(f, fork_tv);
 	}
@@ -543,6 +549,11 @@ logevt_image_exec(logfmt_t *fmt, FILE *f, void *arg0) {
 	image_exec_t *ie = (image_exec_t *)arg0;
 
 	logevt_header(fmt, f, (logevt_header_t *)arg0);
+
+	if (ie->flags & EIFLAG_PIDLOOKUP) {
+		fmt->dict_item(f, "reconstructed");
+		fmt->value_bool(f, true);
+	}
 
 	if (ie->argv) {
 		fmt->dict_item(f, "argv");

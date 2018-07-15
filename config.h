@@ -45,6 +45,7 @@ typedef struct {
 	int logoneline;         /* compact one-line log format */
 	char *logfile;
 
+	bool suppress_image_exec_at_start;
 	strset_t suppress_image_exec_by_ident;
 	strset_t suppress_image_exec_by_path;
 	strset_t suppress_image_exec_by_ancestor_ident;

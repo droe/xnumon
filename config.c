@@ -226,6 +226,13 @@ config_str(config_t *cfg, const char *key, const char *value) {
 		return 0;
 	}
 
+	if (!strcmp(key, "suppress_image_exec_at_start")) {
+		if (config_set_bool(&cfg->suppress_image_exec_at_start,
+		                    value) == -1)
+			return -1;
+		return 0;
+	}
+
 	return -1;
 }
 
@@ -317,6 +324,7 @@ config_new(const char *cfgpath) {
 	cfg->omit_apple_hashes = true;
 	cfg->ancestors = SIZE_MAX;
 	cfg->logoneline = -1; /* any */
+	cfg->suppress_image_exec_at_start = true;
 	if (logfmt_parse(cfg, "json") == -1) {
 		fprintf(stderr, "Failed to set default logfmt 'json'\n");
 		goto errout;
@@ -347,82 +355,89 @@ config_new(const char *cfgpath) {
 	}
 
 	/* String configuration items cannot handle plist==NULL */
-	rv = config_str_from_plist(cfg, "config_id",
-	                           plist, CFSTR("config_id"));
+	rv = config_str_from_plist(cfg, "config_id", plist,
+	                           CFSTR("config_id"));
 	if (rv == -1) {
 		fprintf(stderr, "Failed to load 'config_id'\n");
 		goto errout;
 	}
-	rv = config_str_from_plist(cfg, "log_format",
-	                           plist, CFSTR("log_format"));
+	rv = config_str_from_plist(cfg, "log_format", plist,
+	                           CFSTR("log_format"));
 	if (rv == -1) {
 		fprintf(stderr, "Failed to load 'log_format'\n");
 		goto errout;
 	}
-	rv = config_str_from_plist(cfg, "log_destination",
-	                           plist, CFSTR("log_destination"));
+	rv = config_str_from_plist(cfg, "log_destination", plist,
+	                           CFSTR("log_destination"));
 	if (rv == -1) {
 		fprintf(stderr, "Failed to load 'log_destination'\n");
 		goto errout;
 	}
-	rv = config_str_from_plist(cfg, "log_mode",
-	                           plist, CFSTR("log_mode"));
+	rv = config_str_from_plist(cfg, "log_mode", plist,
+	                           CFSTR("log_mode"));
 	if (rv == -1) {
 		fprintf(stderr, "Failed to load 'log_mode'\n");
 		goto errout;
 	}
-	rv = config_str_from_plist(cfg, "kextlevel",
-	                           plist, CFSTR("kextlevel"));
+	rv = config_str_from_plist(cfg, "kextlevel", plist,
+	                           CFSTR("kextlevel"));
 	if (rv == -1) {
 		fprintf(stderr, "Failed to load 'kextlevel'\n");
 		goto errout;
 	}
-	rv = config_str_from_plist(cfg, "hashes",
-	                           plist, CFSTR("hashes"));
+	rv = config_str_from_plist(cfg, "hashes", plist,
+	                           CFSTR("hashes"));
 	if (rv == -1) {
 		fprintf(stderr, "Failed to load 'hashes'\n");
 		goto errout;
 	}
-	rv = config_bool_from_plist(cfg, "codesign",
-	                            plist, CFSTR("codesign"));
+	rv = config_bool_from_plist(cfg, "codesign", plist,
+	                            CFSTR("codesign"));
 	if (rv == -1) {
 		fprintf(stderr, "Failed to load 'codesign'\n");
 		goto errout;
 	}
-	rv = config_bool_from_plist(cfg, "omit_apple_hashes",
-	                            plist, CFSTR("omit_apple_hashes"));
+	rv = config_bool_from_plist(cfg, "omit_apple_hashes", plist,
+	                            CFSTR("omit_apple_hashes"));
 	if (rv == -1) {
 		fprintf(stderr, "Failed to load 'omit_apple_hashes'\n");
 		goto errout;
 	}
-	rv = config_str_from_plist(cfg, "ancestors",
-	                           plist, CFSTR("ancestors"));
+	rv = config_str_from_plist(cfg, "ancestors", plist,
+	                           CFSTR("ancestors"));
 	if (rv == -1) {
 		fprintf(stderr, "Failed to load 'ancestors'\n");
 		goto errout;
 	}
-	rv = config_str_from_plist(cfg, "events",
-	                           plist, CFSTR("events"));
+	rv = config_str_from_plist(cfg, "events", plist,
+	                           CFSTR("events"));
 	if (rv == -1) {
 		fprintf(stderr, "Failed to load 'events'\n");
 		goto errout;
 	}
-	rv = config_str_from_plist(cfg, "stats_interval",
-	                           plist, CFSTR("stats_interval"));
+	rv = config_str_from_plist(cfg, "stats_interval", plist,
+	                           CFSTR("stats_interval"));
 	if (rv == -1) {
 		fprintf(stderr, "Failed to load 'stats_interval'\n");
 		goto errout;
 	}
-	rv = config_str_from_plist(cfg, "rlimit_nofile",
-	                           plist, CFSTR("rlimit_nofile"));
+	rv = config_str_from_plist(cfg, "rlimit_nofile", plist,
+	                           CFSTR("rlimit_nofile"));
 	if (rv == -1) {
 		fprintf(stderr, "Failed to load 'rlimit_nofile'\n");
 		goto errout;
 	}
-	rv = config_bool_from_plist(cfg, "debug",
-	                            plist, CFSTR("debug"));
+	rv = config_bool_from_plist(cfg, "debug", plist,
+	                            CFSTR("debug"));
 	if (rv == -1) {
 		fprintf(stderr, "Failed to load 'debug'\n");
+		goto errout;
+	}
+	rv = config_bool_from_plist(cfg, "suppress_image_exec_at_start", plist,
+	                            CFSTR("suppress_image_exec_at_start"));
+	if (rv == -1) {
+		fprintf(stderr, "Failed to load "
+		                "'suppress_image_exec_at_start'\n");
 		goto errout;
 	}
 

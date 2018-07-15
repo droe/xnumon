@@ -146,6 +146,7 @@ logfmtjson_value_uint_oct(FILE *f, uint64_t value) {
 
 static void
 logfmtjson_value_timespec(FILE *f, struct timespec *tv) {
+	assert(tv->tv_sec > 0);
 	fprintf(f, "\"");
 	logutl_fwrite_timespec(f, tv);
 	fprintf(f, "\"");

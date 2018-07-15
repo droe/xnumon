@@ -476,6 +476,7 @@ image_exec_from_pid(pid_t pid) {
 	image_exec_t *ei;
 	char *path;
 	int nopath = 0;
+	int rv;
 
 	path = sys_pidpath(pid);
 #ifdef DEBUG_PROCMON
@@ -497,6 +498,11 @@ image_exec_from_pid(pid_t pid) {
 	ei = image_exec_new(path);
 	if (!ei)
 		return NULL;
+	rv = timespec_nanotime(&ei->hdr.tv);
+	if (rv == -1) {
+		image_exec_free(ei);
+		return NULL;
+	}
 	if (nopath)
 		ei->flags |= EIFLAG_NOPATH;
 	ei->flags |= EIFLAG_PIDLOOKUP;
@@ -505,8 +511,9 @@ image_exec_from_pid(pid_t pid) {
 }
 
 /*
- * Create new proc from pid using runtime lookups.
- * Called after looking up the subject of a call fails.
+ * Create new proc from pid using runtime lookups.  Called after looking up a
+ * subject in proctab fails and for examination of processes which executed
+ * before xnumon.
  *
  * Returns NULL on oom or if the process is not running anymore.
  *
@@ -514,7 +521,7 @@ image_exec_from_pid(pid_t pid) {
  * However, caller needs to count and report miss if this fails.
  */
 static proc_t *
-procmon_proc_from_pid(pid_t pid) {
+procmon_proc_from_pid(pid_t pid, bool log_event) {
 	proc_t *proc;
 	pid_t ppid;
 
@@ -553,11 +560,12 @@ procmon_proc_from_pid(pid_t pid) {
 	}
 	image_exec_open(proc->image_exec, NULL);
 
-	/* after acquiring all info from process, go after parent */
+	/* after acquiring all info from process, go after parent before
+	 * submitting the child into the queues */
 	if ((ppid >= 0) && (ppid != pid)) {
 		proc_t *pproc = proctab_find(ppid);
 		if (!pproc) {
-			pproc = procmon_proc_from_pid(ppid);
+			pproc = procmon_proc_from_pid(ppid, log_event);
 			if (!pproc) {
 				if (errno == ENOMEM) {
 					proctab_remove(pid);
@@ -575,7 +583,8 @@ procmon_proc_from_pid(pid_t pid) {
 		}
 	}
 
-	proc->image_exec->flags |= EIFLAG_NOLOG;
+	if (!log_event || pid == 0)
+		proc->image_exec->flags |= EIFLAG_NOLOG;
 #ifdef DEBUG_REFS
 	fprintf(stderr, "DEBUG_REFS: work_submit(%p)\n",
 	                proc->image_exec);
@@ -601,7 +610,7 @@ image_exec_by_pid(pid_t pid) {
 
 	proc = proctab_find(pid);
 	if (!proc) {
-		proc = procmon_proc_from_pid(pid);
+		proc = procmon_proc_from_pid(pid, true);
 		if (!proc) {
 			if (errno != ENOMEM) {
 				miss_bypid++;
@@ -631,7 +640,7 @@ procmon_fork(struct timespec *tv,
 
 	parent = proctab_find(subject->pid);
 	if (!parent) {
-		parent = procmon_proc_from_pid(subject->pid);
+		parent = procmon_proc_from_pid(subject->pid, true);
 		if (!parent) {
 			if (errno != ENOMEM) {
 				miss_forksubj++;
@@ -714,7 +723,7 @@ procmon_exec(struct timespec *tv,
 
 	proc = proctab_find(subject->pid);
 	if (!proc) {
-		proc = procmon_proc_from_pid(subject->pid);
+		proc = procmon_proc_from_pid(subject->pid, true);
 		if (!proc) {
 			if (errno != ENOMEM) {
 				miss_execsubj++;
@@ -998,7 +1007,7 @@ procmon_chdir(pid_t pid, char *path) {
 
 	proc = proctab_find(pid);
 	if (!proc) {
-		proc = procmon_proc_from_pid(pid);
+		proc = procmon_proc_from_pid(pid, true);
 		if (!proc) {
 			if (errno != ENOMEM) {
 				miss_chdirsubj++;
@@ -1054,13 +1063,21 @@ procmon_kern_preexec(struct timespec *tm, pid_t pid, const char *imagepath) {
 
 /*
  * Preload the process context information for pid.
+ *
+ * The procmon code base should actually work without any preloading too.
+ * Main difference is that for processes recovered later, image exec events
+ * are always logged, while for preloaded processes, the logging can be
+ * configured, but is suppressed by default.
  */
 void
 procmon_preloadpid(pid_t pid) {
-	/*
-	 * The code should actually work without any preloading too.
-	 */
-	(void)procmon_proc_from_pid(pid);
+	proc_t *proc;
+
+	proc = proctab_find(pid);
+	if (proc)
+		/* pid was already loaded as an ancestor of a previous call */
+		return;
+	(void)procmon_proc_from_pid(pid, !config->suppress_image_exec_at_start);
 }
 
 /*
@@ -1072,7 +1089,7 @@ procmon_getcwd(pid_t pid) {
 
 	proc = proctab_find(pid);
 	if (!proc) {
-		proc = procmon_proc_from_pid(pid);
+		proc = procmon_proc_from_pid(pid, true);
 		if (!proc) {
 			if (errno != ENOMEM) {
 				miss_getcwd++;

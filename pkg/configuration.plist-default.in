@@ -212,6 +212,36 @@
 
   <!-- SUPPRESSIONS -->
 
+  <!-- Suppress image exec events at start:
+       If enabled (<true/>), suppress image exec events for processes that were
+       already running at the time xnumon started.  If disabled (<false/>),
+       produce image exec events for already running processes in order to
+       produce a complete view on all processes.  These events are logged
+       before the xnumon start event is produced; the xnumon start event always
+       marks the beginning of normal operation.  Image execution events that
+       were acquired from live running processes instead of audit or kext
+       events are marked with an additional "reconstructed" field.  For each
+       process forked off the same image execution, a separate image execution
+       event is produced, because these are not easily distringuishable.
+       Note that setting this option to <false/> also means that when xnumon
+       restarts, for example to load a configuration change, as a result of
+       manual unloading/loading of the launchd plist or because the kext kills
+       the userspace daemon due to having become unresponsive, an image exec
+       event will be logged for every running process.  The process images will
+       be acquired in any case in order to provide context for later events,
+       this option only controls the logging.
+       Reconstructed image execution events can also be (very rarely) caused by
+       dropped audit events; this option does not affect those.
+       Because of the limited value and quality of reconstructed image
+       execution events, disabling this suppression is not recommended.
+       If unset, defaults to:   true
+       -->
+  <!--
+  <key>suppress_image_exec_at_start</key>
+  <true/>
+  <false/>
+  -->
+
   <!-- Suppress exec image events by ident:
        Execution of images whose code signature ident strings matches this list
        will not generate image-exec[3] events.  Unsigned binaries or broken

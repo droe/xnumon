@@ -3,8 +3,26 @@
 -   Add `json-seq` log format, as defined in RFC 7464:  JSON objects are each
     prefixed by an ASCII Record Separator and terminated by an ASCII Line Feed
     character (issue #13).
+-   Mark all image execs as well as subject and object processes that were
+    reconstructed by pid instead of from audit events with a `reconstructed`
+    field.
+-   Generate an image exec event for processes that were missed during exec for
+    some reason and are reconstructed by pid later on for context.
+-   Make configurable whether processes already running at xnumon agent start
+    should generate an image exec event (issue #8).
 -   Fix text rendering of signature field on images.
 -   Use travis-ci.com for continuous integration on supported macOS versions.
+
+Configuration changes:
+
+-   Add `suppress_image_exec_at_start`.
+
+Event schema changes:
+
+-   Event schema version increased to 4.  Changes affect all eventcodes.
+-   Eventcode 2 added `reconstructed`.
+-   Eventcode 4 added `object.reconstructed`.
+-   All eventcodes added `subject.reconstructed`.
 
 ---
 
