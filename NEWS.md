@@ -1,4 +1,4 @@
-### xnumon develop
+### xnumon 0.1.4 2018-07-15
 
 -   Add `json-seq` log format, as defined in RFC 7464:  JSON objects are each
     prefixed by an ASCII Record Separator and terminated by an ASCII Line Feed
@@ -10,8 +10,9 @@
     some reason and are reconstructed by pid later on for context.
 -   Make configurable whether processes already running at xnumon agent start
     should generate an image exec event (issue #8).
--   Fix text rendering of signature field on images.
--   Use travis-ci.com for continuous integration on supported macOS versions.
+-   Fix text rendering of `signature` field on images.
+-   Use travis-ci.com for continuous integration on supported macOS versions
+    (issue #24).
 
 Configuration changes:
 
