@@ -800,6 +800,9 @@ sigusr1_arrived(UNUSED int sig, UNUSED void *udata) {
 	return 0;
 }
 
+#define TIMER_STATS     1
+#define TIMER_CONFIG    2
+
 int
 evtloop_run(config_t *cfg) {
 	kevent_ctx_t sigquit_ctx = KEVENT_CTX_SIGNAL(sigquit_arrived, cfg);
@@ -834,6 +837,12 @@ evtloop_run(config_t *cfg) {
 
 	if ((cfg->kextlevel > 0) && (kextctl_load() == -1)) {
 		fprintf(stderr, "Failed to load kernel extension\n");
+	}
+
+	if (cfg->launchd_mode) {
+		/* capture reference stat of config file */
+		bzero(cfgattr, 2*sizeof(stat_attr_t));
+		(void)config_timer_fired(TIMER_CONFIG, cfg);
 	}
 
 	/* initialize */
@@ -990,7 +999,7 @@ evtloop_run(config_t *cfg) {
 	}
 
 	/* start stats timer */
-	rv = kqueue_add_timer(1, cfg->stats_interval, &sttm_ctx);
+	rv = kqueue_add_timer(TIMER_STATS, cfg->stats_interval, &sttm_ctx);
 	if (rv == -1) {
 		fprintf(stderr, "kqueue_add_timer(1) failed: %s (%i)\n",
 		                strerror(errno), errno);
@@ -1000,9 +1009,7 @@ evtloop_run(config_t *cfg) {
 
 	if (cfg->launchd_mode) {
 		/* start config file timer */
-		bzero(cfgattr, 2*sizeof(stat_attr_t));
-		(void)stats_timer_fired(2, cfg);
-		rv = kqueue_add_timer(2, 300, &cftm_ctx);
+		rv = kqueue_add_timer(TIMER_CONFIG, 300, &cftm_ctx);
 		if (rv == -1) {
 			fprintf(stderr, "kqueue_add_timer(2) failed: %s (%i)\n",
 			                strerror(errno), errno);

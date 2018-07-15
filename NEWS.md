@@ -1,5 +1,8 @@
 ### xnumon develop
 
+-   Fix automatic configuration reloading to pick up changes to the config file
+    during the first five minutes and during initialization.
+
 ---
 
 ### xnumon 0.1.4 2018-07-15
