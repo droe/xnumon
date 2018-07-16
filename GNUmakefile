@@ -226,7 +226,7 @@ maintclean: realclean
 	rm -rf $(EXTSRCS)
 
 todo:
-	@grep -r 'XXX|TODO|FIXME|BUG|HACK' .|grep -v __EXCLUDE__ || true
+	@grep -r 'XXX\|TODO\|FIXME' .|grep -v __EXCLUDE__ || true
 
 FORCE:
 
