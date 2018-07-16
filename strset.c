@@ -12,6 +12,7 @@
 
 #include <assert.h>
 #include <string.h>
+#include <stdio.h>
 
 typedef struct strset_node {
 	tommy_hashtable_node h_node;
@@ -75,6 +76,21 @@ strset_contains(strset_t *this, const char *str) {
 	node = tommy_hashtable_search(&this->hashtable, compfunc, str,
 	                              tommy_strhash_u32(0, str));
 	return node != NULL;
+}
+
+bool
+strset_contains3(strset_t *this, const char *str, const char *scope) {
+	/* TODO May be further optimized by keeping track of whether strset
+	 * contains no scoped entries, or strset contains only scoped entries,
+	 * and skipping the respective lookup accordingly */
+	if (scope) {
+		const size_t sz = strlen(str) + strlen(scope) + 2;
+		char key[sz];
+		snprintf(key, sz, "%s@%s", str, scope);
+		if (strset_contains(this, key))
+			return true;
+	}
+	return strset_contains(this, str);
 }
 
 size_t

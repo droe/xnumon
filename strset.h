@@ -26,6 +26,8 @@ typedef struct strset {
 
 int strset_init(strset_t *, size_t, char **) NONNULL(1) WUNRES;
 bool strset_contains(strset_t *, const char *) NONNULL(1,2) WUNRES;
+bool strset_contains3(strset_t *, const char *, const char *)
+     NONNULL(1,2) WUNRES;
 size_t strset_size(strset_t *) NONNULL(1);
 void strset_destroy(strset_t *) NONNULL(1);
 

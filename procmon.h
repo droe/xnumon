@@ -17,6 +17,7 @@
 #include "sys.h"
 #include "tommylist.h"
 #include "codesign.h"
+#include "strset.h"
 #include "log.h"
 #include "logevt.h"
 #include "debug.h"
@@ -122,5 +123,7 @@ typedef struct image_exec {
 
 image_exec_t * image_exec_by_pid(pid_t) MALLOC;
 void image_exec_free(image_exec_t *) NONNULL(1);
+bool image_exec_match_suppressions(image_exec_t *, strset_t *, strset_t *)
+     NONNULL(1,2,3) WUNRES;
 
 #endif

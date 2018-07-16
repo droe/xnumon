@@ -23,7 +23,6 @@
 #include "time.h"
 #include "work.h"
 #include "atomic.h"
-#include "strset.h"
 
 #include <stdint.h>
 #include <inttypes.h>
@@ -418,20 +417,21 @@ image_exec_analyze(image_exec_t *image, int kern) {
  * Return true iff exec image matches either one of the idents in by_ident or
  * one of the paths in by_path.
  */
-static bool
-image_exec_match_suppressions(image_exec_t *ei,
+bool
+image_exec_match_suppressions(image_exec_t *ie,
                               strset_t *by_ident, strset_t *by_path) {
-	if (ei->codesign && ei->codesign->ident) {
+	if (ie->codesign && ie->codesign->ident) {
 		/* presence of ident implies that signature is good */
-		if (strset_contains(by_ident, ei->codesign->ident))
+		if (strset_contains3(by_ident, ie->codesign->ident,
+		                               ie->codesign->teamid))
 			return true;
 	}
-	if (ei->path) {
-		if (strset_contains(by_path, ei->path))
+	if (ie->path) {
+		if (strset_contains(by_path, ie->path))
 			return true;
 	}
-	if (ei->script && ei->script->path) {
-		if (strset_contains(by_path, ei->script->path))
+	if (ie->script && ie->script->path) {
+		if (strset_contains(by_path, ie->script->path))
 			return true;
 	}
 	return false;

@@ -2,6 +2,14 @@
 
 -   Fix automatic configuration reloading to pick up changes to the config file
     during the first five minutes and during initialization.
+-   Suppressions by ident now support optionally restricting an ident to a
+    specific team ID for non-Apple binaries (issue #27).
+
+Configuration changes:
+
+-   Extended `suppress_image_exec_by_ident`,
+    `suppress_image_exec_by_ancestor_ident` and
+    `suppress_process_access_by_subject_ident` to support ident@teamid syntax.
 
 ---
 

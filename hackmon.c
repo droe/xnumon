@@ -56,40 +56,14 @@ process_access_free(process_access_t *pa) {
 }
 
 /*
- * Return true iff the event should not be logged (i.e. filtered).
- *
- * Executed by worker thread.
- */
-static bool
-process_access_filter(process_access_t *pa) {
-	image_exec_t *ie;
-
-	ie = pa->subject_image_exec;
-	if (ie->codesign && ie->codesign->ident) {
-		/* presence of ident implies that signature is good */
-		if (strset_contains(suppress_process_access_by_subject_ident,
-		                    ie->codesign->ident))
-			return true;
-	}
-	if (ie->path) {
-		if (strset_contains(suppress_process_access_by_subject_path,
-		                    ie->path))
-			return true;
-	}
-	if (ie->script && ie->script->path) {
-		if (strset_contains(suppress_process_access_by_subject_path,
-		                    ie->script->path))
-			return true;
-	}
-	return false;
-}
-
-/*
  * Executed by worker thread.
  */
 static int
 process_access_work(process_access_t *pa) {
-	if (process_access_filter(pa))
+	if (image_exec_match_suppressions(
+			pa->subject_image_exec,
+			suppress_process_access_by_subject_ident,
+			suppress_process_access_by_subject_path))
 		return -1;
 	return 0;
 }
