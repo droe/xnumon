@@ -57,13 +57,15 @@ process_access_free(process_access_t *pa) {
 
 /*
  * Executed by worker thread.
+ *
+ * Returns -1 if this work item should not be logged, 0 otherwise.
  */
 static int
 process_access_work(process_access_t *pa) {
-	if (image_exec_match_suppressions(
-			pa->subject_image_exec,
-			suppress_process_access_by_subject_ident,
-			suppress_process_access_by_subject_path))
+	if (pa->subject_image_exec && image_exec_match_suppressions(
+	                              pa->subject_image_exec,
+	                              suppress_process_access_by_subject_ident,
+	                              suppress_process_access_by_subject_path))
 		return -1;
 	return 0;
 }
