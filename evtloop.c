@@ -1028,6 +1028,7 @@ evtloop_run(config_t *cfg) {
 	}
 
 	/* event dispatch loop */
+	DEBUG(cfg->debug, "xnumon_start", "init complete");
 	running = true;
 	for (;;) {
 		rv = kqueue_dispatch();
@@ -1043,6 +1044,7 @@ evtloop_run(config_t *cfg) {
 	rv = 0;
 errout:
 	/* log xnumon stats and stop */
+	DEBUG(cfg->debug, "xnumon_stop", "shutting down");
 	(void)log_event_xnumon_stats();
 	if (log_event_xnumon_stop() == -1) {
 		fprintf(stderr, "log_event_xnumon_stop() failed\n");
