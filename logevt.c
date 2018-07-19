@@ -49,10 +49,11 @@ logevt_uid(logfmt_t *fmt, FILE *f,
 	struct passwd *pw;
 
 	fmt->dict_item(f, idlabel);
-	if (uid == (uid_t)-1)
-		fmt->value_int(f, uid);
-	else
-		fmt->value_uint(f, uid);
+	if (uid == (uid_t)-1) {
+		fmt->value_int(f, -1);
+		return;
+	}
+	fmt->value_uint(f, uid);
 
 	pw = getpwuid(uid);
 	if (pw) {
@@ -67,10 +68,11 @@ logevt_gid(logfmt_t *fmt, FILE *f,
 	struct group *gr;
 
 	fmt->dict_item(f, idlabel);
-	if (gid == (gid_t)-1)
-		fmt->value_int(f, gid);
-	else
-		fmt->value_uint(f, gid);
+	if (gid == (gid_t)-1) {
+		fmt->value_int(f, -1);
+		return;
+	}
+	fmt->value_uint(f, gid);
 
 	gr = getgrgid(gid);
 	if (gr) {
