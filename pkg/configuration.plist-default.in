@@ -176,8 +176,52 @@
   <false/>
   -->
 
+  <!-- Resolve users and groups
+       Enable (<true/>) or disable (<false/>) the acquisition of user and group
+       names from numerical user and group IDs using getpwuid() and getgrgid(),
+       respectively.
+       If unset, defaults to:   true
+       -->
+  <!--
+  <key>resolve_users_groups</key>
+  <true/>
+  <false/>
+  -->
+
 
   <!-- LEVEL OF DETAIL -->
+
+  <!-- Omit specific fields:
+       If enabled (<true/>), omit the respective field from the produced log
+       events.  The following fields can be omitted:
+       omit_mode        mode field of images
+       omit_size        size field of images
+       omit_mtime       mtime field of images
+       omit_ctime       ctime field of images
+       omit_btime       btime field of images
+       omit_groups      gid field of processes, egid and rgid of images
+       If unset, defaults to:   false
+       -->
+  <!--
+  <key>omit_mode</key>
+  <true/>
+  <false/>
+  <key>omit_size</key>
+  <true/>
+  <false/>
+  <key>omit_mtime</key>
+  <true/>
+  <false/>
+  <key>omit_ctime</key>
+  <true/>
+  <false/>
+  <key>omit_btime</key>
+  <true/>
+  <false/>
+  <key>omit_groups</key>
+  <true/>
+  <false/>
+  -->
 
   <!-- Omit Apple hashes:
        If enabled (<true/>), omit executable image hashes for verified Apple

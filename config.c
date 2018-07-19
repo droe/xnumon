@@ -184,6 +184,48 @@ config_str(config_t *cfg, const char *key, const char *value) {
 		return 0;
 	}
 
+	if (!strcmp(key, "resolve_users_groups")) {
+		if (config_set_bool(&cfg->resolve_users_groups, value) == -1)
+			return -1;
+		return 0;
+	}
+
+	if (!strcmp(key, "omit_mode")) {
+		if (config_set_bool(&cfg->omit_mode, value) == -1)
+			return -1;
+		return 0;
+	}
+
+	if (!strcmp(key, "omit_size")) {
+		if (config_set_bool(&cfg->omit_size, value) == -1)
+			return -1;
+		return 0;
+	}
+
+	if (!strcmp(key, "omit_mtime")) {
+		if (config_set_bool(&cfg->omit_mtime, value) == -1)
+			return -1;
+		return 0;
+	}
+
+	if (!strcmp(key, "omit_ctime")) {
+		if (config_set_bool(&cfg->omit_ctime, value) == -1)
+			return -1;
+		return 0;
+	}
+
+	if (!strcmp(key, "omit_btime")) {
+		if (config_set_bool(&cfg->omit_btime, value) == -1)
+			return -1;
+		return 0;
+	}
+
+	if (!strcmp(key, "omit_groups")) {
+		if (config_set_bool(&cfg->omit_groups, value) == -1)
+			return -1;
+		return 0;
+	}
+
 	if (!strcmp(key, "omit_apple_hashes")) {
 		if (config_set_bool(&cfg->omit_apple_hashes, value) == -1)
 			return -1;
@@ -301,6 +343,23 @@ config_strset_from_plist(strset_t *set,
 	return strset_init(set, arrsz, v);
 }
 
+#define CONFIG_STR_FROM_PLIST(RV, CFG, PLIST, KEY) \
+	if ((RV = config_str_from_plist(CFG, KEY, PLIST, CFSTR(KEY))) == -1) { \
+		fprintf(stderr, "Failed to load '" KEY "'\n"); \
+		goto errout; \
+	}
+#define CONFIG_BOOL_FROM_PLIST(RV, CFG, PLIST, KEY) \
+	if ((RV = config_bool_from_plist(CFG, KEY, PLIST, CFSTR(KEY))) == -1) {\
+		fprintf(stderr, "Failed to load '" KEY "'\n"); \
+		goto errout; \
+	}
+#define CONFIG_STRSET_FROM_PLIST(RV, CFG, PLIST, KEY) \
+	if ((rv = config_strset_from_plist(&CFG->KEY, PLIST, \
+	                                   CFSTR(#KEY))) == -1) { \
+		fprintf(stderr, "Failed to load " #KEY "\n"); \
+		goto errout; \
+	}
+
 config_t *
 config_new(const char *cfgpath) {
 	const char *selected_path;
@@ -321,6 +380,7 @@ config_new(const char *cfgpath) {
 	cfg->kextlevel = KEXTLEVEL_HASH;
 	cfg->hflags = HASH_SHA256;
 	cfg->codesign = true;
+	cfg->resolve_users_groups = true;
 	cfg->omit_apple_hashes = true;
 	cfg->ancestors = SIZE_MAX;
 	cfg->logoneline = -1; /* any */
@@ -355,148 +415,42 @@ config_new(const char *cfgpath) {
 	}
 
 	/* String configuration items cannot handle plist==NULL */
-	rv = config_str_from_plist(cfg, "config_id", plist,
-	                           CFSTR("config_id"));
-	if (rv == -1) {
-		fprintf(stderr, "Failed to load 'config_id'\n");
-		goto errout;
-	}
-	rv = config_str_from_plist(cfg, "log_format", plist,
-	                           CFSTR("log_format"));
-	if (rv == -1) {
-		fprintf(stderr, "Failed to load 'log_format'\n");
-		goto errout;
-	}
-	rv = config_str_from_plist(cfg, "log_destination", plist,
-	                           CFSTR("log_destination"));
-	if (rv == -1) {
-		fprintf(stderr, "Failed to load 'log_destination'\n");
-		goto errout;
-	}
-	rv = config_str_from_plist(cfg, "log_mode", plist,
-	                           CFSTR("log_mode"));
-	if (rv == -1) {
-		fprintf(stderr, "Failed to load 'log_mode'\n");
-		goto errout;
-	}
-	rv = config_str_from_plist(cfg, "kextlevel", plist,
-	                           CFSTR("kextlevel"));
-	if (rv == -1) {
-		fprintf(stderr, "Failed to load 'kextlevel'\n");
-		goto errout;
-	}
-	rv = config_str_from_plist(cfg, "hashes", plist,
-	                           CFSTR("hashes"));
-	if (rv == -1) {
-		fprintf(stderr, "Failed to load 'hashes'\n");
-		goto errout;
-	}
-	rv = config_bool_from_plist(cfg, "codesign", plist,
-	                            CFSTR("codesign"));
-	if (rv == -1) {
-		fprintf(stderr, "Failed to load 'codesign'\n");
-		goto errout;
-	}
-	rv = config_bool_from_plist(cfg, "omit_apple_hashes", plist,
-	                            CFSTR("omit_apple_hashes"));
-	if (rv == -1) {
-		fprintf(stderr, "Failed to load 'omit_apple_hashes'\n");
-		goto errout;
-	}
-	rv = config_str_from_plist(cfg, "ancestors", plist,
-	                           CFSTR("ancestors"));
-	if (rv == -1) {
-		fprintf(stderr, "Failed to load 'ancestors'\n");
-		goto errout;
-	}
-	rv = config_str_from_plist(cfg, "events", plist,
-	                           CFSTR("events"));
-	if (rv == -1) {
-		fprintf(stderr, "Failed to load 'events'\n");
-		goto errout;
-	}
-	rv = config_str_from_plist(cfg, "stats_interval", plist,
-	                           CFSTR("stats_interval"));
-	if (rv == -1) {
-		fprintf(stderr, "Failed to load 'stats_interval'\n");
-		goto errout;
-	}
-	rv = config_str_from_plist(cfg, "rlimit_nofile", plist,
-	                           CFSTR("rlimit_nofile"));
-	if (rv == -1) {
-		fprintf(stderr, "Failed to load 'rlimit_nofile'\n");
-		goto errout;
-	}
-	rv = config_bool_from_plist(cfg, "debug", plist,
-	                            CFSTR("debug"));
-	if (rv == -1) {
-		fprintf(stderr, "Failed to load 'debug'\n");
-		goto errout;
-	}
-	rv = config_bool_from_plist(cfg, "suppress_image_exec_at_start", plist,
-	                            CFSTR("suppress_image_exec_at_start"));
-	if (rv == -1) {
-		fprintf(stderr, "Failed to load "
-		                "'suppress_image_exec_at_start'\n");
-		goto errout;
-	}
+	CONFIG_STR_FROM_PLIST(rv, cfg, plist, "config_id");
+	CONFIG_STR_FROM_PLIST(rv, cfg, plist, "log_format");
+	CONFIG_STR_FROM_PLIST(rv, cfg, plist, "log_destination");
+	CONFIG_STR_FROM_PLIST(rv, cfg, plist, "log_mode");
+	CONFIG_STR_FROM_PLIST(rv, cfg, plist, "kextlevel");
+	CONFIG_STR_FROM_PLIST(rv, cfg, plist, "hashes");
+	CONFIG_BOOL_FROM_PLIST(rv, cfg, plist, "codesign");
+	CONFIG_BOOL_FROM_PLIST(rv, cfg, plist, "resolve_users_groups");
+	CONFIG_BOOL_FROM_PLIST(rv, cfg, plist, "omit_mode");
+	CONFIG_BOOL_FROM_PLIST(rv, cfg, plist, "omit_size");
+	CONFIG_BOOL_FROM_PLIST(rv, cfg, plist, "omit_mtime");
+	CONFIG_BOOL_FROM_PLIST(rv, cfg, plist, "omit_ctime");
+	CONFIG_BOOL_FROM_PLIST(rv, cfg, plist, "omit_btime");
+	CONFIG_BOOL_FROM_PLIST(rv, cfg, plist, "omit_groups");
+	CONFIG_BOOL_FROM_PLIST(rv, cfg, plist, "omit_apple_hashes");
+	CONFIG_STR_FROM_PLIST(rv, cfg, plist, "ancestors");
+	CONFIG_STR_FROM_PLIST(rv, cfg, plist, "events");
+	CONFIG_STR_FROM_PLIST(rv, cfg, plist, "stats_interval");
+	CONFIG_STR_FROM_PLIST(rv, cfg, plist, "rlimit_nofile");
+	CONFIG_BOOL_FROM_PLIST(rv, cfg, plist, "debug");
+	CONFIG_BOOL_FROM_PLIST(rv, cfg, plist, "suppress_image_exec_at_start");
 
 	/* The strset initializations must be called even if we were to allow
 	 * xnumon to run without a config file; they handle plist==NULL. */
-	rv = config_strset_from_plist(
-			&cfg->suppress_image_exec_by_ident,
-			plist,
-			CFSTR("suppress_image_exec_by_ident"));
-	if (rv == -1) {
-		fprintf(stderr, "Failed to load "
-		                "suppress_image_exec_by_ident\n");
-		goto errout;
-	}
-	rv = config_strset_from_plist(
-			&cfg->suppress_image_exec_by_path,
-			plist,
-			CFSTR("suppress_image_exec_by_path"));
-	if (rv == -1) {
-		fprintf(stderr, "Failed to load "
-		                "suppress_image_exec_by_path\n");
-		goto errout;
-	}
-	rv = config_strset_from_plist(
-			&cfg->suppress_image_exec_by_ancestor_ident,
-			plist,
-			CFSTR("suppress_image_exec_by_ancestor_ident"));
-	if (rv == -1) {
-		fprintf(stderr, "Failed to load "
-		                "suppress_image_exec_by_ancestor_ident\n");
-		goto errout;
-	}
-	rv = config_strset_from_plist(
-			&cfg->suppress_image_exec_by_ancestor_path,
-			plist,
-			CFSTR("suppress_image_exec_by_ancestor_path"));
-	if (rv == -1) {
-		fprintf(stderr, "Failed to load "
-		                "suppress_image_exec_by_ancestor_path\n");
-		goto errout;
-	}
-	rv = config_strset_from_plist(
-			&cfg->suppress_process_access_by_subject_ident,
-			plist,
-			CFSTR("suppress_process_access_by_subject_ident"));
-	if (rv == -1) {
-		fprintf(stderr, "Failed to load "
-		                "suppress_process_access_by_subject_ident\n");
-		goto errout;
-	}
-	rv = config_strset_from_plist(
-			&cfg->suppress_process_access_by_subject_path,
-			plist,
-			CFSTR("suppress_process_access_by_subject_path"));
-	if (rv == -1) {
-		fprintf(stderr, "Failed to load "
-		                "suppress_process_access_by_subject_path\n");
-		goto errout;
-	}
+	CONFIG_STRSET_FROM_PLIST(rv, cfg, plist,
+	                         suppress_image_exec_by_ident);
+	CONFIG_STRSET_FROM_PLIST(rv, cfg, plist,
+	                         suppress_image_exec_by_path);
+	CONFIG_STRSET_FROM_PLIST(rv, cfg, plist,
+	                         suppress_image_exec_by_ancestor_ident);
+	CONFIG_STRSET_FROM_PLIST(rv, cfg, plist,
+	                         suppress_image_exec_by_ancestor_path);
+	CONFIG_STRSET_FROM_PLIST(rv, cfg, plist,
+	                         suppress_process_access_by_subject_ident);
+	CONFIG_STRSET_FROM_PLIST(rv, cfg, plist,
+	                         suppress_process_access_by_subject_path);
 
 	if (plist)
 		CFRelease(plist);

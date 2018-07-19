@@ -55,10 +55,12 @@ logevt_uid(logfmt_t *fmt, FILE *f,
 	}
 	fmt->value_uint(f, uid);
 
-	pw = getpwuid(uid);
-	if (pw) {
-		fmt->dict_item(f, namelabel);
-		fmt->value_string(f, pw->pw_name);
+	if (config->resolve_users_groups) {
+		pw = getpwuid(uid);
+		if (pw) {
+			fmt->dict_item(f, namelabel);
+			fmt->value_string(f, pw->pw_name);
+		}
 	}
 }
 
@@ -74,10 +76,12 @@ logevt_gid(logfmt_t *fmt, FILE *f,
 	}
 	fmt->value_uint(f, gid);
 
-	gr = getgrgid(gid);
-	if (gr) {
-		fmt->dict_item(f, namelabel);
-		fmt->value_string(f, gr->gr_name);
+	if (config->resolve_users_groups) {
+		gr = getgrgid(gid);
+		if (gr) {
+			fmt->dict_item(f, namelabel);
+			fmt->value_string(f, gr->gr_name);
+		}
 	}
 }
 
@@ -409,20 +413,32 @@ logevt_image_exec_image(logfmt_t *fmt, FILE *f, image_exec_t *ie) {
 	fmt->dict_item(f, "path");
 	fmt->value_string(f, ie->path);
 	if (ie->flags & (EIFLAG_STAT|EIFLAG_ATTR)) {
-		fmt->dict_item(f, "mode");
-		fmt->value_uint_oct(f, ie->stat.mode);
+		if (!config->omit_mode) {
+			fmt->dict_item(f, "mode");
+			fmt->value_uint_oct(f, ie->stat.mode);
+		}
 		logevt_uid(fmt, f, ie->stat.uid, "uid", "uname");
-		logevt_gid(fmt, f, ie->stat.gid, "gid", "gname");
+		if (!config->omit_groups) {
+			logevt_gid(fmt, f, ie->stat.gid, "gid", "gname");
+		}
 	}
 	if (ie->flags & EIFLAG_STAT) {
-		fmt->dict_item(f, "size");
-		fmt->value_uint(f, ie->stat.size);
-		fmt->dict_item(f, "mtime");
-		fmt->value_timespec(f, &ie->stat.mtime);
-		fmt->dict_item(f, "ctime");
-		fmt->value_timespec(f, &ie->stat.ctime);
-		fmt->dict_item(f, "btime");
-		fmt->value_timespec(f, &ie->stat.btime);
+		if (!config->omit_size) {
+			fmt->dict_item(f, "size");
+			fmt->value_uint(f, ie->stat.size);
+		}
+		if (!config->omit_mtime) {
+			fmt->dict_item(f, "mtime");
+			fmt->value_timespec(f, &ie->stat.mtime);
+		}
+		if (!config->omit_ctime) {
+			fmt->dict_item(f, "ctime");
+			fmt->value_timespec(f, &ie->stat.ctime);
+		}
+		if (!config->omit_btime) {
+			fmt->dict_item(f, "btime");
+			fmt->value_timespec(f, &ie->stat.btime);
+		}
 	}
 	if ((ie->flags & EIFLAG_HASHES) &&
 	    (!config->omit_apple_hashes ||
@@ -560,9 +576,13 @@ logevt_process(logfmt_t *fmt, FILE *f,
 		fmt->value_int(f, process->pid);
 		logevt_uid(fmt, f, process->auid, "auid", "auname");
 		logevt_uid(fmt, f, process->euid, "euid", "euname");
-		logevt_gid(fmt, f, process->egid, "egid", "egname");
+		if (!config->omit_groups) {
+			logevt_gid(fmt, f, process->egid, "egid", "egname");
+		}
 		logevt_uid(fmt, f, process->ruid, "ruid", "runame");
-		logevt_gid(fmt, f, process->rgid, "rgid", "rgname");
+		if (!config->omit_groups) {
+			logevt_gid(fmt, f, process->rgid, "rgid", "rgname");
+		}
 		fmt->dict_item(f, "sid");
 		fmt->value_uint(f, process->sid);
 		fmt->dict_item(f, "dev");

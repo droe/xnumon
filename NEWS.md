@@ -5,19 +5,27 @@
 -   Suppressions by ident now support optionally restricting an ident to a
     specific team ID for non-Apple binaries (issue #27).
 -   User and group IDs are now resolved to names (issues #4, #28).
--   User and group ID -1 is now logged as signed integer -1 (#29).
+-   User and group ID -1 is now logged as signed integer -1 (issue #29).
+-   Added capability to omit less useful fields from logged events: file mode,
+    size, mtime, ctime, btime, and groups: file gid and process egid/rgid
+    (issue #3).
+-   Treat TTY source address `0.0.0.0` as no address and hide the `addr` field
+    unless an actual address is present.
 
 Configuration changes:
 
--   Extended `suppress_image_exec_by_ident`,
+-   Extend `suppress_image_exec_by_ident`,
     `suppress_image_exec_by_ancestor_ident` and
     `suppress_process_access_by_subject_ident` to support ident@teamid syntax.
+-   Add `resolve_users_groups`.
+-   Add `omit_mode`, `omit_size`, `omit_mtime`, `omit_ctime`, `omit_btime`,
+    `omit_groups`.
 
 Event schema changes:
 
 -   Event schema version increased to 5.  Changes affect all eventcodes.
--   All eventcodes added `*uname` for every `*uid` field.
--   All eventcodes added `*gname` for every `*gid` field.
+-   Eventcodes 2-4 added `*uname` for every `*uid` field.
+-   Eventcodes 2-4 added `*gname` for every `*gid` field.
 
 ---
 
@@ -46,7 +54,7 @@ Event schema changes:
 -   Event schema version increased to 4.  Changes affect all eventcodes.
 -   Eventcode 2 added `reconstructed`.
 -   Eventcode 4 added `object.reconstructed`.
--   All eventcodes added `subject.reconstructed`.
+-   Eventcodes 2-4 added `subject.reconstructed`.
 
 ---
 
@@ -89,7 +97,7 @@ Event schema changes:
     `image.codesign.chain` with `image.signature`, `image.teamid` and
     `image.devid`.
 -   Eventcode 2 added `image.cdhash`.
--   All eventcodes added `subject.image.teamid` and
+-   Eventcodes 2-4 added `subject.image.teamid` and
     `subject.ancestors[].teamid`.
 
 ---

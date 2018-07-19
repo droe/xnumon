@@ -153,8 +153,11 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], FILE *f) {
 			ev->subject.pid = tok.tt.subj32.pid;
 			ev->subject.sid = tok.tt.subj32.sid;
 			ev->subject.dev = tok.tt.subj32.tid.port;
-			ev->subject.addr.family = AF_INET;
-			ev->subject.addr.ev_addr = tok.tt.subj32.tid.addr;
+			if (tok.tt.subj32.tid.addr != 0) {
+				ev->subject.addr.family = AF_INET;
+				ev->subject.addr.ev_addr =
+					tok.tt.subj32.tid.addr;
+			}
 			break;
 		case AUT_SUBJECT32_EX:
 			assert(ev->subject_present == 0);
@@ -168,9 +171,11 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], FILE *f) {
 			ev->subject.sid = tok.tt.subj32_ex.sid;
 			ev->subject.dev = tok.tt.subj32_ex.tid.port;
 			if (tok.tt.subj32_ex.tid.type == AU_IPv4) {
-				ev->subject.addr.family = AF_INET;
-				ev->subject.addr.ev_addr =
-					tok.tt.subj32_ex.tid.addr[0];
+				if (tok.tt.subj32_ex.tid.addr[0] != 0) {
+					ev->subject.addr.family = AF_INET;
+					ev->subject.addr.ev_addr =
+						tok.tt.subj32_ex.tid.addr[0];
+				}
 			} else if (tok.tt.subj32_ex.tid.type == AU_IPv6) {
 				ev->subject.addr.family = AF_INET6;
 				ev->subject.addr.ev6_addr[0] =
@@ -194,8 +199,11 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], FILE *f) {
 			ev->subject.pid = tok.tt.subj64.pid;
 			ev->subject.sid = tok.tt.subj64.sid;
 			ev->subject.dev = tok.tt.subj64.tid.port;
-			ev->subject.addr.family = AF_INET;
-			ev->subject.addr.ev_addr = tok.tt.subj64.tid.addr;
+			if (tok.tt.subj64.tid.addr != 0) {
+				ev->subject.addr.family = AF_INET;
+				ev->subject.addr.ev_addr =
+					tok.tt.subj64.tid.addr;
+			}
 			break;
 		case AUT_SUBJECT64_EX:
 			assert(ev->subject_present == 0);
@@ -209,9 +217,11 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], FILE *f) {
 			ev->subject.sid = tok.tt.subj64_ex.sid;
 			ev->subject.dev = tok.tt.subj64_ex.tid.port;
 			if (tok.tt.subj64_ex.tid.type == AU_IPv4) {
-				ev->subject.addr.family = AF_INET;
-				ev->subject.addr.ev_addr =
-					tok.tt.subj64_ex.tid.addr[0];
+				if (tok.tt.subj64_ex.tid.addr[0]) {
+					ev->subject.addr.family = AF_INET;
+					ev->subject.addr.ev_addr =
+						tok.tt.subj64_ex.tid.addr[0];
+				}
 			} else if (tok.tt.subj64_ex.tid.type == AU_IPv6) {
 				ev->subject.addr.family = AF_INET6;
 				ev->subject.addr.ev6_addr[0] =
@@ -236,8 +246,11 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], FILE *f) {
 			ev->process.pid = tok.tt.proc32.pid;
 			ev->process.sid = tok.tt.proc32.sid;
 			ev->process.dev = tok.tt.proc32.tid.port;
-			ev->process.addr.family = AF_INET;
-			ev->process.addr.ev_addr = tok.tt.proc32.tid.addr;
+			if (tok.tt.proc32.tid.addr != 0) {
+				ev->process.addr.family = AF_INET;
+				ev->process.addr.ev_addr =
+					tok.tt.proc32.tid.addr;
+			}
 			break;
 		case AUT_PROCESS32_EX:
 			assert(ev->process_present == 0);
@@ -251,9 +264,11 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], FILE *f) {
 			ev->process.sid = tok.tt.proc32_ex.sid;
 			ev->process.dev = tok.tt.proc32_ex.tid.port;
 			if (tok.tt.proc32_ex.tid.type == AU_IPv4) {
-				ev->process.addr.family = AF_INET;
-				ev->process.addr.ev_addr =
-					tok.tt.proc32_ex.tid.addr[0];
+				if (tok.tt.proc32_ex.tid.addr[0]) {
+					ev->process.addr.family = AF_INET;
+					ev->process.addr.ev_addr =
+						tok.tt.proc32_ex.tid.addr[0];
+				}
 			} else if (tok.tt.proc32_ex.tid.type == AU_IPv6) {
 				ev->process.addr.family = AF_INET6;
 				ev->process.addr.ev6_addr[0] =
@@ -277,8 +292,11 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], FILE *f) {
 			ev->process.pid = tok.tt.proc64.pid;
 			ev->process.sid = tok.tt.proc64.sid;
 			ev->process.dev = tok.tt.proc64.tid.port;
-			ev->process.addr.family = AF_INET;
-			ev->process.addr.ev_addr = tok.tt.proc64.tid.addr;
+			if (tok.tt.proc64.tid.addr != 0) {
+				ev->process.addr.family = AF_INET;
+				ev->process.addr.ev_addr =
+					tok.tt.proc64.tid.addr;
+			}
 			break;
 		case AUT_PROCESS64_EX:
 			assert(ev->process_present == 0);
@@ -292,9 +310,11 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], FILE *f) {
 			ev->process.sid = tok.tt.proc64_ex.sid;
 			ev->process.dev = tok.tt.proc64_ex.tid.port;
 			if (tok.tt.proc64_ex.tid.type == AU_IPv4) {
-				ev->process.addr.family = AF_INET;
-				ev->process.addr.ev_addr =
-					tok.tt.proc64_ex.tid.addr[0];
+				if (tok.tt.proc64_ex.tid.addr[0] != 0) {
+					ev->process.addr.family = AF_INET;
+					ev->process.addr.ev_addr =
+						tok.tt.proc64_ex.tid.addr[0];
+				}
 			} else if (tok.tt.proc64_ex.tid.type == AU_IPv6) {
 				ev->process.addr.family = AF_INET6;
 				ev->process.addr.ev6_addr[0] =
