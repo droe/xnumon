@@ -356,7 +356,7 @@ config_strset_from_plist(strset_t *set,
 #define CONFIG_STRSET_FROM_PLIST(RV, CFG, PLIST, KEY) \
 	if ((rv = config_strset_from_plist(&CFG->KEY, PLIST, \
 	                                   CFSTR(#KEY))) == -1) { \
-		fprintf(stderr, "Failed to load " #KEY "\n"); \
+		fprintf(stderr, "Failed to load '" #KEY "'\n"); \
 		goto errout; \
 	}
 
