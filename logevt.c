@@ -567,8 +567,8 @@ logevt_process(logfmt_t *fmt, FILE *f,
 		fmt->value_uint(f, process->sid);
 		fmt->dict_item(f, "dev");
 		fmt->value_ttydev(f, process->dev);
-		fmt->dict_item(f, "addr");
 		if (process->addr.family) {
+			fmt->dict_item(f, "addr");
 			fmt->value_string(f, ipaddrtoa(&process->addr, NULL));
 		}
 	}
