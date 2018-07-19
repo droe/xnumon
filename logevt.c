@@ -16,7 +16,9 @@
  * Currently, this code also does runtime translation of user, group etc IDs
  * into names.  The reason for this is that we do not want to block the worker
  * thread with such lookups, because they are not as time-critical as the
- * acquisition of hashes and code signatures.
+ * acquisition of hashes and code signatures.  As a side benefit, we do not
+ * need to malloc space for the strings as we can print them to the log record
+ * right away.
  *
  * General design decisions:
  * - only use null values for configuration, not for data
