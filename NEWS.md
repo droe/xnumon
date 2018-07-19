@@ -15,11 +15,11 @@
 
 Configuration changes:
 
--   Extend `suppress_image_exec_by_ident`,
+-   Extended `suppress_image_exec_by_ident`,
     `suppress_image_exec_by_ancestor_ident` and
     `suppress_process_access_by_subject_ident` to support ident@teamid syntax.
--   Add `resolve_users_groups`.
--   Add `omit_mode`, `omit_size`, `omit_mtime`, `omit_ctime`, `omit_btime`,
+-   Added `resolve_users_groups`.
+-   Added `omit_mode`, `omit_size`, `omit_mtime`, `omit_ctime`, `omit_btime`,
     `omit_groups`.
 
 Event schema changes:
