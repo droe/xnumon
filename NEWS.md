@@ -4,8 +4,9 @@
     during the first five minutes and during initialization.
 -   Suppressions by ident now support optionally restricting an ident to a
     specific team ID for non-Apple binaries (issue #27).
--   User and group IDs are now resolved to names (issues #4, #28).
--   User and group ID -1 is now logged as signed integer -1 (issue #29).
+-   User and group IDs are now by default resolved to names (issues #4, #28).
+-   User and group ID -1 is now logged as signed integer -1 instead of unsigned
+    integer 4294967295 (issue #29).
 -   Added capability to omit less useful fields from logged events: file mode,
     size, mtime, ctime, btime, and groups: file gid and process egid/rgid
     (issue #3).
@@ -23,7 +24,7 @@ Configuration changes:
 
 Event schema changes:
 
--   Event schema version increased to 5.  Changes affect all eventcodes.
+-   Event schema version increased to 5.  Changes affect eventcodes 2-4.
 -   Eventcodes 2-4 added `*uname` for every `*uid` field.
 -   Eventcodes 2-4 added `*gname` for every `*gid` field.
 
@@ -51,7 +52,7 @@ Configuration changes:
 
 Event schema changes:
 
--   Event schema version increased to 4.  Changes affect all eventcodes.
+-   Event schema version increased to 4.  Changes affect eventcodes 2-4.
 -   Eventcode 2 added `reconstructed`.
 -   Eventcode 4 added `object.reconstructed`.
 -   Eventcodes 2-4 added `subject.reconstructed`.
@@ -88,7 +89,7 @@ Configuration changes:
 
 Event schema changes:
 
--   Event schema version increased to 3.  Changes affect all eventcodes.
+-   Event schema version increased to 3.  Changes affect eventcodes 1-4.
 -   Eventcode 1 replaced `evtloop.needargv`, `evtloop.needcwd` and
     `evtloop.needpath` with `evtloop.radar38845422_fatal`,
     `evtloop.radar39267328_fatal` and `evtloop.radar39623812_fatal`.
