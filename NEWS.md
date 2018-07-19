@@ -4,12 +4,20 @@
     during the first five minutes and during initialization.
 -   Suppressions by ident now support optionally restricting an ident to a
     specific team ID for non-Apple binaries (issue #27).
+-   User and group IDs are now resolved to names (issues #4, #28).
+-   User and group ID -1 is now logged as signed integer -1 (#29).
 
 Configuration changes:
 
 -   Extended `suppress_image_exec_by_ident`,
     `suppress_image_exec_by_ancestor_ident` and
     `suppress_process_access_by_subject_ident` to support ident@teamid syntax.
+
+Event schema changes:
+
+-   Event schema version increased to 5.  Changes affect all eventcodes.
+-   All eventcodes added `*uname` for every `*uid` field.
+-   All eventcodes added `*gname` for every `*gid` field.
 
 ---
 

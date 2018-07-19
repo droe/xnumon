@@ -9,6 +9,15 @@
  */
 
 /*
+ * This compilation unit contains the code that drives logging through the
+ * configured log format engine.  The structure and content of the logged data
+ * is decided here.
+ *
+ * Currently, this code also does runtime translation of user, group etc IDs
+ * into names.  The reason for this is that we do not want to block the worker
+ * thread with such lookups, because they are not as time-critical as the
+ * acquisition of hashes and code signatures.
+ *
  * General design decisions:
  * - only use null values for configuration, not for data
  */
@@ -23,12 +32,51 @@
 #include "hackmon.h"
 
 #include <assert.h>
+#include <sys/types.h>
+#include <pwd.h>
+#include <grp.h>
 
 config_t *config;
 
 void
 logevt_init(config_t *cfg) {
 	config = cfg;
+}
+
+static void
+logevt_uid(logfmt_t *fmt, FILE *f,
+           uid_t uid, const char *idlabel, const char *namelabel) {
+	struct passwd *pw;
+
+	fmt->dict_item(f, idlabel);
+	if (uid == (uid_t)-1)
+		fmt->value_int(f, uid);
+	else
+		fmt->value_uint(f, uid);
+
+	pw = getpwuid(uid);
+	if (pw) {
+		fmt->dict_item(f, namelabel);
+		fmt->value_string(f, pw->pw_name);
+	}
+}
+
+static void
+logevt_gid(logfmt_t *fmt, FILE *f,
+           gid_t gid, const char *idlabel, const char *namelabel) {
+	struct group *gr;
+
+	fmt->dict_item(f, idlabel);
+	if (gid == (gid_t)-1)
+		fmt->value_int(f, gid);
+	else
+		fmt->value_uint(f, gid);
+
+	gr = getgrgid(gid);
+	if (gr) {
+		fmt->dict_item(f, namelabel);
+		fmt->value_string(f, gr->gr_name);
+	}
 }
 
 static void
@@ -361,10 +409,8 @@ logevt_image_exec_image(logfmt_t *fmt, FILE *f, image_exec_t *ie) {
 	if (ie->flags & (EIFLAG_STAT|EIFLAG_ATTR)) {
 		fmt->dict_item(f, "mode");
 		fmt->value_uint_oct(f, ie->stat.mode);
-		fmt->dict_item(f, "uid");
-		fmt->value_uint(f, ie->stat.uid);
-		fmt->dict_item(f, "gid");
-		fmt->value_uint(f, ie->stat.gid);
+		logevt_uid(fmt, f, ie->stat.uid, "uid", "uname");
+		logevt_gid(fmt, f, ie->stat.gid, "gid", "gname");
 	}
 	if (ie->flags & EIFLAG_STAT) {
 		fmt->dict_item(f, "size");
@@ -510,18 +556,13 @@ logevt_process(logfmt_t *fmt, FILE *f,
 	if (process) {
 		fmt->dict_item(f, "pid");
 		fmt->value_int(f, process->pid);
-		fmt->dict_item(f, "auid");
-		fmt->value_uint(f, process->auid);
+		logevt_uid(fmt, f, process->auid, "auid", "auname");
+		logevt_uid(fmt, f, process->euid, "euid", "euname");
+		logevt_gid(fmt, f, process->egid, "egid", "egname");
+		logevt_uid(fmt, f, process->ruid, "ruid", "runame");
+		logevt_gid(fmt, f, process->rgid, "rgid", "rgname");
 		fmt->dict_item(f, "sid");
 		fmt->value_uint(f, process->sid);
-		fmt->dict_item(f, "euid");
-		fmt->value_uint(f, process->euid);
-		fmt->dict_item(f, "egid");
-		fmt->value_uint(f, process->egid);
-		fmt->dict_item(f, "ruid");
-		fmt->value_uint(f, process->ruid);
-		fmt->dict_item(f, "rgid");
-		fmt->value_uint(f, process->rgid);
 		fmt->dict_item(f, "dev");
 		fmt->value_ttydev(f, process->dev);
 		fmt->dict_item(f, "addr");
