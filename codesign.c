@@ -217,6 +217,8 @@ codesign_new(const char *cpath) {
 	}
 	CFRelease(scode);
 	if (rv != errSecSuccess) {
+		/* we are treating ad-hoc signatures as bad signatures;
+		 * might want to change this at some point */
 		CFRelease(dict);
 		free(cs->ident);
 		cs->ident = NULL;
