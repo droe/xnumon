@@ -238,7 +238,7 @@ codesign_new(const char *cpath) {
 		memcpy(cs->cdhash, CFDataGetBytePtr(cdhash), cs->cdhashsz);
 	}
 
-	/* Apple binaries have no Team ID or Developer ID */
+	/* skip Team ID and Developer ID extraction for Apple System sigs */
 	if (cs->origin == CODESIGN_ORIGIN_APPLE_SYSTEM)
 		goto out;
 
@@ -252,6 +252,10 @@ codesign_new(const char *cpath) {
 			goto enomemout;
 		}
 	}
+
+	/* skip Developer ID extraction unless sig origin is Developer ID */
+	if (cs->origin != CODESIGN_ORIGIN_DEVELOPER_ID)
+		goto out;
 
 	/* extract Developer ID from CN of first certificate in chain */
 	CFArrayRef chain = CFDictionaryGetValue(dict,
