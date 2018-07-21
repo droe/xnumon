@@ -238,7 +238,7 @@ image_exec_close(image_exec_t *image) {
  * kern != 0 indicates that we are currently handling a kernel module callback.
  */
 static int
-image_exec_analyze(image_exec_t *image, int kern) {
+image_exec_acquire(image_exec_t *image, int kern) {
 	stat_attr_t st;
 	off_t sz;
 	bool hit;
@@ -448,10 +448,10 @@ image_exec_work(image_exec_t *ei) {
 #ifdef DEBUG_REFS
 	fprintf(stderr, "DEBUG_REFS: image_exec_work(%p)\n", ei);
 #endif
-	image_exec_analyze(ei, 0);
+	image_exec_acquire(ei, 0);
 	image_exec_close(ei);
 	if (ei->script) {
-		image_exec_analyze(ei->script, 0);
+		image_exec_acquire(ei->script, 0);
 		image_exec_close(ei->script);
 	}
 	if (config->ancestors < SIZE_MAX)
@@ -1056,7 +1056,7 @@ procmon_kern_preexec(struct timespec *tm, pid_t pid, const char *imagepath) {
 	ei->hdr.tv = *tm;
 	ei->pid = pid;
 	image_exec_open(ei, NULL);
-	image_exec_analyze(ei, 1);
+	image_exec_acquire(ei, 1);
 	tommy_list_insert_tail(&kqlist, &ei->hdr.node, ei);
 	kqsize++;
 }

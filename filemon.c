@@ -107,7 +107,7 @@ launchd_add_open(launchd_add_t *ldadd) {
 }
 
 static void
-launchd_add_analyze(launchd_add_t *ldadd) {
+launchd_add_acquire(launchd_add_t *ldadd) {
 	CFPropertyListRef plist;
 
 	assert(ldadd->plist_path);
@@ -171,7 +171,7 @@ launchd_add_close(launchd_add_t *ldadd) {
 
 static int
 launchd_add_work(launchd_add_t *ldadd) {
-	launchd_add_analyze(ldadd);
+	launchd_add_acquire(ldadd);
 	launchd_add_close(ldadd);
 	if (!ldadd->program_path)
 		return -1; /* don't log */
