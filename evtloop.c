@@ -865,7 +865,7 @@ evtloop_run(config_t *cfg) {
 		rv = -1;
 		goto errout_silent;
 	}
-	if (codesign_init() == -1) {
+	if (codesign_init(cfg) == -1) {
 		fprintf(stderr, "Failed to initialize codesign\n");
 		rv = -1;
 		goto errout_silent;

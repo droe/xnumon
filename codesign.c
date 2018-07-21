@@ -11,12 +11,15 @@
 #include "codesign.h"
 
 #include "cf.h"
+#include "debug.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 
 #include <CoreFoundation/CoreFoundation.h>
 #include <Security/Security.h>
+
+config_t *config;
 
 typedef struct {
 	int origin;
@@ -40,7 +43,11 @@ origin_req_tuple_t reqs[] = {
 }
 
 int
-codesign_init() {
+codesign_init(config_t *cfg) {
+	if (config)
+		return -1;
+	config = cfg;
+
 	CREATE_REQ(reqs[0].req, "anchor apple");
 	CREATE_REQ(reqs[1].req, "anchor apple generic and "
 		"certificate leaf[field.1.2.840.113635.100.6.1.9] exists");
@@ -59,6 +66,7 @@ codesign_fini() {
 			reqs[i].req = NULL;
 		}
 	}
+	config = NULL;
 }
 
 #undef CREATE_REQ
@@ -87,7 +95,6 @@ codesign_dup(const codesign_t *other) {
 
 	cs->result = other->result;
 	cs->origin = other->origin;
-	cs->error = other->error;
 	if (other->ident) {
 		cs->ident = strdup(other->ident);
 		if (!cs->ident)
@@ -136,7 +143,9 @@ codesign_new(const char *cpath) {
 	rv = SecStaticCodeCreateWithPath(url, kSecCSDefaultFlags, &scode);
 	CFRelease(url);
 	if (rv != errSecSuccess) {
-		cs->error = rv;
+		DEBUG(config->debug, "codesign_error",
+		      "SecStaticCodeCreateWithPath(%s) => %i",
+		      cpath, rv);
 		cs->result = CODESIGN_RESULT_ERROR;
 		return cs;
 	}
@@ -153,7 +162,9 @@ codesign_new(const char *cpath) {
 		CFRelease(scode);
 		return cs;
 	default:
-		cs->error = rv;
+		DEBUG(config->debug, "codesign_error",
+		      "SecCodeCopyDesignatedRequirement(%s) => %i",
+		      cpath, rv);
 		cs->result = CODESIGN_RESULT_ERROR;
 		CFRelease(scode);
 		return cs;
@@ -168,6 +179,9 @@ codesign_new(const char *cpath) {
 	                                designated_req);
 	CFRelease(designated_req);
 	if (rv != errSecSuccess) {
+		DEBUG(config->debug, "codesign_bad",
+		      "SecStaticCodeCheckValidity(%s, full, designated_req)"
+		      " => %i", cpath, rv);
 		cs->result = CODESIGN_RESULT_BAD;
 		CFRelease(scode);
 		return cs;
@@ -182,27 +196,12 @@ codesign_new(const char *cpath) {
 	                                   &dict);
 	if (rv != errSecSuccess || !dict) {
 		CFRelease(scode);
-		cs->error = rv;
+		DEBUG(config->debug, "codesign_error",
+		      "SecCodeCopySigningInformation(%s)"
+		      " => %i", cpath, rv);
 		cs->result = CODESIGN_RESULT_ERROR;
 		return cs;
 	}
-
-	/* copy ident string; signed implies ident string is present */
-	CFStringRef ident = CFDictionaryGetValue(dict, kSecCodeInfoIdentifier);
-	if (ident && cf_is_string(ident)) {
-		cs->ident = cf_cstr(ident);
-		if (!cs->ident) {
-			CFRelease(scode);
-			CFRelease(dict);
-			goto enomemout;
-		}
-	} else {
-		CFRelease(scode);
-		CFRelease(dict);
-		cs->result = CODESIGN_RESULT_BAD;
-		return cs;
-	}
-	assert(ident && cs->ident);
 
 	/* reduced set of flags, we are only checking requirements here */
 	SecCSFlags csflags = kSecCSDefaultFlags|
@@ -217,13 +216,20 @@ codesign_new(const char *cpath) {
 	}
 	CFRelease(scode);
 	if (rv != errSecSuccess) {
-		/* we are treating ad-hoc signatures as bad signatures;
-		 * might want to change this at some point */
-		CFRelease(dict);
-		free(cs->ident);
-		cs->ident = NULL;
-		cs->result = CODESIGN_RESULT_BAD;
-		return cs;
+		/* signature is okay, but none of the requirements match */
+		cs->result = CODESIGN_RESULT_ADHOC;
+	} else {
+		cs->result = CODESIGN_RESULT_GOOD;
+	}
+
+	/* extract ident */
+	CFStringRef ident = CFDictionaryGetValue(dict, kSecCodeInfoIdentifier);
+	if (ident && cf_is_string(ident)) {
+		cs->ident = cf_cstr(ident);
+		if (!cs->ident) {
+			CFRelease(dict);
+			goto enomemout;
+		}
 	}
 
 	/* extract CDHash */
@@ -280,7 +286,6 @@ codesign_new(const char *cpath) {
 
 out:
 	CFRelease(dict);
-	cs->result = CODESIGN_RESULT_GOOD;
 	return cs;
 
 enomemout:
@@ -297,6 +302,8 @@ codesign_result_s(codesign_t *cs) {
 		return "unsigned";
 	case CODESIGN_RESULT_GOOD:
 		return "good";
+	case CODESIGN_RESULT_ADHOC:
+		return "adhoc";
 	case CODESIGN_RESULT_BAD:
 		return "bad";
 	case CODESIGN_RESULT_ERROR:
@@ -329,8 +336,6 @@ codesign_fprint(FILE *f, codesign_t *cs) {
 	fprintf(f, "signature: %s\n", codesign_result_s(cs));
 	if (cs->origin)
 		fprintf(f, "origin: %s\n", codesign_origin_s(cs));
-	if (cs->error)
-		fprintf(f, "error: %lu\n", cs->error);
 	if (cs->ident)
 		fprintf(f, "ident: %s\n", cs->ident);
 	if (cs->cdhash) {

@@ -25,8 +25,9 @@
 static void
 fusage(FILE *f, const char *argv0) {
 	fprintf(f,
-"Usage: %s <path>\n"
+"Usage: %s [-D] <path>\n"
 "       %s -h\n"
+" -D             debug mode: print diagnostic messages\n"
 " -h             print usage and exit\n"
 , argv0, argv0);
 }
@@ -34,9 +35,14 @@ fusage(FILE *f, const char *argv0) {
 int
 main(int argc, char *argv[]) {
 	int ch;
+	config_t cfg;
 
-	while ((ch = getopt(argc, argv, "h")) != -1) {
+	bzero(&cfg, sizeof(config_t));
+	while ((ch = getopt(argc, argv, "Dh")) != -1) {
 		switch (ch) {
+			case 'D':
+				cfg.debug = true;
+				break;
 			case 'h':
 				fusage(stdout, argv[0]);
 				exit(EXIT_SUCCESS);
@@ -54,7 +60,7 @@ main(int argc, char *argv[]) {
 	argc -= optind;
 	argv += optind;
 
-	if (codesign_init() != 0) {
+	if (codesign_init(&cfg) != 0) {
 		fprintf(stderr, "Failed to initialize codesign module\n");
 		codesign_fini();
 		exit(EXIT_FAILURE);

@@ -421,8 +421,7 @@ image_exec_acquire(image_exec_t *image, int kern) {
 bool
 image_exec_match_suppressions(image_exec_t *ie,
                               strset_t *by_ident, strset_t *by_path) {
-	if (ie->codesign && ie->codesign->ident) {
-		/* presence of ident implies that signature is good */
+	if (ie->codesign && codesign_is_good(ie->codesign)) {
 		if (strset_contains3(by_ident, ie->codesign->ident,
 		                               ie->codesign->teamid))
 			return true;

@@ -11,6 +11,7 @@
 #ifndef CODESIGN_H
 #define CODESIGN_H
 
+#include "config.h"
 #include "attrib.h"
 
 #include <sys/types.h>
@@ -22,15 +23,15 @@ typedef struct {
 #define CODESIGN_RESULT_NONE          0
 #define CODESIGN_RESULT_UNSIGNED      1
 #define CODESIGN_RESULT_GOOD          2
-#define CODESIGN_RESULT_BAD           3
-#define CODESIGN_RESULT_ERROR         4
+#define CODESIGN_RESULT_ADHOC         3
+#define CODESIGN_RESULT_BAD           4
+#define CODESIGN_RESULT_ERROR         5
 	int origin;
 #define CODESIGN_ORIGIN_NONE          0
 #define CODESIGN_ORIGIN_APPLE_SYSTEM  1
 #define CODESIGN_ORIGIN_MAC_APP_STORE 2
 #define CODESIGN_ORIGIN_DEVELOPER_ID  3
 #define CODESIGN_ORIGIN_APPLE_GENERIC 4
-	long error;
 	char *ident;
 	unsigned char *cdhash;
 	size_t cdhashsz;
@@ -51,7 +52,7 @@ const char * codesign_result_s(codesign_t *) NONNULL(1);
 const char * codesign_origin_s(codesign_t *) NONNULL(1);
 void codesign_fprint(FILE *, codesign_t *) NONNULL(1,2);
 
-int codesign_init(void) WUNRES;
+int codesign_init(config_t *) WUNRES NONNULL(1);
 void codesign_fini(void);
 
 #endif

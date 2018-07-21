@@ -532,13 +532,15 @@ logevt_process_image_exec(logfmt_t *fmt, FILE *f, image_exec_t *ie) {
 			fmt->value_buf_hex(f, ie->hashes.sha256, SHA256SZ);
 		}
 	}
-	if (ie->codesign && ie->codesign->ident) {
-		fmt->dict_item(f, "ident");
-		fmt->value_string(f, ie->codesign->ident);
-	}
-	if (ie->codesign && ie->codesign->teamid) {
-		fmt->dict_item(f, "teamid");
-		fmt->value_string(f, ie->codesign->teamid);
+	if (ie->codesign && codesign_is_good(ie->codesign)) {
+		if (ie->codesign->ident) {
+			fmt->dict_item(f, "ident");
+			fmt->value_string(f, ie->codesign->ident);
+		}
+		if (ie->codesign->teamid) {
+			fmt->dict_item(f, "teamid");
+			fmt->value_string(f, ie->codesign->teamid);
+		}
 	}
 	if (ie->script) {
 		fmt->dict_item(f, "script");

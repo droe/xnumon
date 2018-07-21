@@ -5,9 +5,13 @@
 -   User and group IDs are now by default resolved to names (issues #4, #28).
 -   User and group ID -1 is now logged as signed integer -1 instead of unsigned
     integer 4294967295 (issue #29).
--   Extract the `origin` of signed binaries from the code signature:
+-   Extract the `origin` of good signed binaries from the code signature:
     Apple System (`system`), Mac App Store (`appstore`), Developer ID (`devid`)
     or other Apple `generic` (issue #31) and align algorithm with Gatekeeper.
+-   Report ad-hoc signed binaries as signature `adhoc` with no origin instead
+    of signature `bad`; ident, cdhash and teamid are also extracted for ad-hoc
+    signed binaries, but should not be trusted since they cannot be verified.
+    For suppression, only ident strings for good signatures are considered.
 -   Add `chkcs` developer utility to extract code signatures from binaries or
     bundles on the command line.
 -   Add capability to omit less useful fields from logged events: file mode,
