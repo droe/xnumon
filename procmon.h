@@ -30,6 +30,7 @@
 typedef struct {
 	uint32_t procs;
 	uint32_t images;
+	uint64_t liveacq;
 	uint64_t miss_bypid;
 	uint64_t miss_forksubj;
 	uint64_t miss_execsubj;

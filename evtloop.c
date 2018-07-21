@@ -603,8 +603,9 @@ siginfo_arrived(UNUSED int sig, UNUSED void *udata) {
 	                st.el_radar39623812);
 
 	fprintf(stderr, "procmon "
-	                "actprocs:%"PRIu32" "
-	                "actimages:%"PRIu32" "
+	                "actprc:%"PRIu32" "
+	                "actimg:%"PRIu32" "
+	                "liveacq:%"PRIu64" "
 	                "miss bp:%"PRIu64" "
 	                "fs:%"PRIu64" "
 	                "es:%"PRIu64" "
@@ -614,6 +615,7 @@ siginfo_arrived(UNUSED int sig, UNUSED void *udata) {
 	                "oom:%"PRIu64"\n",
 	                st.pm.procs,
 	                st.pm.images,
+	                st.pm.liveacq,
 	                st.pm.miss_bypid,
 	                st.pm.miss_forksubj,
 	                st.pm.miss_execsubj,

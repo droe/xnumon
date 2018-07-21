@@ -46,6 +46,7 @@ static uint64_t kqdrop;         /* counts preloaded imgs removed due max TTL */
 static uint64_t kqskip;         /* counts non-matching entries skipped in kq */
 
 static atomic32_t images;
+static uint64_t liveacq;        /* counts live process acquisitions */
 static uint64_t miss_bypid;     /* counts various miss conditions */
 static uint64_t miss_forksubj;
 static uint64_t miss_execsubj;
@@ -619,6 +620,7 @@ image_exec_by_pid(pid_t pid) {
 			}
 			return NULL;
 		}
+		liveacq++;
 	}
 	image_exec_ref(proc->image_exec);
 	return proc->image_exec;
@@ -650,6 +652,7 @@ procmon_fork(struct timespec *tv,
 			}
 			return;
 		}
+		liveacq++;
 	}
 	assert(parent);
 
@@ -737,6 +740,7 @@ procmon_exec(struct timespec *tv,
 				free(argv);
 			return;
 		}
+		liveacq++;
 	}
 	assert(proc);
 
@@ -1017,6 +1021,7 @@ procmon_chdir(pid_t pid, char *path) {
 			free(path);
 			return;
 		}
+		liveacq++;
 	}
 	assert(proc);
 
@@ -1098,6 +1103,7 @@ procmon_getcwd(pid_t pid) {
 			}
 			return NULL;
 		}
+		liveacq++;
 	}
 	return proc->cwd;
 }
@@ -1152,6 +1158,7 @@ procmon_stats(procmon_stat_t *st) {
 
 	st->procs = procs; /* external */
 	st->images = (uint32_t)images;
+	st->liveacq = liveacq;
 	st->miss_bypid = miss_bypid;
 	st->miss_forksubj = miss_forksubj;
 	st->miss_execsubj = miss_execsubj;

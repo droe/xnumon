@@ -17,6 +17,8 @@
     unless an actual address is present.
 -   Fix automatic configuration reloading to pick up changes to the config file
     during the first five minutes and during initialization.
+-   Add metric for the number of processes successfully acquired from live
+    process state as part of working around some bug or missed event.
 
 Configuration changes:
 
@@ -30,6 +32,7 @@ Configuration changes:
 Event schema changes:
 
 -   Event schema version increased to 5.  Changes affect eventcodes 2-4.
+-   Eventcode 1 added `procmon.liveacq`.
 -   Eventcode 2 added `image.origin`.
 -   Eventcodes 2-4 added `*uname` for every `*uid` field.
 -   Eventcodes 2-4 added `*gname` for every `*gid` field.
