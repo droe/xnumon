@@ -267,6 +267,11 @@ codesign_result_s(codesign_t *cs) {
 	}
 }
 
+bool
+codesign_is_good(codesign_t *cs) {
+	return (cs->result & CODESIGN_RESULT_GOOD);
+}
+
 /*
  * Returns true iff the code signature is a genuine Apple binary, i.e. code
  * originating at Apple, not from developers part of the Developer ID program.
@@ -277,5 +282,25 @@ bool
 codesign_is_apple(codesign_t *cs) {
 	return (cs->result & CODESIGN_RESULT_GOOD) &&
 	       (cs->result & CODESIGN_RESULT_APPLE);
+}
+
+void
+codesign_fprint(FILE *f, codesign_t *cs) {
+	fprintf(f, "signature: %s\n", codesign_result_s(cs));
+	if (cs->error)
+		fprintf(f, "error: %lu\n", cs->error);
+	if (cs->ident)
+		fprintf(f, "ident: %s\n", cs->ident);
+	if (cs->cdhash) {
+		fprintf(f, "cdhash: ");
+		for (size_t i = 0; i < cs->cdhashsz; i++) {
+			fprintf(f, "%02x", cs->cdhash[i]);
+		}
+		fprintf(f, "\n");
+	}
+	if (cs->teamid)
+		fprintf(f, "teamid: %s\n", cs->teamid);
+	if (cs->devid)
+		fprintf(f, "devid: %s\n", cs->devid);
 }
 

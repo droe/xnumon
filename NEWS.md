@@ -7,11 +7,13 @@
 -   User and group IDs are now by default resolved to names (issues #4, #28).
 -   User and group ID -1 is now logged as signed integer -1 instead of unsigned
     integer 4294967295 (issue #29).
--   Added capability to omit less useful fields from logged events: file mode,
+-   Add capability to omit less useful fields from logged events: file mode,
     size, mtime, ctime, btime, and groups: file gid and process egid/rgid
     (issue #3).
 -   Treat TTY source address `0.0.0.0` as no address and hide the `addr` field
     unless an actual address is present.
+-   Add `chkcs` developer utility to extract code signatures from binaries or
+    bundles on the command line.
 
 Configuration changes:
 

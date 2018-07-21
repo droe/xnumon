@@ -4,6 +4,7 @@
 xnumon
 timeops
 mklaunchdplist
+chkcs
 auditdump
 test/sizeof/sizeof
 test/bin/*.test

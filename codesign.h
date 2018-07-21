@@ -15,6 +15,7 @@
 
 #include <sys/types.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 typedef struct {
 	int result;
@@ -37,7 +38,9 @@ codesign_t * codesign_dup(const codesign_t *) MALLOC NONNULL(1);
 void codesign_free(codesign_t *) NONNULL(1);
 
 const char * codesign_result_s(codesign_t *) NONNULL(1);
+bool codesign_is_good(codesign_t *) NONNULL(1);
 bool codesign_is_apple(codesign_t *) NONNULL(1);
+void codesign_fprint(FILE *, codesign_t *) NONNULL(1,2);
 
 #endif
 

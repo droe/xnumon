@@ -94,10 +94,14 @@ $(TARGETS): %: $(OBJS) %.o
 
 sign: $(TARGETS:=.signed)
 
-%.signed: %
-	cp $^ $@
-	#strip $@
-	$(CODESIGN) -s $(DEVIDAPPL) -i ch.roe.$^ -f $@
+%.signed: % chkcs
+	cp $< $@
+	@#strip $@
+	$(CODESIGN) -s $(DEVIDAPPL) -i ch.roe.$< -f $@
+	$(CODESIGN) -d --verbose=4 $@
+	$(CODESIGN) --verify --deep --strict --verbose=4 $@
+	./chkcs $@
+	@#spctl --verbose=4 --assess --type execute $@
 
 copyright: $(filter-out $(EXTSRCS),$(wildcard *.c *.h)) kext/*.c kext/*.h
 	Mk/bin/copyright.py $^
