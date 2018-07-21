@@ -319,7 +319,7 @@ codesign_origin_s(codesign_t *cs) {
 	case CODESIGN_ORIGIN_APPLE_GENERIC:
 		return "generic";
 	default:
-		/* this should never happen */
+		/* this should never happen if a signature is present */
 		return "undefined";
 	}
 }
@@ -327,7 +327,8 @@ codesign_origin_s(codesign_t *cs) {
 void
 codesign_fprint(FILE *f, codesign_t *cs) {
 	fprintf(f, "signature: %s\n", codesign_result_s(cs));
-	fprintf(f, "origin: %s\n", codesign_origin_s(cs));
+	if (cs->origin)
+		fprintf(f, "origin: %s\n", codesign_origin_s(cs));
 	if (cs->error)
 		fprintf(f, "error: %lu\n", cs->error);
 	if (cs->ident)

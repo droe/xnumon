@@ -19,11 +19,13 @@
 
 typedef struct {
 	int result;
+#define CODESIGN_RESULT_NONE          0
 #define CODESIGN_RESULT_UNSIGNED      1
 #define CODESIGN_RESULT_GOOD          2
 #define CODESIGN_RESULT_BAD           3
 #define CODESIGN_RESULT_ERROR         4
 	int origin;
+#define CODESIGN_ORIGIN_NONE          0
 #define CODESIGN_ORIGIN_APPLE_SYSTEM  1
 #define CODESIGN_ORIGIN_MAC_APP_STORE 2
 #define CODESIGN_ORIGIN_DEVELOPER_ID  3

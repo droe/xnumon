@@ -463,8 +463,10 @@ logevt_image_exec_image(logfmt_t *fmt, FILE *f, image_exec_t *ie) {
 	if (ie->codesign) {
 		fmt->dict_item(f, "signature");
 		fmt->value_string(f, codesign_result_s(ie->codesign));
-		fmt->dict_item(f, "origin");
-		fmt->value_string(f, codesign_origin_s(ie->codesign));
+		if (ie->codesign->origin) {
+			fmt->dict_item(f, "origin");
+			fmt->value_string(f, codesign_origin_s(ie->codesign));
+		}
 		if (ie->codesign->ident) {
 			fmt->dict_item(f, "ident");
 			fmt->value_string(f, ie->codesign->ident);
