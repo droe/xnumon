@@ -25,9 +25,9 @@
 static void
 fusage(FILE *f, const char *argv0) {
 	fprintf(f,
-"Usage: %s [-D] <path>\n"
+"Usage: %s [-v] <path>\n"
 "       %s -h\n"
-" -D             debug mode: print diagnostic messages\n"
+" -v             verbose: print diagnostic messages\n"
 " -h             print usage and exit\n"
 , argv0, argv0);
 }
@@ -38,9 +38,9 @@ main(int argc, char *argv[]) {
 	config_t cfg;
 
 	bzero(&cfg, sizeof(config_t));
-	while ((ch = getopt(argc, argv, "Dh")) != -1) {
+	while ((ch = getopt(argc, argv, "vh")) != -1) {
 		switch (ch) {
-			case 'D':
+			case 'v':
 				cfg.debug = true;
 				break;
 			case 'h':
