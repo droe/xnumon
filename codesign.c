@@ -18,6 +18,51 @@
 #include <CoreFoundation/CoreFoundation.h>
 #include <Security/Security.h>
 
+typedef struct {
+	int origin;
+	SecRequirementRef req;
+} origin_req_tuple_t;
+
+origin_req_tuple_t reqs[] = {
+	{CODESIGN_ORIGIN_APPLE_SYSTEM, NULL},
+	{CODESIGN_ORIGIN_MAC_APP_STORE, NULL},
+	{CODESIGN_ORIGIN_DEVELOPER_ID, NULL},
+	{CODESIGN_ORIGIN_APPLE_GENERIC, NULL},
+};
+
+#define CREATE_REQ(REQ, REQSTR) \
+{ \
+	REQ = NULL; \
+	if (SecRequirementCreateWithString(CFSTR(REQSTR), \
+	                                   kSecCSDefaultFlags, \
+	                                   &REQ) != errSecSuccess || !REQ) \
+		return -1; \
+}
+
+int
+codesign_init() {
+	CREATE_REQ(reqs[0].req, "anchor apple");
+	CREATE_REQ(reqs[1].req, "anchor apple generic and "
+		"certificate leaf[field.1.2.840.113635.100.6.1.9] exists");
+	CREATE_REQ(reqs[2].req, "anchor apple generic and "
+		"certificate 1[field.1.2.840.113635.100.6.2.6] exists and "
+		"certificate leaf[field.1.2.840.113635.100.6.1.13] exists");
+	CREATE_REQ(reqs[3].req, "anchor apple generic");
+	return 0;
+}
+
+void
+codesign_fini() {
+	for (size_t i = 0; i < sizeof(reqs)/sizeof(origin_req_tuple_t); i++) {
+		if (reqs[i].req) {
+			CFRelease(reqs[i].req);
+			reqs[i].req = NULL;
+		}
+	}
+}
+
+#undef CREATE_REQ
+
 void
 codesign_free(codesign_t *cs) {
 	if (cs->ident)
@@ -41,6 +86,7 @@ codesign_dup(const codesign_t *other) {
 	bzero(cs, sizeof(codesign_t));
 
 	cs->result = other->result;
+	cs->origin = other->origin;
 	cs->error = other->error;
 	if (other->ident) {
 		cs->ident = strdup(other->ident);
@@ -96,8 +142,9 @@ codesign_new(const char *cpath) {
 	}
 
 	/* verify signature using embedded designated requirement */
-	SecRequirementRef req = NULL;
-	rv = SecCodeCopyDesignatedRequirement(scode, kSecCSDefaultFlags, &req);
+	SecRequirementRef designated_req = NULL;
+	rv = SecCodeCopyDesignatedRequirement(scode, kSecCSDefaultFlags,
+	                                      &designated_req);
 	switch (rv) {
 	case errSecSuccess:
 		break;
@@ -118,8 +165,8 @@ codesign_new(const char *cpath) {
 	                                kSecCSCheckNestedCode|
 	                                kSecCSEnforceRevocationChecks|
 	                                kSecCSConsiderExpiration,
-	                                req);
-	CFRelease(req);
+	                                designated_req);
+	CFRelease(designated_req);
 	if (rv != errSecSuccess) {
 		cs->result = CODESIGN_RESULT_BAD;
 		CFRelease(scode);
@@ -157,35 +204,23 @@ codesign_new(const char *cpath) {
 	}
 	assert(ident && cs->ident);
 
-	/* verify signing certificate was issued by appropriate Apple CA; this
-	 * ensures that a non-Apple binary cannot carry an com.apple ident */
-	CFStringRef anchor;
-	if (CFStringHasPrefix(ident, CFSTR("com.apple."))) {
-		cs->result |= CODESIGN_RESULT_APPLE;
-		anchor = CFSTR("anchor apple");
-	} else {
-		anchor = CFSTR("anchor apple generic");
+	/* reduced set of flags, we are only checking requirements here */
+	SecCSFlags csflags = kSecCSDefaultFlags|
+	                     kSecCSCheckAllArchitectures|
+	                     kSecCSStrictValidate;
+	for (size_t i = 0; i < sizeof(reqs)/sizeof(origin_req_tuple_t); i++) {
+		rv = SecStaticCodeCheckValidity(scode, csflags, reqs[i].req);
+		if (rv == errSecSuccess) {
+			cs->origin = reqs[i].origin;
+			break;
+		}
 	}
-	req = NULL;
-	rv = SecRequirementCreateWithString(anchor, kSecCSDefaultFlags, &req);
-	if (rv != errSecSuccess || !req) {
-		CFRelease(scode);
-		CFRelease(dict);
-		goto enomemout;
-	}
-	/* reduced set of flags, we are only checking the anchor here */
-	rv = SecStaticCodeCheckValidity(scode,
-	                                kSecCSDefaultFlags|
-	                                kSecCSCheckAllArchitectures|
-	                                kSecCSStrictValidate,
-	                                req);
 	CFRelease(scode);
-	CFRelease(req);
 	if (rv != errSecSuccess) {
 		CFRelease(dict);
 		free(cs->ident);
 		cs->ident = NULL;
-		cs->result = CODESIGN_RESULT_BAD; /* also clears _APPLE */
+		cs->result = CODESIGN_RESULT_BAD;
 		return cs;
 	}
 
@@ -202,7 +237,7 @@ codesign_new(const char *cpath) {
 	}
 
 	/* Apple binaries have no Team ID or Developer ID */
-	if (cs->result & CODESIGN_RESULT_APPLE)
+	if (cs->origin == CODESIGN_ORIGIN_APPLE_SYSTEM)
 		goto out;
 
 	/* extract Team ID associated with the signing Developer ID */
@@ -239,8 +274,7 @@ codesign_new(const char *cpath) {
 
 out:
 	CFRelease(dict);
-	/* avoid clearing CODESIGN_RESULT_APPLE */
-	cs->result |= CODESIGN_RESULT_GOOD;
+	cs->result = CODESIGN_RESULT_GOOD;
 	return cs;
 
 enomemout:
@@ -252,7 +286,7 @@ enomemout:
 
 const char *
 codesign_result_s(codesign_t *cs) {
-	switch (cs->result & CODESIGN_RESULT_MASK) {
+	switch (cs->result) {
 	case CODESIGN_RESULT_UNSIGNED:
 		return "unsigned";
 	case CODESIGN_RESULT_GOOD:
@@ -267,26 +301,27 @@ codesign_result_s(codesign_t *cs) {
 	}
 }
 
-bool
-codesign_is_good(codesign_t *cs) {
-	return (cs->result & CODESIGN_RESULT_GOOD);
-}
-
-/*
- * Returns true iff the code signature is a genuine Apple binary, i.e. code
- * originating at Apple, not from developers part of the Developer ID program.
- * CODESIGN_RESULT_APPLE should only be set on good signatures, but for defense
- * in depth we are testing both flags anyway.
- */
-bool
-codesign_is_apple(codesign_t *cs) {
-	return (cs->result & CODESIGN_RESULT_GOOD) &&
-	       (cs->result & CODESIGN_RESULT_APPLE);
+const char *
+codesign_origin_s(codesign_t *cs) {
+	switch (cs->origin) {
+	case CODESIGN_ORIGIN_APPLE_SYSTEM:
+		return "system";
+	case CODESIGN_ORIGIN_MAC_APP_STORE:
+		return "appstore";
+	case CODESIGN_ORIGIN_DEVELOPER_ID:
+		return "devid";
+	case CODESIGN_ORIGIN_APPLE_GENERIC:
+		return "generic";
+	default:
+		/* this should never happen */
+		return "undefined";
+	}
 }
 
 void
 codesign_fprint(FILE *f, codesign_t *cs) {
 	fprintf(f, "signature: %s\n", codesign_result_s(cs));
+	fprintf(f, "origin: %s\n", codesign_origin_s(cs));
 	if (cs->error)
 		fprintf(f, "error: %lu\n", cs->error);
 	if (cs->ident)

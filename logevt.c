@@ -445,7 +445,7 @@ logevt_image_exec_image(logfmt_t *fmt, FILE *f, image_exec_t *ie) {
 	if ((ie->flags & EIFLAG_HASHES) &&
 	    (!config->omit_apple_hashes ||
 	     !ie->codesign ||
-	     !codesign_is_apple(ie->codesign))) {
+	     !codesign_is_apple_system(ie->codesign))) {
 		if (config->hflags & HASH_MD5) {
 			fmt->dict_item(f, "md5");
 			fmt->value_buf_hex(f, ie->hashes.md5, MD5SZ);
@@ -463,6 +463,8 @@ logevt_image_exec_image(logfmt_t *fmt, FILE *f, image_exec_t *ie) {
 	if (ie->codesign) {
 		fmt->dict_item(f, "signature");
 		fmt->value_string(f, codesign_result_s(ie->codesign));
+		fmt->dict_item(f, "origin");
+		fmt->value_string(f, codesign_origin_s(ie->codesign));
 		if (ie->codesign->ident) {
 			fmt->dict_item(f, "ident");
 			fmt->value_string(f, ie->codesign->ident);
@@ -498,7 +500,7 @@ logevt_process_image_exec(logfmt_t *fmt, FILE *f, image_exec_t *ie) {
 	if ((ie->flags & EIFLAG_HASHES) &&
 	    (!config->omit_apple_hashes ||
 	     !ie->codesign ||
-	     !codesign_is_apple(ie->codesign))) {
+	     !codesign_is_apple_system(ie->codesign))) {
 		if (config->hflags & HASH_MD5) {
 			fmt->dict_item(f, "md5");
 			fmt->value_buf_hex(f, ie->hashes.md5, MD5SZ);

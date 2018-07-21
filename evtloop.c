@@ -863,6 +863,11 @@ evtloop_run(config_t *cfg) {
 		rv = -1;
 		goto errout_silent;
 	}
+	if (codesign_init() == -1) {
+		fprintf(stderr, "Failed to initialize codesign\n");
+		rv = -1;
+		goto errout_silent;
+	}
 	if (log_init(cfg) == -1) {
 		fprintf(stderr, "Failed to initialize logging\n");
 		rv = -1;
@@ -1068,6 +1073,7 @@ errout_silent:
 	procmon_fini();         /* clear kext queue */
 	log_fini();             /* drain log queue */
 	assert(procmon_images() == 0);
+	codesign_fini();
 	os_fini();
 	cacheldpl_fini();
 	cachecsig_fini();

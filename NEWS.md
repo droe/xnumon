@@ -12,6 +12,10 @@
     (issue #3).
 -   Treat TTY source address `0.0.0.0` as no address and hide the `addr` field
     unless an actual address is present.
+-   Extract the `origin` of signed binaries from the code signature:
+    Apple System (`system`), Mac App Store (`appstore`), Developer ID (`devid`)
+    or other Apple `generic` (issue #31) and align algorithm and tested
+    requirements with Gatekeeper.
 -   Add `chkcs` developer utility to extract code signatures from binaries or
     bundles on the command line.
 
@@ -27,6 +31,7 @@ Configuration changes:
 Event schema changes:
 
 -   Event schema version increased to 5.  Changes affect eventcodes 2-4.
+-   Eventcode 2 added `image.origin`.
 -   Eventcodes 2-4 added `*uname` for every `*uid` field.
 -   Eventcodes 2-4 added `*gname` for every `*gid` field.
 
