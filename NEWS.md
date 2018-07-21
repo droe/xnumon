@@ -1,23 +1,22 @@
 ### xnumon develop
 
--   Fix automatic configuration reloading to pick up changes to the config file
-    during the first five minutes and during initialization.
 -   Suppressions by ident now support optionally restricting an ident to a
-    specific team ID for non-Apple binaries (issue #27).
+    specific team ID (issue #27).
 -   User and group IDs are now by default resolved to names (issues #4, #28).
 -   User and group ID -1 is now logged as signed integer -1 instead of unsigned
     integer 4294967295 (issue #29).
+-   Extract the `origin` of signed binaries from the code signature:
+    Apple System (`system`), Mac App Store (`appstore`), Developer ID (`devid`)
+    or other Apple `generic` (issue #31) and align algorithm with Gatekeeper.
+-   Add `chkcs` developer utility to extract code signatures from binaries or
+    bundles on the command line.
 -   Add capability to omit less useful fields from logged events: file mode,
     size, mtime, ctime, btime, and groups: file gid and process egid/rgid
     (issue #3).
 -   Treat TTY source address `0.0.0.0` as no address and hide the `addr` field
     unless an actual address is present.
--   Extract the `origin` of signed binaries from the code signature:
-    Apple System (`system`), Mac App Store (`appstore`), Developer ID (`devid`)
-    or other Apple `generic` (issue #31) and align algorithm and tested
-    requirements with Gatekeeper.
--   Add `chkcs` developer utility to extract code signatures from binaries or
-    bundles on the command line.
+-   Fix automatic configuration reloading to pick up changes to the config file
+    during the first five minutes and during initialization.
 
 Configuration changes:
 
