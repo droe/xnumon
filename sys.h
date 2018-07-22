@@ -37,6 +37,7 @@ pid_t * sys_pidlist(int *) MALLOC NONNULL(1);
 
 gid_t sys_gidbyname(const char *) NONNULL(1);
 
+dev_t sys_devbypath(const char *) WUNRES;
 const char * sys_ttydevname(dev_t) WUNRES;
 
 int sys_pathattr(stat_attr_t *, const char *) NONNULL(1,2);

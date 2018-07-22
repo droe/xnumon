@@ -17,8 +17,9 @@
 -   Add capability to omit less useful fields from logged events: file mode,
     size, mtime, ctime, btime, and groups: file gid and process egid/rgid
     (issue #3).
--   Treat TTY source address `0.0.0.0` as no address and hide the `addr` field
-    unless an actual address is present.
+-   Treat TTY device `/dev/null` and source address `0.0.0.0` as no device and
+    no address respectively and hide the `dev` and `addr` fields accordingly
+    unless an actual TTY device or source address is reported by audit(4).
 -   Fix automatic configuration reloading to pick up changes to the config file
     during the first five minutes and during initialization.
 -   Add metric for the number of processes successfully acquired from live

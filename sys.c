@@ -110,6 +110,16 @@ sys_gidbyname(const char *name) {
 	return gr->gr_gid;
 }
 
+dev_t
+sys_devbypath(const char *path) {
+	struct stat ss;
+
+	if (stat(path, &ss) == -1)
+		return -1;
+
+	return ss.st_rdev;
+}
+
 const char *
 sys_ttydevname(dev_t dev) {
 	return devname(dev, S_IFCHR);
