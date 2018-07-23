@@ -63,9 +63,9 @@ typedef FILE * (*logdst_open_func_t)(void);
 typedef int (*logdst_close_func_t)(FILE *);
 typedef struct {
 	const char *ld_name;
-	int ld_oneline;
-	int ld_multiline;
-	int ld_onelineprefered;
+	bool ld_oneline;
+	bool ld_multiline;
+	bool ld_onelineprefered;
 	logdst_init_func_t ld_init;
 	logdst_reinit_func_t ld_reinit;
 	logdst_fini_func_t ld_fini;
@@ -76,7 +76,7 @@ typedef struct {
 #define LOGDSTS 3
 static logdst_t logdsttab[LOGDSTS] = {
 	{
-		"file", 1, 1, 1,
+		"file", true, true, true,
 		logdstfile_init,
 		logdstfile_reinit,
 		logdstfile_fini,
@@ -84,7 +84,7 @@ static logdst_t logdsttab[LOGDSTS] = {
 		logdstfile_close
 	},
 	{
-		"-", 1, 1, 0,
+		"-", true, true, false,
 		logdststdout_init,
 		NULL,
 		logdststdout_fini,
@@ -92,7 +92,7 @@ static logdst_t logdsttab[LOGDSTS] = {
 		logdststdout_close
 	},
 	{
-		"syslog", 1, 0, 1,
+		"syslog", true, false, true,
 		logdstsyslog_init,
 		NULL,
 		logdstsyslog_fini,

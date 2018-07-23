@@ -8,6 +8,10 @@
  * Licensed under the Open Software License version 3.0.
  */
 
+/*
+ * YAML log format driver
+ */
+
 #include "logfmtyaml.h"
 #include "logutl.h"
 
@@ -168,7 +172,7 @@ logfmtyaml_value_string(FILE *f, const char *s) {
 }
 
 logfmt_t logfmtyaml = {
-	"yaml", 0, 1,
+	"yaml", false, true,
 	logfmtyaml_init,
 	logfmtyaml_record_begin,
 	logfmtyaml_record_end,

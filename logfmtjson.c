@@ -8,6 +8,10 @@
  * Licensed under the Open Software License version 3.0.
  */
 
+/*
+ * JSON Lines and JSON Seq log format drivers
+ */
+
 #include "logfmtjson.h"
 #include "logutl.h"
 
@@ -209,7 +213,7 @@ logfmtjson_value_string(FILE *f, const char *s) {
 }
 
 logfmt_t logfmtjson = {
-	"json", 1, 1,
+	"json", true, true,
 	logfmtjson_init,
 	logfmtjson_record_begin,
 	logfmtjson_record_end,
@@ -231,7 +235,7 @@ logfmt_t logfmtjson = {
 };
 
 logfmt_t logfmtjsonseq = {
-	"json-seq", 1, 1,
+	"json-seq", true, true,
 	logfmtjson_init,
 	logfmtjsonseq_record_begin,
 	logfmtjson_record_end,

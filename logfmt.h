@@ -34,8 +34,8 @@ typedef void (*logfmt_cchar_func_t)(FILE *, const char *);
 typedef struct {
 	/* meta information */
 	const char *lf_name;
-	int lf_oneline;                 /* supports compact */
-	int lf_multiline;               /* supports multi-line */
+	bool lf_oneline;                /* supports compact */
+	bool lf_multiline;              /* supports multi-line */
 	logfmt_init_func_t lf_init;
 
 	/* actual render functions */
