@@ -1,4 +1,4 @@
-### xnumon develop
+### xnumon 0.1.5 2018-07-23
 
 -   Suppressions by ident now support optionally restricting an ident to a
     specific team ID (issue #27).
@@ -12,11 +12,9 @@
     algorithm with Gatekeeper.
 -   Report code signatures from untrusted CAs as signature `untrusted` with no
     origin instead of signature `bad`.
--   Add `chkcs` developer utility to extract code signatures from binaries or
-    bundles on the command line.
--   Add capability to omit less useful fields from logged events: file mode,
-    size, mtime, ctime, btime, and groups: file gid and process egid/rgid
-    (issue #3).
+-   Add capability to omit somewhat less useful fields from logged events:
+    file mode, size, mtime, ctime, btime, and groups (file gid and process
+    egid/rgid) (issue #3).
 -   Treat TTY device `/dev/null` and source address `0.0.0.0` as no device and
     no address respectively and hide the `dev` and `addr` fields accordingly
     unless an actual TTY device or source address is reported by audit(4).
@@ -26,6 +24,8 @@
     process state as part of working around some bug or missed event.
 -   Add raw log destination driver mode to facilitate fully custom logging
     within the current log driver model.
+-   Add `chkcs` developer utility to extract code signatures from binaries or
+    bundles on the command line.
 
 Configuration changes:
 
