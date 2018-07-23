@@ -253,7 +253,7 @@ codesign_new(const char *cpath) {
 		}
 	}
 
-	/* extract Team ID, present on App Store and DevID signatures */
+	/* extract Team ID */
 	CFStringRef teamid = CFDictionaryGetValue(dict,
 	                                          kSecCodeInfoTeamIdentifier);
 	if (teamid && cf_is_string(teamid)) {
@@ -264,9 +264,9 @@ codesign_new(const char *cpath) {
 		}
 	}
 
-	/* skip certificate CN extraction unless origin is devid or trusted */
-	if (cs->origin != CODESIGN_ORIGIN_DEVELOPER_ID &&
-	    cs->origin != CODESIGN_ORIGIN_TRUSTED_CA)
+	/* skip certificate CN extraction where it holds no interesting data */
+	if (cs->origin == CODESIGN_ORIGIN_APPLE_SYSTEM ||
+	    cs->origin == CODESIGN_ORIGIN_MAC_APP_STORE)
 		goto out;
 
 	/* extract CN of first certificate in chain */
