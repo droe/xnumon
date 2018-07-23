@@ -21,17 +21,18 @@
 typedef struct {
 	int result;
 #define CODESIGN_RESULT_NONE          0
-#define CODESIGN_RESULT_UNSIGNED      1
-#define CODESIGN_RESULT_GOOD          2
-#define CODESIGN_RESULT_ADHOC         3
-#define CODESIGN_RESULT_BAD           4
-#define CODESIGN_RESULT_ERROR         5
+#define CODESIGN_RESULT_UNSIGNED      1 /* no signature */
+#define CODESIGN_RESULT_GOOD          2 /* signature with trusted anchor */
+#define CODESIGN_RESULT_UNTRUSTED     3 /* signature with untrusted anchor */
+#define CODESIGN_RESULT_BAD           4 /* bad signature */
+#define CODESIGN_RESULT_ERROR         5 /* error */
 	int origin;
 #define CODESIGN_ORIGIN_NONE          0
 #define CODESIGN_ORIGIN_APPLE_SYSTEM  1
 #define CODESIGN_ORIGIN_MAC_APP_STORE 2
 #define CODESIGN_ORIGIN_DEVELOPER_ID  3
 #define CODESIGN_ORIGIN_APPLE_GENERIC 4
+#define CODESIGN_ORIGIN_TRUSTED_CA    5
 	char *ident;
 	unsigned char *cdhash;
 	size_t cdhashsz;

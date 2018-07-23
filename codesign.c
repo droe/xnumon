@@ -31,6 +31,7 @@ origin_req_tuple_t reqs[] = {
 	{CODESIGN_ORIGIN_MAC_APP_STORE, NULL},
 	{CODESIGN_ORIGIN_DEVELOPER_ID, NULL},
 	{CODESIGN_ORIGIN_APPLE_GENERIC, NULL},
+	{CODESIGN_ORIGIN_TRUSTED_CA, NULL},
 };
 
 #define CREATE_REQ(REQ, REQSTR) \
@@ -55,6 +56,7 @@ codesign_init(config_t *cfg) {
 		"certificate 1[field.1.2.840.113635.100.6.2.6] exists and "
 		"certificate leaf[field.1.2.840.113635.100.6.1.13] exists");
 	CREATE_REQ(reqs[3].req, "anchor apple generic");
+	CREATE_REQ(reqs[4].req, "anchor trusted");
 	return 0;
 }
 
@@ -216,20 +218,13 @@ codesign_new(const char *cpath) {
 	}
 	CFRelease(scode);
 	if (rv != errSecSuccess) {
-		/* signature is okay, but none of the requirements match */
-		cs->result = CODESIGN_RESULT_ADHOC;
+		/* signature is okay, but none of the requirements match;
+		 * either the signature is from a self-signed certificate, a
+		 * certificate issued by an untrusted CA, or it is an ad-hoc
+		 * code signature.  Treat all of these as untrusted. */
+		cs->result = CODESIGN_RESULT_UNTRUSTED;
 	} else {
 		cs->result = CODESIGN_RESULT_GOOD;
-	}
-
-	/* extract ident */
-	CFStringRef ident = CFDictionaryGetValue(dict, kSecCodeInfoIdentifier);
-	if (ident && cf_is_string(ident)) {
-		cs->ident = cf_cstr(ident);
-		if (!cs->ident) {
-			CFRelease(dict);
-			goto enomemout;
-		}
 	}
 
 	/* extract CDHash */
@@ -244,11 +239,21 @@ codesign_new(const char *cpath) {
 		memcpy(cs->cdhash, CFDataGetBytePtr(cdhash), cs->cdhashsz);
 	}
 
-	/* skip Team ID and Developer ID extraction for Apple System sigs */
-	if (cs->origin == CODESIGN_ORIGIN_APPLE_SYSTEM)
+	/* extract identity-related info only for good signatures */
+	if (cs->origin != CODESIGN_RESULT_GOOD)
 		goto out;
 
-	/* extract Team ID associated with the signing Developer ID */
+	/* extract ident */
+	CFStringRef ident = CFDictionaryGetValue(dict, kSecCodeInfoIdentifier);
+	if (ident && cf_is_string(ident)) {
+		cs->ident = cf_cstr(ident);
+		if (!cs->ident) {
+			CFRelease(dict);
+			goto enomemout;
+		}
+	}
+
+	/* extract Team ID, present on App Store and DevID signatures */
 	CFStringRef teamid = CFDictionaryGetValue(dict,
 	                                          kSecCodeInfoTeamIdentifier);
 	if (teamid && cf_is_string(teamid)) {
@@ -259,8 +264,9 @@ codesign_new(const char *cpath) {
 		}
 	}
 
-	/* skip Developer ID extraction unless sig origin is Developer ID */
-	if (cs->origin != CODESIGN_ORIGIN_DEVELOPER_ID)
+	/* skip certificate extraction unless origin is devid or trusted */
+	if (cs->origin != CODESIGN_ORIGIN_DEVELOPER_ID &&
+	    cs->origin != CODESIGN_ORIGIN_TRUSTED_CA)
 		goto out;
 
 	/* extract Developer ID from CN of first certificate in chain */
@@ -302,8 +308,8 @@ codesign_result_s(codesign_t *cs) {
 		return "unsigned";
 	case CODESIGN_RESULT_GOOD:
 		return "good";
-	case CODESIGN_RESULT_ADHOC:
-		return "adhoc";
+	case CODESIGN_RESULT_UNTRUSTED:
+		return "untrusted";
 	case CODESIGN_RESULT_BAD:
 		return "bad";
 	case CODESIGN_RESULT_ERROR:
@@ -325,6 +331,8 @@ codesign_origin_s(codesign_t *cs) {
 		return "devid";
 	case CODESIGN_ORIGIN_APPLE_GENERIC:
 		return "generic";
+	case CODESIGN_ORIGIN_TRUSTED_CA:
+		return "trusted";
 	default:
 		/* this should never happen if a signature is present */
 		return "undefined";

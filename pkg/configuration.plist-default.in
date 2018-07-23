@@ -166,7 +166,7 @@
   <!-- Code signature information:
        Enable (<true/>) or disable (<false/>) the acquisition of code signature
        information from executed files, including the signature status, origin,
-       ident string, team ID and developer ID.
+       cdhash, ident string, team ID and developer ID.
        If this is false, suppression rules by ident will not have any effect.
        If unset, defaults to:   true
        -->
@@ -293,9 +293,6 @@
        Non-Apple identifiers in this list can be restricted to a team ID by
        postfixing an @ and the team ID, e.g. ch.roe.xnumon@C9BFEG985N only
        matches the ident ch.roe.xnumon if the signing team ID is C9BFEG985N.
-       Unsigned binaries or broken signature binaries have no ident string so
-       never match an identifier.  Ad-hoc signed binaries are not whitelisted
-       by this means because the signatures cannot be validated.
        In order to not lose relationship information, it is recommended to not
        disable ancestors completely when suppressing image exec events.
        This requires codesign to be enabled.  If codesign is false, suppression
@@ -338,9 +335,6 @@
        Non-Apple identifiers in this list can be restricted to a team ID by
        postfixing an @ and the team ID, e.g. ch.roe.xnumon@C9BFEG985N only
        matches the ident ch.roe.xnumon if the signing team ID is C9BFEG985N.
-       Unsigned binaries or broken signature binaries have no ident string so
-       never match an identifier.  Ad-hoc signed binaries are not whitelisted
-       by this means because the signatures cannot be validated.
        This requires codesign to be enabled.  If codesign is false, suppression
        by ident is disabled.
        This suppression type is suitable for suppressing things like MacPorts,
@@ -372,9 +366,6 @@
        Non-Apple identifiers in this list can be restricted to a team ID by
        postfixing an @ and the team ID, e.g. ch.roe.xnumon@C9BFEG985N only
        matches the ident ch.roe.xnumon if the signing team ID is C9BFEG985N.
-       Unsigned binaries or broken signature binaries have no ident string so
-       never match an identifier in this list.  Ad-hoc signed binaries are not
-       whitelisted by this means because the signatures cannot be validated.
        This requires codesign to be enabled.  If codesign is false, suppression
        by ident is disabled.
        Generally, we want to suppress process access events from binaries which
