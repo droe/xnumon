@@ -102,7 +102,7 @@
                     writing to or unlinking their executable image on disk,
                     resulting in log events without hashes or code signatures.
                     While care has been taken to avoid acquiring wrong hashes
-                    or code signures, there is still a race condition that
+                    or code signatures, there is still a race condition that
                     cannot be avoided without kernel help.  If an executable
                     modifies its executable image after exec, before xnumon
                     receives and processes the audit event and stats the image,
