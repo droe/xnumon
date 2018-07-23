@@ -134,6 +134,11 @@ errout:
 	return v;
 }
 
+CFNumberRef
+cf_number(int64_t n) {
+	return CFNumberCreate(kCFAllocatorDefault, kCFNumberSInt64Type, &n);
+}
+
 CFURLRef
 cf_url(const char *cpath) {
 	CFStringRef path;
@@ -150,6 +155,14 @@ cf_url(const char *cpath) {
 	                                    true);
 	CFRelease(path);
 	return url;
+}
+
+CFDictionaryRef
+cf_dictionary1(CFTypeRef key, CFTypeRef value) {
+	return CFDictionaryCreate(kCFAllocatorDefault,
+	                          &key, &value, 1,
+	                          &kCFTypeDictionaryKeyCallBacks,
+	                          &kCFTypeDictionaryValueCallBacks);
 }
 
 /*

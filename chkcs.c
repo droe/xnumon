@@ -26,10 +26,11 @@ static void
 fusage(FILE *f, const char *argv0) {
 	fprintf(f,
 "Usage: %s [-v] <path>\n"
+"       %s [-v] <pid>\n"
 "       %s -h\n"
 " -v             verbose: print diagnostic messages\n"
 " -h             print usage and exit\n"
-, argv0, argv0);
+, argv0, argv0, argv0);
 }
 
 int
@@ -67,7 +68,11 @@ main(int argc, char *argv[]) {
 	}
 
 	bool good;
-	codesign_t *cs = codesign_new(argv[0]);
+	codesign_t *cs;
+	if (argv[0][0] >= '0' && argv[0][0] <= '9')
+		cs = codesign_new(NULL, atoi(argv[0]));
+	else
+		cs = codesign_new(argv[0], -1);
 	if (!cs) {
 		fprintf(stderr, "Failed to acquire code signature!\n");
 		exit(EXIT_FAILURE);

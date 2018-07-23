@@ -45,7 +45,7 @@ typedef struct {
 #define codesign_is_apple_system(CS) \
 	((CS)->origin == CODESIGN_ORIGIN_APPLE_SYSTEM)
 
-codesign_t * codesign_new(const char *) MALLOC NONNULL(1);
+codesign_t * codesign_new(const char *, pid_t) MALLOC;
 codesign_t * codesign_dup(const codesign_t *) MALLOC NONNULL(1);
 void codesign_free(codesign_t *) NONNULL(1);
 

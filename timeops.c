@@ -69,7 +69,7 @@ timeit_codesign(void) {
 
 	purge();
 	TIMEIT_START;
-	cs = codesign_new(path);
+	cs = codesign_new(path, -1);
 	TIMEIT_STOP;
 	codesign_free(cs);
 
@@ -117,7 +117,7 @@ timeit_cachecsig_get(void) {
 	hashes_t h;
 	codesign_t *cs;
 
-	cs = codesign_new("/usr/bin/iotop");
+	cs = codesign_new("/usr/bin/iotop", -1);
 	memset(&h, 0x7F, sizeof(hashes_t));
 	cachecsig_init();
 	cachecsig_put(&h, cs);
@@ -136,7 +136,7 @@ timeit_cachecsig_put(void) {
 	hashes_t h;
 	codesign_t *cs;
 
-	cs = codesign_new("/usr/bin/iotop");
+	cs = codesign_new("/usr/bin/iotop", -1);
 	memset(&h, 0x7F, sizeof(hashes_t));
 	cachecsig_init();
 	TIMEIT_START;

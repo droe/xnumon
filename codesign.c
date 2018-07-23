@@ -125,29 +125,66 @@ errout:
 	return NULL;
 }
 
+/*
+ * Extract code signature meta-data from either an on-disk executable or a pid.
+ * Either cpath must be NULL or pid must be -1.
+ *
+ * We cannot safely acquire code signature information by pid in xnumon.
+ * Nevertheless, the chkcs utility can acquire code signature information from
+ * running processes for experimentation and comparison against codesign(1).
+ */
 codesign_t *
-codesign_new(const char *cpath) {
+codesign_new(const char *cpath, pid_t pid) {
 	codesign_t *cs;
 	OSStatus rv;
 
-	assert(cpath);
+	assert((cpath && pid == (pid_t)-1) || (!cpath && pid != (pid_t)-1));
 
 	cs = malloc(sizeof(codesign_t));
 	if (!cs)
 		goto enomemout;
 	bzero(cs, sizeof(codesign_t));
 
-	CFURLRef url = cf_url(cpath);
-	if (!url)
-		goto enomemout;
-
 	SecStaticCodeRef scode = NULL;
-	rv = SecStaticCodeCreateWithPath(url, kSecCSDefaultFlags, &scode);
-	CFRelease(url);
-	if (rv != errSecSuccess) {
-		DEBUG(config->debug, "codesign_error",
+	if (cpath) {
+		CFURLRef url = cf_url(cpath);
+		if (!url)
+			goto enomemout;
+		rv = SecStaticCodeCreateWithPath(url,
+		                                 kSecCSDefaultFlags,
+		                                 &scode);
+		CFRelease(url);
+		DEBUG(config->debug && rv != errSecSuccess,
+		      "codesign_error",
 		      "SecStaticCodeCreateWithPath(%s) => %i",
 		      cpath, rv);
+	} else {
+		CFNumberRef cfnpid = cf_number(pid);
+		if (!cfnpid)
+			goto enomemout;
+		CFDictionaryRef cfdpid = cf_dictionary1(kSecGuestAttributePid,
+		                                        cfnpid);
+		if (!cfdpid) {
+			CFRelease(cfnpid);
+			goto enomemout;
+		}
+		rv = SecCodeCopyGuestWithAttributes(NULL,
+		                                    cfdpid,
+		                                    kSecCSDefaultFlags,
+		                                    (SecCodeRef*)&scode);
+		CFRelease(cfdpid);
+		CFRelease(cfnpid);
+		if (rv != errSecSuccess) {
+			DEBUG(config->debug,
+			      "codesign_error",
+			      "SecCodeCopyGuestWithAttributes(%i) => %i",
+			      pid, rv);
+			CFRelease(scode);
+			errno = 0;
+			goto errout;
+		}
+	}
+	if (rv != errSecSuccess) {
 		cs->result = CODESIGN_RESULT_ERROR;
 		return cs;
 	}
@@ -171,19 +208,32 @@ codesign_new(const char *cpath) {
 		CFRelease(scode);
 		return cs;
 	}
-	rv = SecStaticCodeCheckValidity(scode,
-	                                kSecCSDefaultFlags|
-	                                kSecCSCheckAllArchitectures|
-	                                kSecCSStrictValidate|
-	                                kSecCSCheckNestedCode|
-	                                kSecCSEnforceRevocationChecks|
-	                                kSecCSConsiderExpiration,
-	                                designated_req);
-	CFRelease(designated_req);
-	if (rv != errSecSuccess) {
-		DEBUG(config->debug, "codesign_bad",
+	SecCSFlags csflags = kSecCSDefaultFlags|
+		             kSecCSStrictValidate|
+		             kSecCSEnforceRevocationChecks|
+		             kSecCSConsiderExpiration;
+	if (cpath) {
+		csflags |= kSecCSCheckAllArchitectures|
+		           kSecCSCheckNestedCode|
+		           kSecCSDoNotValidateResources;
+		rv = SecStaticCodeCheckValidity(scode,
+		                                csflags,
+		                                designated_req);
+		DEBUG(config->debug && rv != errSecSuccess,
+		      "codesign_bad",
 		      "SecStaticCodeCheckValidity(%s, full, designated_req)"
 		      " => %i", cpath, rv);
+	} else {
+		rv = SecCodeCheckValidity((SecCodeRef)scode,
+		                          csflags,
+		                          designated_req);
+		DEBUG(config->debug && rv != errSecSuccess,
+		      "codesign_bad",
+		      "SecCodeCheckValidity(%i, full, designated_req)"
+		      " => %i", pid, rv);
+	}
+	CFRelease(designated_req);
+	if (rv != errSecSuccess) {
 		cs->result = CODESIGN_RESULT_BAD;
 		CFRelease(scode);
 		return cs;
@@ -206,11 +256,20 @@ codesign_new(const char *cpath) {
 	}
 
 	/* reduced set of flags, we are only checking requirements here */
-	SecCSFlags csflags = kSecCSDefaultFlags|
-	                     kSecCSCheckAllArchitectures|
-	                     kSecCSStrictValidate;
+	csflags = kSecCSDefaultFlags|
+	          kSecCSStrictValidate;
+	if (cpath)
+		csflags |= kSecCSCheckAllArchitectures|
+		           kSecCSDoNotValidateResources;
 	for (size_t i = 0; i < sizeof(reqs)/sizeof(origin_req_tuple_t); i++) {
-		rv = SecStaticCodeCheckValidity(scode, csflags, reqs[i].req);
+		if (cpath)
+			rv = SecStaticCodeCheckValidity(scode,
+			                                csflags,
+			                                reqs[i].req);
+		else
+			rv = SecCodeCheckValidity((SecCodeRef)scode,
+			                          csflags,
+			                          reqs[i].req);
 		if (rv == errSecSuccess) {
 			cs->origin = reqs[i].origin;
 			break;
@@ -295,9 +354,10 @@ out:
 	return cs;
 
 enomemout:
+	errno = ENOMEM;
+errout:
 	if (cs)
 		codesign_free(cs);
-	errno = ENOMEM;
 	return NULL;
 }
 

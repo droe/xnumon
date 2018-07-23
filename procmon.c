@@ -369,7 +369,7 @@ image_exec_acquire(image_exec_t *image, int kern) {
 			return 0;
 
 		/* Check code signature (can be very slow!) */
-		image->codesign = codesign_new(image->path);
+		image->codesign = codesign_new(image->path, -1);
 		if (!image->codesign) {
 			if (errno == ENOMEM)
 				image->flags |= EIFLAG_ENOMEM;

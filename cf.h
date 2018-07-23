@@ -14,6 +14,7 @@
 #include "attrib.h"
 
 #include <stdbool.h>
+#include <stdint.h>
 
 #include <CoreFoundation/CoreFoundation.h>
 #include <Security/Security.h>
@@ -26,7 +27,9 @@ bool cf_is_cert(CFTypeRef) WUNRES NONNULL(1);
 char * cf_cstr(CFStringRef) MALLOC;
 char ** cf_cstrv(CFArrayRef) MALLOC;
 char ** cf_aev(CFArrayRef) MALLOC;
+CFNumberRef cf_number(int64_t) MALLOC;
 CFURLRef cf_url(const char *) MALLOC NONNULL(1);
+CFDictionaryRef cf_dictionary1(CFTypeRef, CFTypeRef) MALLOC NONNULL(1,2);
 CFPropertyListRef cf_plist_load(const char *) MALLOC;
 
 #endif

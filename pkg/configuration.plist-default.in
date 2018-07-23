@@ -100,9 +100,9 @@
        0 none       Do not use kernel extension.  Processes may execute without
                     any delay, but acquisition of images may fail for processes
                     writing to or unlinking their executable image on disk,
-                    resulting in log events without hashes or codesign info.
+                    resulting in log events without hashes or code signatures.
                     While care has been taken to avoid acquiring wrong hashes
-                    or codesign info, there is still a race condition that
+                    or code signures, there is still a race condition that
                     cannot be avoided without kernel help.  If an executable
                     modifies its executable image after exec, before xnumon
                     receives and processes the audit event and stats the image,
@@ -112,32 +112,33 @@
                     process is allowed to execute in the new image.
                     This incurs only a minimal delay before the new process may
                     execute, but processes writing to their own exec image may
-                    cause subsequent hashes and codesign acquisition to fail,
-                    resulting in log events without hashes or codesign info.
-                    The acquired hashes and code signature information can
-                    never be wrong, only missing.  Processes unlinking but not
-                    modifying their own executable image on disk will have
-                    hashes acquired successfully.
+                    cause subsequent hashes and code signature acquisition to
+                    fail, resulting in log events without hashes or code
+                    signatures.  The acquired hashes and code signature
+                    information can never be wrong, only missing.  Processes
+                    unlinking but not modifying their own executable image on
+                    disk will have hashes acquired successfully.
        2 hashes     Synchroniously acquire hashes of the executable image
                     before the process is allowed to execute in the new image.
                     Incurs a delay of a few milliseconds depending on image
                     size, but ensures we have hashes for all exec images.  For
                     processes modifying or unlinking their own image on disk,
-                    the subsequent acquisition of codesign information may
-                    fail, resulting in log events without codesign info.  The
-                    acquired code signature information can never be wrong,
+                    the subsequent acquisition of code signature information
+                    may fail, resulting in log events without code signatures.
+                    The acquired code signature information can never be wrong,
                     only missing.  The delay for hash acquisition is minimal if
                     hashes for the same binary have been cached from a previous
                     execution.
        3 codesign   Synchroniously acquire hashes and code signature info
                     before the process is allowed to execute in the new image.
                     Incurs a significant delay of tens of milliseconds for very
-                    small executable images up to tens of seconds (!) for very
-                    large app bundles, but ensures we have both hashes and code
-                    signature information for all executed image files.  The
-                    delay for hash and code signature info acquisition is
-                    minimal if hashes and code signature info for the same
-                    binary have been cached from a previous execution.
+                    small executable images up to hundreds of microseconds for
+                    large app bundles, sometimes even seconds (!), but ensures
+                    we have both hashes and code signature information for all
+                    executed image files.  The delay for hash and code
+                    signature info acquisition is minimal if hashes and code
+                    signature info for the same binary have been cached from a
+                    previous execution.
                     NOT RECOMMENDED FOR USE IN PRODUCTION ENVIRONMENTS.
        If unset, defaults to:   hash
        -->
@@ -166,7 +167,7 @@
   <!-- Code signature information:
        Enable (<true/>) or disable (<false/>) the acquisition of code signature
        information from executed files, including the signature status, origin,
-       cdhash, ident string, team ID and developer ID.
+       CDHash, ident string, team ID and certificate CN.
        If this is false, suppression rules by ident will not have any effect.
        If unset, defaults to:   true
        -->
