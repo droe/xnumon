@@ -38,7 +38,7 @@ Configuration changes:
 
 Event schema changes:
 
--   Event schema version increased to 5.  Changes affect eventcodes 2-4.
+-   Event schema version increased to 5.  Changes affect eventcodes 1-4.
 -   Eventcode 1 added `procmon.liveacq`.
 -   Eventcode 2 added `image.origin`.
 -   Eventcode 2 renamed `image.devid` to `image.certcn`.
