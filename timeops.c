@@ -80,12 +80,14 @@ double
 timeit_cachehash_get(void) {
 	TIMEIT_INIT;
 	hashes_t h;
+	struct timespec tm;
 
 	bzero(&h, sizeof(hashes_t));
+	bzero(&tm, sizeof(struct timespec));
 	cachehash_init();
-	cachehash_put(0, 0, 0, 0, 0, &h);
+	cachehash_put(0, 0, &tm, &tm, &tm, &h);
 	TIMEIT_START;
-	cachehash_get(&h, 0, 0, 0, 0, 0);
+	cachehash_get(&h, 0, 0, &tm, &tm, &tm);
 	TIMEIT_STOP;
 	cachehash_fini();
 
@@ -96,11 +98,13 @@ double
 timeit_cachehash_put(void) {
 	TIMEIT_INIT;
 	hashes_t h;
+	struct timespec tm;
 
 	bzero(&h, sizeof(hashes_t));
+	bzero(&tm, sizeof(struct timespec));
 	cachehash_init();
 	TIMEIT_START;
-	cachehash_put(0, 0, 0, 0, 0, &h);
+	cachehash_put(0, 0, &tm, &tm, &tm, &h);
 	TIMEIT_STOP;
 	cachehash_fini();
 

@@ -267,9 +267,9 @@ image_exec_acquire(image_exec_t *image, int kern) {
 		hit = cachehash_get(&image->hashes,
 		                    image->stat.dev,
 		                    image->stat.ino,
-		                    image->stat.mtime.tv_sec,
-		                    image->stat.ctime.tv_sec,
-		                    image->stat.btime.tv_sec);
+		                    &image->stat.mtime,
+		                    &image->stat.ctime,
+		                    &image->stat.btime);
 		if (!hit) {
 			/* cache miss, calculate hashes */
 			rv = hashes_fd(&sz, &image->hashes, config->hflags,
@@ -307,9 +307,9 @@ image_exec_acquire(image_exec_t *image, int kern) {
 			}
 			cachehash_put(image->stat.dev,
 			              image->stat.ino,
-			              image->stat.mtime.tv_sec,
-			              image->stat.ctime.tv_sec,
-			              image->stat.btime.tv_sec,
+			              &image->stat.mtime,
+			              &image->stat.ctime,
+			              &image->stat.btime,
 			              &image->hashes);
 #ifdef DEBUG_EXECIMAGE
 			fprintf(stderr, "DEBUG_EXECIMAGE: hashes from path=%s\n", image->path);

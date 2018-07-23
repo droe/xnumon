@@ -22,9 +22,15 @@
 void cachehash_init(void);
 void cachehash_fini(void);
 bool cachehash_get(hashes_t *,
-                   dev_t, ino_t, time_t, time_t, time_t) NONNULL(1);
-void cachehash_put(dev_t, ino_t, time_t, time_t, time_t,
-                   hashes_t *) NONNULL(6);
+                   dev_t, ino_t,
+                   struct timespec *,
+                   struct timespec *,
+                   struct timespec *) NONNULL(1,4,5,6);
+void cachehash_put(dev_t, ino_t,
+                   struct timespec *,
+                   struct timespec *,
+                   struct timespec *,
+                   hashes_t *) NONNULL(3,4,5,6);
 void cachehash_stats(lrucache_stat_t *) NONNULL(1);
 
 #endif

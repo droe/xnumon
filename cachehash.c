@@ -22,9 +22,12 @@
 typedef struct __attribute__((packed)) {
 	ino_t ino;
 	dev_t dev;
-	time_t mtime;
-	time_t ctime;
-	time_t btime;
+	time_t mtime_sec;
+	long   mtime_nsec;
+	time_t ctime_sec;
+	long   ctime_nsec;
+	time_t btime_sec;
+	long   btime_nsec;
 } cachehash_key_t;
 
 typedef struct {
@@ -72,21 +75,26 @@ cachehash_fini(void) {
 bool
 cachehash_get(hashes_t *hashes,
               dev_t dev, ino_t ino,
-              time_t mtime, time_t ctime, time_t btime) {
+              struct timespec *mtime,
+              struct timespec *ctime,
+              struct timespec *btime) {
 	cachehash_obj_t *obj;
 	cachehash_key_t key;
 
 	key.dev = dev;
 	key.ino = ino;
-	key.mtime = mtime;
-	key.ctime = ctime;
-	key.btime = btime;
+	key.mtime_sec  = mtime->tv_sec;
+	key.mtime_nsec = mtime->tv_nsec;
+	key.ctime_sec  = ctime->tv_sec;
+	key.ctime_nsec = ctime->tv_nsec;
+	key.btime_sec  = btime->tv_sec;
+	key.btime_nsec = btime->tv_nsec;
 	pthread_mutex_lock(&mutex);
 	obj = lrucache_get(&lrucache, &key);
 #ifdef DEBUG_CACHE
 	fprintf(stderr, "DEBUG_CACHE: hash get %s (%u,%llu,%lu,%lu,%lu)\n",
 	                obj ? "HIT" : "MISS",
-	                dev, ino, mtime, ctime, btime);
+	                dev, ino, mtime->tv_sec, ctime->tv_sec, btime->tv_sec);
 #endif
 	if (!obj) {
 		pthread_mutex_unlock(&mutex);
@@ -98,7 +106,10 @@ cachehash_get(hashes_t *hashes,
 }
 
 void
-cachehash_put(dev_t dev, ino_t ino, time_t mtime, time_t ctime, time_t btime,
+cachehash_put(dev_t dev, ino_t ino,
+              struct timespec *mtime,
+              struct timespec *ctime,
+              struct timespec *btime,
               hashes_t *hashes) {
 	cachehash_obj_t *obj;
 
@@ -106,7 +117,7 @@ cachehash_put(dev_t dev, ino_t ino, time_t mtime, time_t ctime, time_t btime,
 
 #ifdef DEBUG_CACHE
 	fprintf(stderr, "DEBUG_CACHE: hash put (%u,%llu,%lu,%lu,%lu)\n",
-	                dev, ino, mtime, ctime, btime);
+	                dev, ino, mtime->tv_sec, ctime->tv_sec, btime->tv_sec);
 #endif
 
 	obj = cachehash_obj_new();
@@ -114,9 +125,12 @@ cachehash_put(dev_t dev, ino_t ino, time_t mtime, time_t ctime, time_t btime,
 		return;
 	obj->key.dev = dev;
 	obj->key.ino = ino;
-	obj->key.mtime = mtime;
-	obj->key.ctime = ctime;
-	obj->key.btime = btime;
+	obj->key.mtime_sec  = mtime->tv_sec;
+	obj->key.mtime_nsec = mtime->tv_nsec;
+	obj->key.ctime_sec  = ctime->tv_sec;
+	obj->key.ctime_nsec = ctime->tv_nsec;
+	obj->key.btime_sec  = btime->tv_sec;
+	obj->key.btime_nsec = btime->tv_nsec;
 	memcpy(&obj->hashes, hashes, sizeof(hashes_t));
 	pthread_mutex_lock(&mutex);
 	lrucache_put(&lrucache, &obj->node, obj);
