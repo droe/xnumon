@@ -484,22 +484,22 @@ logevt_image_exec_image(logfmt_t *fmt, FILE *f, image_exec_t *ie) {
 			fmt->dict_item(f, "origin");
 			fmt->value_string(f, codesign_origin_s(ie->codesign));
 		}
-		if (ie->codesign->ident) {
-			fmt->dict_item(f, "ident");
-			fmt->value_string(f, ie->codesign->ident);
-		}
 		if (ie->codesign->cdhash) {
 			fmt->dict_item(f, "cdhash");
 			fmt->value_buf_hex(f, ie->codesign->cdhash,
 			                      ie->codesign->cdhashsz);
 		}
+		if (ie->codesign->ident) {
+			fmt->dict_item(f, "ident");
+			fmt->value_string(f, ie->codesign->ident);
+		}
 		if (ie->codesign->teamid) {
 			fmt->dict_item(f, "teamid");
 			fmt->value_string(f, ie->codesign->teamid);
 		}
-		if (ie->codesign->devid) {
-			fmt->dict_item(f, "devid");
-			fmt->value_string(f, ie->codesign->devid);
+		if (ie->codesign->certcn) {
+			fmt->dict_item(f, "certcn");
+			fmt->value_string(f, ie->codesign->certcn);
 		}
 	}
 	fmt->dict_end(f); /* image */

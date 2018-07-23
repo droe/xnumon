@@ -75,14 +75,14 @@ codesign_fini() {
 
 void
 codesign_free(codesign_t *cs) {
-	if (cs->ident)
-		free(cs->ident);
 	if (cs->cdhash)
 		free(cs->cdhash);
+	if (cs->ident)
+		free(cs->ident);
 	if (cs->teamid)
 		free(cs->teamid);
-	if (cs->devid)
-		free(cs->devid);
+	if (cs->certcn)
+		free(cs->certcn);
 	free(cs);
 }
 
@@ -114,9 +114,9 @@ codesign_dup(const codesign_t *other) {
 		if (!cs->teamid)
 			goto errout;
 	}
-	if (other->devid) {
-		cs->devid = strdup(other->devid);
-		if (!cs->devid)
+	if (other->certcn) {
+		cs->certcn = strdup(other->certcn);
+		if (!cs->certcn)
 			goto errout;
 	}
 	return cs;
@@ -264,12 +264,12 @@ codesign_new(const char *cpath) {
 		}
 	}
 
-	/* skip certificate extraction unless origin is devid or trusted */
+	/* skip certificate CN extraction unless origin is devid or trusted */
 	if (cs->origin != CODESIGN_ORIGIN_DEVELOPER_ID &&
 	    cs->origin != CODESIGN_ORIGIN_TRUSTED_CA)
 		goto out;
 
-	/* extract Developer ID from CN of first certificate in chain */
+	/* extract CN of first certificate in chain */
 	CFArrayRef chain = CFDictionaryGetValue(dict,
 	                                        kSecCodeInfoCertificates);
 	if (chain && cf_is_array(chain) && CFArrayGetCount(chain) >= 1) {
@@ -281,9 +281,9 @@ codesign_new(const char *cpath) {
 				CFRelease(dict);
 				goto enomemout;
 			}
-			cs->devid = cf_cstr(s);
+			cs->certcn = cf_cstr(s);
 			CFRelease(s);
-			if (!cs->devid) {
+			if (!cs->certcn) {
 				CFRelease(dict);
 				goto enomemout;
 			}
@@ -344,8 +344,6 @@ codesign_fprint(FILE *f, codesign_t *cs) {
 	fprintf(f, "signature: %s\n", codesign_result_s(cs));
 	if (cs->origin)
 		fprintf(f, "origin: %s\n", codesign_origin_s(cs));
-	if (cs->ident)
-		fprintf(f, "ident: %s\n", cs->ident);
 	if (cs->cdhash) {
 		fprintf(f, "cdhash: ");
 		for (size_t i = 0; i < cs->cdhashsz; i++) {
@@ -353,9 +351,11 @@ codesign_fprint(FILE *f, codesign_t *cs) {
 		}
 		fprintf(f, "\n");
 	}
+	if (cs->ident)
+		fprintf(f, "ident: %s\n", cs->ident);
 	if (cs->teamid)
 		fprintf(f, "teamid: %s\n", cs->teamid);
-	if (cs->devid)
-		fprintf(f, "devid: %s\n", cs->devid);
+	if (cs->certcn)
+		fprintf(f, "certcn: %s\n", cs->certcn);
 }
 

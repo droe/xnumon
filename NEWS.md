@@ -41,6 +41,7 @@ Event schema changes:
 -   Event schema version increased to 5.  Changes affect eventcodes 2-4.
 -   Eventcode 1 added `procmon.liveacq`.
 -   Eventcode 2 added `image.origin`.
+-   Eventcode 2 renamed `image.devid` to `image.certcn`.
 -   Eventcodes 2-4 added `*uname` for every `*uid` field.
 -   Eventcodes 2-4 added `*gname` for every `*gid` field.
 

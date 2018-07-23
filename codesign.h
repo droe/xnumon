@@ -33,11 +33,11 @@ typedef struct {
 #define CODESIGN_ORIGIN_DEVELOPER_ID  3
 #define CODESIGN_ORIGIN_APPLE_GENERIC 4
 #define CODESIGN_ORIGIN_TRUSTED_CA    5
-	char *ident;
 	unsigned char *cdhash;
 	size_t cdhashsz;
+	char *ident;
 	char *teamid;
-	char *devid;
+	char *certcn;
 } codesign_t;
 
 #define codesign_is_good(CS) \
