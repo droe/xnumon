@@ -38,6 +38,39 @@
  * https://github.com/apple/darwin-xnu/blob/master/bsd/bsm/audit_kevents.h
  */
 
+static dev_t devnull;
+
+int
+auevent_init(void) {
+	devnull = sys_devbypath("/dev/null");
+	if (devnull == (dev_t)-1)
+		return -1;
+	return 0;
+}
+
+#define SET_DEV(DST_DEV, SRC_TID) \
+	DST_DEV = ((dev_t)(SRC_TID).port) == devnull ? -1 : (SRC_TID).port;
+
+#define SET_ADDR(DST_ADDR, SRC_TID) \
+	if ((SRC_TID).addr != 0) { \
+		(DST_ADDR).family = AF_INET; \
+		(DST_ADDR).ev_addr = (SRC_TID).addr; \
+	}
+
+#define SET_ADDR_EX(DST_ADDR, SRC_TID) \
+	if ((SRC_TID).type == AU_IPv4) { \
+		if ((SRC_TID).addr[0] != 0) { \
+			(DST_ADDR).family = AF_INET; \
+			(DST_ADDR).ev_addr = (SRC_TID).addr[0]; \
+		} \
+	} else if ((SRC_TID).type == AU_IPv6) { \
+		(DST_ADDR).family = AF_INET6; \
+		(DST_ADDR).ev6_addr[0] = (SRC_TID).addr[0]; \
+		(DST_ADDR).ev6_addr[1] = (SRC_TID).addr[1]; \
+		(DST_ADDR).ev6_addr[2] = (SRC_TID).addr[2]; \
+		(DST_ADDR).ev6_addr[3] = (SRC_TID).addr[3]; \
+	}
+
 static bool
 auevent_type_in_typelist(const uint16_t type, const uint16_t typelist[]) {
 	int i = 0;
@@ -52,8 +85,8 @@ auevent_type_in_typelist(const uint16_t type, const uint16_t typelist[]) {
 }
 
 /*
- * ev must be initialized before every call to auevent_fread and destroyed
- * after using the results.
+ * ev must be created using auevent_create before every call to
+ * auevent_fread and destroyed after using the results.
  *
  * returns 0 to indicate that a record was skipped
  * returns 1 to indicate that a record was read into ev
@@ -99,6 +132,13 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], FILE *f) {
 			                " skipping partial record\n");
 			goto skip_rec;
 		}
+
+		/*
+		 * XNU reports subjects and processes not attached to any TTY
+		 * with tty device /dev/null and tty addr 0.0.0.0.
+		 * Translate those here to no device represented by (dev_t)-1
+		 * and no addr represented by address family 0, respectively.
+		 */
 
 		switch (tok.id) {
 		/* record header and trailer */
@@ -152,12 +192,8 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], FILE *f) {
 			ev->subject.rgid = tok.tt.subj32.rgid;
 			ev->subject.pid = tok.tt.subj32.pid;
 			ev->subject.sid = tok.tt.subj32.sid;
-			ev->subject.dev = tok.tt.subj32.tid.port;
-			if (tok.tt.subj32.tid.addr != 0) {
-				ev->subject.addr.family = AF_INET;
-				ev->subject.addr.ev_addr =
-					tok.tt.subj32.tid.addr;
-			}
+			SET_DEV(ev->subject.dev, tok.tt.subj32.tid);
+			SET_ADDR(ev->subject.addr, tok.tt.subj32.tid);
 			break;
 		case AUT_SUBJECT32_EX:
 			assert(ev->subject_present == 0);
@@ -169,24 +205,8 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], FILE *f) {
 			ev->subject.rgid = tok.tt.subj32_ex.rgid;
 			ev->subject.pid = tok.tt.subj32_ex.pid;
 			ev->subject.sid = tok.tt.subj32_ex.sid;
-			ev->subject.dev = tok.tt.subj32_ex.tid.port;
-			if (tok.tt.subj32_ex.tid.type == AU_IPv4) {
-				if (tok.tt.subj32_ex.tid.addr[0] != 0) {
-					ev->subject.addr.family = AF_INET;
-					ev->subject.addr.ev_addr =
-						tok.tt.subj32_ex.tid.addr[0];
-				}
-			} else if (tok.tt.subj32_ex.tid.type == AU_IPv6) {
-				ev->subject.addr.family = AF_INET6;
-				ev->subject.addr.ev6_addr[0] =
-					tok.tt.subj32_ex.tid.addr[0];
-				ev->subject.addr.ev6_addr[1] =
-					tok.tt.subj32_ex.tid.addr[1];
-				ev->subject.addr.ev6_addr[2] =
-					tok.tt.subj32_ex.tid.addr[2];
-				ev->subject.addr.ev6_addr[3] =
-					tok.tt.subj32_ex.tid.addr[3];
-			}
+			SET_DEV(ev->subject.dev, tok.tt.subj32_ex.tid);
+			SET_ADDR_EX(ev->subject.addr, tok.tt.subj32_ex.tid);
 			break;
 		case AUT_SUBJECT64:
 			assert(ev->subject_present == 0);
@@ -198,12 +218,8 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], FILE *f) {
 			ev->subject.rgid = tok.tt.subj64.rgid;
 			ev->subject.pid = tok.tt.subj64.pid;
 			ev->subject.sid = tok.tt.subj64.sid;
-			ev->subject.dev = tok.tt.subj64.tid.port;
-			if (tok.tt.subj64.tid.addr != 0) {
-				ev->subject.addr.family = AF_INET;
-				ev->subject.addr.ev_addr =
-					tok.tt.subj64.tid.addr;
-			}
+			SET_DEV(ev->subject.dev, tok.tt.subj64.tid);
+			SET_ADDR(ev->subject.addr, tok.tt.subj64.tid);
 			break;
 		case AUT_SUBJECT64_EX:
 			assert(ev->subject_present == 0);
@@ -215,24 +231,8 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], FILE *f) {
 			ev->subject.rgid = tok.tt.subj64_ex.rgid;
 			ev->subject.pid = tok.tt.subj64_ex.pid;
 			ev->subject.sid = tok.tt.subj64_ex.sid;
-			ev->subject.dev = tok.tt.subj64_ex.tid.port;
-			if (tok.tt.subj64_ex.tid.type == AU_IPv4) {
-				if (tok.tt.subj64_ex.tid.addr[0]) {
-					ev->subject.addr.family = AF_INET;
-					ev->subject.addr.ev_addr =
-						tok.tt.subj64_ex.tid.addr[0];
-				}
-			} else if (tok.tt.subj64_ex.tid.type == AU_IPv6) {
-				ev->subject.addr.family = AF_INET6;
-				ev->subject.addr.ev6_addr[0] =
-					tok.tt.subj64_ex.tid.addr[0];
-				ev->subject.addr.ev6_addr[1] =
-					tok.tt.subj64_ex.tid.addr[1];
-				ev->subject.addr.ev6_addr[2] =
-					tok.tt.subj64_ex.tid.addr[2];
-				ev->subject.addr.ev6_addr[3] =
-					tok.tt.subj64_ex.tid.addr[3];
-			}
+			SET_DEV(ev->subject.dev, tok.tt.subj64_ex.tid);
+			SET_ADDR_EX(ev->subject.addr, tok.tt.subj64_ex.tid);
 			break;
 		/* process (as object, other than subject) */
 		case AUT_PROCESS32:
@@ -245,12 +245,8 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], FILE *f) {
 			ev->process.rgid = tok.tt.proc32.rgid;
 			ev->process.pid = tok.tt.proc32.pid;
 			ev->process.sid = tok.tt.proc32.sid;
-			ev->process.dev = tok.tt.proc32.tid.port;
-			if (tok.tt.proc32.tid.addr != 0) {
-				ev->process.addr.family = AF_INET;
-				ev->process.addr.ev_addr =
-					tok.tt.proc32.tid.addr;
-			}
+			SET_DEV(ev->process.dev, tok.tt.proc32.tid);
+			SET_ADDR(ev->process.addr, tok.tt.proc32.tid);
 			break;
 		case AUT_PROCESS32_EX:
 			assert(ev->process_present == 0);
@@ -262,24 +258,8 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], FILE *f) {
 			ev->process.rgid = tok.tt.proc32_ex.rgid;
 			ev->process.pid = tok.tt.proc32_ex.pid;
 			ev->process.sid = tok.tt.proc32_ex.sid;
-			ev->process.dev = tok.tt.proc32_ex.tid.port;
-			if (tok.tt.proc32_ex.tid.type == AU_IPv4) {
-				if (tok.tt.proc32_ex.tid.addr[0]) {
-					ev->process.addr.family = AF_INET;
-					ev->process.addr.ev_addr =
-						tok.tt.proc32_ex.tid.addr[0];
-				}
-			} else if (tok.tt.proc32_ex.tid.type == AU_IPv6) {
-				ev->process.addr.family = AF_INET6;
-				ev->process.addr.ev6_addr[0] =
-					tok.tt.proc32_ex.tid.addr[0];
-				ev->process.addr.ev6_addr[1] =
-					tok.tt.proc32_ex.tid.addr[1];
-				ev->process.addr.ev6_addr[2] =
-					tok.tt.proc32_ex.tid.addr[2];
-				ev->process.addr.ev6_addr[3] =
-					tok.tt.proc32_ex.tid.addr[3];
-			}
+			SET_DEV(ev->process.dev, tok.tt.proc32_ex.tid);
+			SET_ADDR_EX(ev->process.addr, tok.tt.proc32_ex.tid);
 			break;
 		case AUT_PROCESS64:
 			assert(ev->process_present == 0);
@@ -291,12 +271,8 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], FILE *f) {
 			ev->process.rgid = tok.tt.proc64.rgid;
 			ev->process.pid = tok.tt.proc64.pid;
 			ev->process.sid = tok.tt.proc64.sid;
-			ev->process.dev = tok.tt.proc64.tid.port;
-			if (tok.tt.proc64.tid.addr != 0) {
-				ev->process.addr.family = AF_INET;
-				ev->process.addr.ev_addr =
-					tok.tt.proc64.tid.addr;
-			}
+			SET_DEV(ev->process.dev, tok.tt.proc64.tid);
+			SET_ADDR(ev->process.addr, tok.tt.proc64.tid);
 			break;
 		case AUT_PROCESS64_EX:
 			assert(ev->process_present == 0);
@@ -308,24 +284,8 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], FILE *f) {
 			ev->process.rgid = tok.tt.proc64_ex.rgid;
 			ev->process.pid = tok.tt.proc64_ex.pid;
 			ev->process.sid = tok.tt.proc64_ex.sid;
-			ev->process.dev = tok.tt.proc64_ex.tid.port;
-			if (tok.tt.proc64_ex.tid.type == AU_IPv4) {
-				if (tok.tt.proc64_ex.tid.addr[0] != 0) {
-					ev->process.addr.family = AF_INET;
-					ev->process.addr.ev_addr =
-						tok.tt.proc64_ex.tid.addr[0];
-				}
-			} else if (tok.tt.proc64_ex.tid.type == AU_IPv6) {
-				ev->process.addr.family = AF_INET6;
-				ev->process.addr.ev6_addr[0] =
-					tok.tt.proc64_ex.tid.addr[0];
-				ev->process.addr.ev6_addr[1] =
-					tok.tt.proc64_ex.tid.addr[1];
-				ev->process.addr.ev6_addr[2] =
-					tok.tt.proc64_ex.tid.addr[2];
-				ev->process.addr.ev6_addr[3] =
-					tok.tt.proc64_ex.tid.addr[3];
-			}
+			SET_DEV(ev->process.dev, tok.tt.proc64_ex.tid);
+			SET_ADDR_EX(ev->process.addr, tok.tt.proc64_ex.tid);
 			break;
 		/* syscall arguments */
 		case AUT_ARG32:
@@ -570,7 +530,7 @@ auevent_fprint(FILE *f, audit_event_t *ev) {
 }
 
 void
-auevent_init(audit_event_t *ev) {
+auevent_create(audit_event_t *ev) {
 	assert(ev);
 	bzero(ev, sizeof(audit_event_t));
 }

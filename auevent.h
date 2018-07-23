@@ -23,23 +23,23 @@
 #include <bsm/audit_kevents.h> /* auevent_* take lists of event types */
 
 typedef struct {
-	pid_t pid;
-	uid_t auid;
-	uint32_t sid;
-	uid_t euid;
-	gid_t egid;
-	uid_t ruid;
-	gid_t rgid;
-	dev_t dev;
-	ipaddr_t addr;
+	pid_t           pid;
+	uid_t           auid;
+	uint32_t        sid;
+	uid_t           euid;
+	gid_t           egid;
+	uid_t           ruid;
+	gid_t           rgid;
+	dev_t           dev;                    /* set if != (dev_t)-1 */
+	ipaddr_t        addr;                   /* set if !ipaddr_is_empty() */
 } audit_proc_t;
 
 typedef struct {
-	mode_t mode;
-	uid_t uid;
-	gid_t gid;
-	dev_t dev;
-	ino_t ino;
+	mode_t          mode;
+	uid_t           uid;
+	gid_t           gid;
+	dev_t           dev;
+	ino_t           ino;
 	/* dev_t rdev; */
 } audit_attr_t;
 
@@ -87,10 +87,12 @@ typedef struct {
 	unsigned char   unk_tokids[UCHAR_MAX+1]; /* zero-terminated list */
 } audit_event_t;
 
-void auevent_init(audit_event_t *) NONNULL(1);
+void auevent_create(audit_event_t *) NONNULL(1);
 ssize_t auevent_fread(audit_event_t *ev, const uint16_t[], FILE *) NONNULL(1,3);
 void auevent_destroy(audit_event_t *) NONNULL(1);
 void auevent_fprint(FILE *, audit_event_t *) NONNULL(1,2);
+
+int auevent_init(void) WUNRES;
 
 #endif
 

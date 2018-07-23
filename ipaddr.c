@@ -18,11 +18,11 @@
 char ipaddrtoa_buf[INET6_ADDRSTRLEN];
 
 /*
- * If address family is unset, returns nullstr (can be NULL).
+ * If address family is empty/unset, returns nullstr (can be NULL).
  */
 const char *
 ipaddrtoa(ipaddr_t *addr, const char *nullstr) {
-	if (addr->family == 0)
+	if (ipaddr_is_empty(addr))
 		return nullstr;
 	if (!inet_ntop(addr->family, &addr->sin_addr,
 	               ipaddrtoa_buf, sizeof(ipaddrtoa_buf)))

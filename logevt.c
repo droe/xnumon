@@ -40,12 +40,10 @@
 #include <grp.h>
 
 config_t *config;
-dev_t devnull;
 
 void
 logevt_init(config_t *cfg) {
 	config = cfg;
-	devnull = sys_devbypath("/dev/null");
 }
 
 static void
@@ -612,11 +610,11 @@ logevt_process(logfmt_t *fmt, FILE *f,
 		}
 		fmt->dict_item(f, "sid");
 		fmt->value_uint(f, process->sid);
-		if (process->dev != devnull) {
+		if (process->dev != (dev_t)-1) {
 			fmt->dict_item(f, "dev");
 			fmt->value_ttydev(f, process->dev);
 		}
-		if (process->addr.family) {
+		if (!ipaddr_is_empty(&process->addr)) {
 			fmt->dict_item(f, "addr");
 			fmt->value_string(f, ipaddrtoa(&process->addr, NULL));
 		}

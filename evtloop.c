@@ -103,7 +103,7 @@ auef_readable(UNUSED int fd, void *udata) {
 	char *path;
 	int rv;
 
-	auevent_init(&ev);
+	auevent_create(&ev);
 	rv = auevent_fread(&ev, NULL, auef);
 	if (rv == -1 || rv == 0) {
 		if (ev.flags & AEFLAG_ENOMEM)
@@ -860,6 +860,11 @@ evtloop_run(config_t *cfg) {
 	cachehash_init();
 	cachecsig_init();
 	cacheldpl_init();
+	if (auevent_init() == -1) {
+		fprintf(stderr, "Failed to initialize auevent\n");
+		rv = -1;
+		goto errout_silent;
+	}
 	if (os_init() == -1) {
 		fprintf(stderr, "Failed to initialize os version\n");
 		rv = -1;

@@ -30,5 +30,7 @@ typedef struct ipaddr {
 
 const char * ipaddrtoa(ipaddr_t *, const char *) NONNULL(1);
 
+#define ipaddr_is_empty(PIPADDR) ((PIPADDR)->family == 0)
+
 #endif
 
