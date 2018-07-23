@@ -55,47 +55,60 @@ static logfmt_t *logfmttab[LOGFMTS] = {
  * Log destinations.
  *
  * We may want to refactor this along the lines of logfmt above.
+ *
+ * There are two different kinds of log destination drivers.  Raw drivers
+ * implement ld_event and receive the raw event struct for fully custom
+ * logging.  Normal drivers implement ld_open and ld_close for FILE * based
+ * formatted logging.  The FILE * produced by ld_open will be passed to the
+ * event formatter, which will use the log format driver to write a formatted
+ * log record to the FILE *.
  */
-typedef int (*logdst_init_func_t)(config_t *);
-typedef int (*logdst_reinit_func_t)(void);
-typedef void (*logdst_fini_func_t)(void);
+typedef int    (*logdst_init_func_t)(config_t *);
+typedef int    (*logdst_reinit_func_t)(void);
+typedef void   (*logdst_fini_func_t)(void);
 typedef FILE * (*logdst_open_func_t)(void);
-typedef int (*logdst_close_func_t)(FILE *);
+typedef int    (*logdst_close_func_t)(FILE *);
+typedef int    (*logdst_event_func_t)(const logevt_header_t *);
 typedef struct {
 	const char *ld_name;
-	bool ld_oneline;
-	bool ld_multiline;
-	bool ld_onelineprefered;
-	logdst_init_func_t ld_init;
+	bool ld_raw;                /* wants raw event, not formatted buffer */
+	bool ld_oneline;            /* supports compact one-line format */
+	bool ld_multiline;          /* supports readable multi-line format */
+	bool ld_onelineprefered;    /* prefers oneline if both are available */
+	logdst_init_func_t   ld_init;
 	logdst_reinit_func_t ld_reinit;
-	logdst_fini_func_t ld_fini;
-	logdst_open_func_t ld_open;
-	logdst_close_func_t ld_close;
+	logdst_fini_func_t   ld_fini;
+	logdst_event_func_t  ld_event;  /* raw mode only */
+	logdst_open_func_t   ld_open;   /* normal mode only */
+	logdst_close_func_t  ld_close;  /* normal mode only */
 } logdst_t;
 
 #define LOGDSTS 3
 static logdst_t logdsttab[LOGDSTS] = {
 	{
-		"file", true, true, true,
+		"file", false, true, true, true,
 		logdstfile_init,
 		logdstfile_reinit,
 		logdstfile_fini,
+		NULL,
 		logdstfile_open,
 		logdstfile_close
 	},
 	{
-		"-", true, true, false,
+		"-", false, true, true, false,
 		logdststdout_init,
 		NULL,
 		logdststdout_fini,
+		NULL,
 		logdststdout_open,
 		logdststdout_close
 	},
 	{
-		"syslog", true, false, true,
+		"syslog", false, true, false, true,
 		logdstsyslog_init,
 		NULL,
 		logdstsyslog_fini,
+		NULL,
 		logdstsyslog_open,
 		logdstsyslog_close
 	}
@@ -143,7 +156,7 @@ logfmt_s(config_t *cfg) {
 	return logfmttab[cfg->logfmt]->lf_name;
 }
 
-static int log_initialized = 0;
+static bool log_initialized = false;
 static int logfmt = -1;
 static int logdst = -1;
 static queue_t log_queue;
@@ -159,18 +172,22 @@ log_log(logevt_header_t *hdr) {
 	int rv;
 
 	assert(logdst != -1);
-	assert(logfmt != -1);
+	assert(logdsttab[logdst].ld_raw || logfmt != -1);
 	assert(hdr->code >= 0 && hdr->code < LOGEVT_SIZE);
 
-	f = logdsttab[logdst].ld_open();
-	if (!f)
-		return -1;
-	rv = le_logevt[hdr->code](logfmttab[logfmt], f, hdr);
+	if (logdsttab[logdst].ld_raw) {
+		rv = logdsttab[logdst].ld_event(hdr);
+	} else {
+		f = logdsttab[logdst].ld_open();
+		if (!f)
+			return -1;
+		rv = le_logevt[hdr->code](logfmttab[logfmt], f, hdr);
+		if (logdsttab[logdst].ld_close(f) == -1)
+			errors++;
+	}
 	if (rv == 0)
 		counts[hdr->code]++;
 	else
-		errors++;
-	if (logdsttab[logdst].ld_close(f) == -1)
 		errors++;
 	assert(hdr->le_free);
 	hdr->le_free(hdr);
@@ -198,27 +215,33 @@ log_thread(UNUSED void *arg) {
 
 int
 log_init(config_t *cfg) {
-	logfmt = cfg->logfmt;
 	logdst = cfg->logdst;
-	if ((!logfmttab[logfmt]->lf_oneline &&
-	     !logdsttab[logdst].ld_multiline) ||
-	    (!logfmttab[logfmt]->lf_multiline &&
-	     !logdsttab[logdst].ld_oneline)) {
-		fprintf(stderr, "Incompatible logfmt and logdst\n");
-		return -1;
+	if (!logdsttab[logdst].ld_raw) {
+		logfmt = cfg->logfmt;
+		if ((!logfmttab[logfmt]->lf_oneline &&
+		     !logdsttab[logdst].ld_multiline) ||
+		    (!logfmttab[logfmt]->lf_multiline &&
+		     !logdsttab[logdst].ld_oneline)) {
+			fprintf(stderr, "Incompatible logfmt and logdst\n");
+			return -1;
+		}
+		if (cfg->logoneline == -1)
+			cfg->logoneline =
+				logdsttab[logdst].ld_onelineprefered ? 1 : 0;
+		if (cfg->logoneline && (!logfmttab[logfmt]->lf_oneline ||
+		                        !logdsttab[logdst].ld_oneline))
+			cfg->logoneline = 0;
+		if (!cfg->logoneline && (!logfmttab[logfmt]->lf_multiline ||
+		                         !logdsttab[logdst].ld_multiline))
+			cfg->logoneline = 1;
 	}
-	if (cfg->logoneline == -1)
-		cfg->logoneline = logdsttab[logdst].ld_onelineprefered;
-	if (cfg->logoneline && (!logfmttab[logfmt]->lf_oneline ||
-	                        !logdsttab[logdst].ld_oneline))
-		cfg->logoneline = 0;
-	if (!cfg->logoneline && (!logfmttab[logfmt]->lf_multiline ||
-	                         !logdsttab[logdst].ld_multiline))
-		cfg->logoneline = 1;
 	logevt_init(cfg);
-	if (logfmttab[logfmt]->lf_init(cfg) == -1) {
-		fprintf(stderr, "Failed to initialize logfmt %i\n", logfmt);
-		return -1;
+	if (!logdsttab[logdst].ld_raw) {
+		if (logfmttab[logfmt]->lf_init(cfg) == -1) {
+			fprintf(stderr, "Failed to initialize logfmt %i\n",
+			                logfmt);
+			return -1;
+		}
 	}
 	if (logdsttab[logdst].ld_init(cfg) == -1) {
 		fprintf(stderr, "Failed to initialize logdst %i\n", logdst);
@@ -234,7 +257,7 @@ log_init(config_t *cfg) {
 	for (int i = 0; i < LOGEVT_SIZE; i++) {
 		counts[i] = 0;
 	}
-	log_initialized = 1;
+	log_initialized = true;
 	return 0;
 }
 
@@ -266,7 +289,7 @@ log_fini(void) {
 	logdsttab[logdst].ld_fini();
 	logfmt = -1;
 	logdst = -1;
-	log_initialized = 0;
+	log_initialized = false;
 }
 
 void

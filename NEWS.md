@@ -24,6 +24,8 @@
     during the first five minutes and during initialization.
 -   Add metric for the number of processes successfully acquired from live
     process state as part of working around some bug or missed event.
+-   Add raw log destination driver mode to facilitate fully custom logging
+    within the current log driver model.
 
 Configuration changes:
 
