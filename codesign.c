@@ -240,7 +240,7 @@ codesign_new(const char *cpath) {
 	}
 
 	/* extract identity-related info only for good signatures */
-	if (cs->origin != CODESIGN_RESULT_GOOD)
+	if (cs->result != CODESIGN_RESULT_GOOD)
 		goto out;
 
 	/* extract ident */
