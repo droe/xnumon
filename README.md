@@ -3,8 +3,8 @@ https://www.roe.ch/xnumon
 
 [//]: # (__BUILD_VERSION__)
 
-This version is considered safe to deploy in production environments, but still
-subject to active development with frequent releases.
+This version is considered safe to deploy in production environments without
+kext, but still subject to active development with frequent releases.
 
 
 ## Overview
@@ -98,6 +98,10 @@ System Integrity Protection (SIP) for kexts.  Reboot to repair mode by pressing
 <kbd>cmd⌘</kbd>+<kbd>r</kbd> during boot and from within the repair console,
 run `csrutil enable --without kext`.  This will also turn off the kext user
 consent requirement of High Sierra.
+
+In addition to a code signature, the kext needs more field testing, especially
+compatibility tests with other security solutions, before recommending
+large-scale deployments.
 
 
 ## Uninstalling
