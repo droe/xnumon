@@ -3,6 +3,9 @@ https://www.roe.ch/xnumon
 
 [//]: # (__BUILD_VERSION__)
 
+This version is considered safe to deploy in production environments, but still
+subject to active development with frequent releases.
+
 
 ## Overview
 
@@ -53,12 +56,14 @@ points:
 
 ## Installing
 
-The installer package will install the daemon, the control utility and a
-default configuration which by default will log to /var/log/xnumon.log in JSON
-Lines format.  It will also install a matching newsyslog configuration and the
-optional kernel extension.  The kernel extension is currently unsigned and as
-such will not be usable in production environments unless you control a kext
-signing certificate (see «Kernel Extension» below).
+The installer package published on the
+[xnumon website](https://www.roe.ch/xnumon)
+will install the daemon, the control utility and a default configuration which
+by default will log to /var/log/xnumon.log in JSON Lines format.  It will also
+install a matching newsyslog configuration and the optional kernel extension.
+The kernel extension is currently unsigned and as such will not be usable in
+production environments unless you control a kext signing certificate (see
+«Kernel Extension» below).
 
 The extensively commented default configuration is installed to
 `/Library/Application Support/ch.roe.xnumon/configuration.plist-default`.
