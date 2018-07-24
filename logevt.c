@@ -163,6 +163,8 @@ logevt_xnumon_ops(logfmt_t *fmt, FILE *f, void *arg0) {
 	fmt->value_bool(f, config->omit_ctime);
 	fmt->dict_item(f, "omit_btime");
 	fmt->value_bool(f, config->omit_btime);
+	fmt->dict_item(f, "omit_sid");
+	fmt->value_bool(f, config->omit_sid);
 	fmt->dict_item(f, "omit_groups");
 	fmt->value_bool(f, config->omit_groups);
 	fmt->dict_item(f, "omit_apple_hashes");
@@ -608,8 +610,10 @@ logevt_process(logfmt_t *fmt, FILE *f,
 		if (!config->omit_groups) {
 			logevt_gid(fmt, f, process->rgid, "rgid", "rgname");
 		}
-		fmt->dict_item(f, "sid");
-		fmt->value_uint(f, process->sid);
+		if (!config->omit_sid) {
+			fmt->dict_item(f, "sid");
+			fmt->value_uint(f, process->sid);
+		}
 		if (process->dev != (dev_t)-1) {
 			fmt->dict_item(f, "dev");
 			fmt->value_ttydev(f, process->dev);

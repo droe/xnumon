@@ -220,6 +220,12 @@ config_str(config_t *cfg, const char *key, const char *value) {
 		return 0;
 	}
 
+	if (!strcmp(key, "omit_sid")) {
+		if (config_set_bool(&cfg->omit_sid, value) == -1)
+			return -1;
+		return 0;
+	}
+
 	if (!strcmp(key, "omit_groups")) {
 		if (config_set_bool(&cfg->omit_groups, value) == -1)
 			return -1;
@@ -428,6 +434,7 @@ config_new(const char *cfgpath) {
 	CONFIG_BOOL_FROM_PLIST(rv, cfg, plist, "omit_mtime");
 	CONFIG_BOOL_FROM_PLIST(rv, cfg, plist, "omit_ctime");
 	CONFIG_BOOL_FROM_PLIST(rv, cfg, plist, "omit_btime");
+	CONFIG_BOOL_FROM_PLIST(rv, cfg, plist, "omit_sid");
 	CONFIG_BOOL_FROM_PLIST(rv, cfg, plist, "omit_groups");
 	CONFIG_BOOL_FROM_PLIST(rv, cfg, plist, "omit_apple_hashes");
 	CONFIG_STR_FROM_PLIST(rv, cfg, plist, "ancestors");

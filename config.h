@@ -44,6 +44,7 @@ typedef struct {
 	bool omit_ctime;
 	bool omit_btime;
 	bool omit_groups;
+	bool omit_sid;
 	bool omit_apple_hashes;
 	size_t ancestors;       /* 0 unlimited, > 0 limited */
 

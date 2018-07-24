@@ -1,5 +1,11 @@
 ### xnumon develop
 
+-   Add capability to omit the `sid` field of processes.
+
+Configuration changes:
+
+-   Added `omit_sid`.
+
 ---
 
 ### xnumon 0.1.5 2018-07-23

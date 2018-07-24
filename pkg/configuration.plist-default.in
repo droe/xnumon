@@ -200,6 +200,7 @@
        omit_mtime       mtime field of images
        omit_ctime       ctime field of images
        omit_btime       btime field of images
+       omit_sid         sid field of processes
        omit_groups      gid field of processes, egid and rgid of images
        If unset, defaults to:   false
        -->
@@ -217,6 +218,9 @@
   <true/>
   <false/>
   <key>omit_btime</key>
+  <true/>
+  <false/>
+  <key>omit_sid</key>
   <true/>
   <false/>
   <key>omit_groups</key>

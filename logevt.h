@@ -26,7 +26,8 @@
  * log events change in any of the log formats.  Adding information without
  * breaking backwards compatibility also counts as a change.  This is to
  * facilitate compatibility management of tooling and data processing that
- * depends on specific data to be presented in specific ways.
+ * depends on specific data to be presented in specific ways.  The config
+ * dump in eventcode 0 is not considered part of the log event schema.
  *
  * LOGEVT_VERSION is only incremented at most once per xnumon release, which
  * means that changes may happen between different commits during development
