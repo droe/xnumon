@@ -41,7 +41,9 @@ A supported version of OS X or macOS, currently:
 
 ## Documentation
 
-More complete documentation has yet to be written.  Some useful commands:
+See the [xnumon wiki](https://github.com/droe/xnumon/wiki) for further
+documentation.  While the wiki is still work in progress, some useful starting
+points:
 
 -   `cat /var/log/xnumon.log | jq 'select(.eventcode==0)'`
 -   `xnumonctl`
