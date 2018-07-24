@@ -14,7 +14,8 @@ suitable for monitoring potentially large fleets of macOS systems for malware
 and intrusions.  It aims at providing similar capabilities on macOS that sysmon
 provides on Windows.
 
-Currently implemented are the following log events:
+Currently implemented are the following
+[log events](https://github.com/droe/xnumon/wiki/Event-Schemata):
 
 -   **xnumon-ops[0]** and **xnumon-stats[1]** for in-band monitoring of agent
     status and activity metrics.
