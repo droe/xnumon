@@ -59,18 +59,18 @@ points:
 The installer package published on the
 [xnumon website](https://www.roe.ch/xnumon)
 will install the daemon, the control utility and a default configuration which
-by default will log to /var/log/xnumon.log in JSON Lines format.  It will also
-install a matching newsyslog configuration and the optional kernel extension.
-The kernel extension is currently unsigned and as such will not be usable in
-production environments unless you control a kext signing certificate (see
-«Kernel Extension» below).
+by default will log to `/var/log/xnumon.log` in JSON Lines format.  It will
+also install a matching newsyslog configuration and the optional kernel
+extension.  The kernel extension is currently unsigned and as such will not be
+usable in production environments unless you control a kext signing certificate
+(see «Kernel Extension» below).
 
 The extensively commented default configuration is installed to
 `/Library/Application Support/ch.roe.xnumon/configuration.plist-default`.
 While the defaults are as sensible as possible, you will most likely want to
 maintain a custom configuration at
 `/Library/Application Support/ch.roe.xnumon/configuration.plist` to be used
-in favour of the default configuration.
+in favour of the default configuration, especially for enterprise deployments.
 
 In addition to installing xnumon, you will want to make sure that auditd does
 not clobber the global kernel audit policy.  Make sure the `argv` policy flag
