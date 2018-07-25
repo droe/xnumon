@@ -66,12 +66,18 @@ kqueue_dispatch(kqueue_t *kq) {
 	kevent_ctx_t *ctx;
 	int nev;
 	int rv;
+	struct timespec timeout;
 
 	if (!kq->ke)
 		return -1;
 
+	bzero(&timeout, sizeof(struct timespec));
+	timeout.tv_sec = 1;
+
 retry:
-	nev = kevent(kq->fd, NULL, 0, kq->ke, kq->nke, NULL);
+	nev = kevent(kq->fd, NULL, 0, kq->ke, kq->nke, &timeout);
+	if (nev == 0)
+		return 0;
 	if (nev == -1) {
 		if (errno == EINTR)
 			goto retry;

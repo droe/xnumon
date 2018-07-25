@@ -1046,9 +1046,9 @@ evtloop_run(config_t *cfg) {
 	running = true;
 	for (;;) {
 		rv = kqueue_dispatch(kq);
+		if (!running)
+			break;
 		if (rv != 0) {
-			if (!running)
-				break;
 			fprintf(stderr, "kevent_dispatch() failed\n");
 			rv = -1;
 			goto errout;
