@@ -40,6 +40,7 @@ static config_t *config;
 
 /* prepq state */
 static tommy_list pqlist;
+pthread_mutex_t pqmutex;        /* protects pqlist */
 static uint64_t pqsize;         /* current number of elements in pqlist */
 static uint64_t pqlookup;       /* counts total number of lookups in pq */
 static uint64_t pqmiss;         /* counts no preloaded image found in pq */
@@ -707,23 +708,26 @@ procmon_spawn(struct timespec *tv,
  */
 static void
 prepq_append(image_exec_t *ei) {
-	/* lock */
+	pthread_mutex_lock(&pqmutex);
 	tommy_list_insert_tail(&pqlist, &ei->hdr.node, ei);
 	pqsize++;
-	/* unlock */
+	pthread_mutex_unlock(&pqmutex);
 }
 
 /*
  * Remove an existing (!) element from the prepq.
  * Called from the exec handler only (!).
+ *
+ * The chosen locking strategy only works if only a single thread is removing
+ * elements and one or more other threads are only adding elements.
  */
 static void
 prepq_remove_existing(image_exec_t *ei) {
-	/* lock */
+	pthread_mutex_lock(&pqmutex);
 	tommy_list_remove_existing(&pqlist,
 	                           &ei->hdr.node);
 	pqsize--;
-	/* unlock */
+	pthread_mutex_unlock(&pqmutex);
 }
 
 /*
@@ -1153,6 +1157,7 @@ procmon_init(config_t *cfg) {
 	pqskip = 0;
 	pqsize = 0;
 	tommy_list_init(&pqlist);
+	pthread_mutex_init(&pqmutex, NULL);
 	suppress_image_exec_by_ident = &cfg->suppress_image_exec_by_ident;
 	suppress_image_exec_by_path = &cfg->suppress_image_exec_by_path;
 	suppress_image_exec_by_ancestor_ident =
@@ -1167,6 +1172,8 @@ procmon_fini(void) {
 	if (!config)
 		return;
 
+	/* kext thread must be terminated before call to procmon_fini */
+	pthread_mutex_destroy(&pqmutex);
 	while (!tommy_list_empty(&pqlist)) {
 		image_exec_t *ei;
 		ei = tommy_list_remove_existing(&pqlist,
