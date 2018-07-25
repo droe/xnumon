@@ -61,7 +61,6 @@ void procmon_preloadpid(pid_t);
 int procmon_init(config_t *) WUNRES NONNULL(1);
 void procmon_fini(void);
 void procmon_stats(procmon_stat_t *) NONNULL(1);
-bool procmon_kpriority(void) WUNRES;
 uint32_t procmon_images(void) WUNRES;
 const char * procmon_getcwd(pid_t) WUNRES;
 

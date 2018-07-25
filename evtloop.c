@@ -19,6 +19,7 @@
 #include "str.h"
 #include "time.h"
 #include "os.h"
+#include "policy.h"
 #include "debug.h"
 #include "attrib.h"
 
@@ -30,10 +31,11 @@
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
+#include <pthread.h>
 #include <assert.h>
 
-static bool running = true;
-static int kefd = -1;
+static bool running = true;     /* shared */
+static int kefd = -1;           /* shared */
 static FILE *auef = NULL;
 static pid_t xnumon_pid;
 static uint64_t aueunknowns = 0;
@@ -48,14 +50,11 @@ static uint64_t radar39623812_fatal = 0;
 static uint64_t missingtoken = 0;
 static uint64_t ooms = 0;
 
-/* return 1 if kextctl should be treated with priority */
-static bool
-kextctl_priority(UNUSED int fd, UNUSED void *udata) {
-	return procmon_kpriority();
-}
+static bool kextloop_running = true;
+static pthread_t kextloop_thr;
 
 static int
-kextctl_readable(int fd, UNUSED void *udata) {
+kefd_readable(int fd, UNUSED void *udata) {
 	const xnumon_msg_t *msg;
 	struct timespec tm;
 
@@ -70,6 +69,86 @@ kextctl_readable(int fd, UNUSED void *udata) {
 		return -1;
 	}
 	return 0;
+}
+
+static void *
+kextloop_thread(void *arg) {
+	kqueue_t *kq = (kqueue_t *)arg;
+
+#if 0	/* terra pericolosa */
+	(void)policy_thread_sched_standard();
+#endif
+	(void)policy_thread_diskio_standard();
+
+	/* event dispatch loop */
+	kextloop_running = true;
+	for (;;) {
+		int rv = kqueue_dispatch(kq);
+		if (!kextloop_running)
+			break;
+		if (rv != 0) {
+			fprintf(stderr, "kevent_dispatch() failed\n");
+			running = false; /* stop main loop */
+			break;
+		}
+	}
+
+	kqueue_free(kq);
+	close(kefd);
+	kefd = -1;
+	return NULL;
+}
+
+static void
+kextloop_break(void) {
+	kextloop_running = false;
+	if (pthread_join(kextloop_thr, NULL) != 0) {
+		fprintf(stderr, "Failed to join kextloop thread - exiting\n");
+		exit(EXIT_FAILURE);
+	}
+}
+
+static int
+kextloop_spawn(config_t *cfg) {
+	kevent_ctx_t kefd_ctx = KEVENT_CTX_FD_READ(kefd_readable, cfg);
+	kqueue_t *kq = NULL;
+
+	if ((kefd = kextctl_open()) == -1) {
+		fprintf(stderr, "kextctl_open() failed: %s (%i)\n",
+		        strerror(errno), errno);
+		goto errout;
+	}
+	/* from here on the kernel blocks execs until we ACK */
+
+	kq = kqueue_new();
+	if (!kq) {
+		fprintf(stderr, "kqueue_new() failed: %s (%i)\n",
+		                strerror(errno), errno);
+		goto errout;
+	}
+
+	if (kqueue_add_fd_read(kq, kefd, &kefd_ctx) == -1) {
+		fprintf(stderr, "kqueue_add_fd_read(/dev/xnumon) failed: "
+		                "%s (%i)\n", strerror(errno), errno);
+		goto errout;
+	}
+
+	if (pthread_create(&kextloop_thr, NULL, kextloop_thread, kq) != 0) {
+		fprintf(stderr, "pthread_create() failed: "
+		                "%s (%i)\n", strerror(errno), errno);
+		goto errout;
+	}
+	return 0;
+
+errout:
+	if (kq) {
+		kqueue_free(kq);
+	}
+	if (kefd != -1) {
+		close(kefd);
+		kefd = -1;
+	}
+	return -1;
 }
 
 /*
@@ -824,9 +903,6 @@ evtloop_run(config_t *cfg) {
 	kevent_ctx_t siginfo_ctx = KEVENT_CTX_SIGNAL(siginfo_arrived, cfg);
 	kevent_ctx_t sighup_ctx  = KEVENT_CTX_SIGNAL(sighup_arrived, cfg);
 	kevent_ctx_t sigusr1_ctx = KEVENT_CTX_SIGNAL(sigusr1_arrived, cfg);
-	kevent_ctx_t kefd_ctx    = KEVENT_CTX_FD_READ_PRIO(kextctl_readable,
-	                                                   kextctl_priority,
-	                                                   cfg);
 	kevent_ctx_t auef_ctx    = KEVENT_CTX_FD_READ(auef_readable, cfg);
 	kevent_ctx_t sttm_ctx    = KEVENT_CTX_TIMER(stats_timer_fired, cfg);
 	kevent_ctx_t cftm_ctx    = KEVENT_CTX_TIMER(config_timer_fired, cfg);
@@ -835,7 +911,6 @@ evtloop_run(config_t *cfg) {
 	pid_t *pidv;
 	int rv;
 
-	kefd = -1;
 	auef = NULL;
 	aueunknowns = 0;
 	failedsyscalls = 0;
@@ -898,6 +973,12 @@ evtloop_run(config_t *cfg) {
 	}
 	hackmon_init(cfg);
 
+	/* try to spawn kextloop thread */
+	if (cfg->kextlevel > 0 && kextloop_spawn(cfg) == -1) {
+		cfg->kextlevel = 0;
+		fprintf(stderr, "Proceeding without kext\n");
+	}
+
 	/* open kqueue */
 	kq = kqueue_new();
 	if (!kq) {
@@ -950,6 +1031,16 @@ evtloop_run(config_t *cfg) {
 		rv = -1;
 		goto errout_silent;
 	}
+	if (cfg->kextlevel > 0) {
+		rv = kqueue_add_signal(kq, SIGTSTP, &sigtstp_ctx);
+		if (rv == -1) {
+			fprintf(stderr, "kqueue_add_signal(SIGTSTP) "
+			                "failed: %s (%i)\n",
+			                strerror(errno), errno);
+			rv = -1;
+			goto errout_silent;
+		}
+	}
 
 	/* open auditpipe to start queueing audit events */
 	if ((auef = aupipe_fopen(AC_XNUMON)) == NULL) {
@@ -973,43 +1064,11 @@ evtloop_run(config_t *cfg) {
 	free(pidv);
 	fprintf(stderr, "\n");
 
-	/* open kextctl if configured */
-	if (cfg->kextlevel > 0) {
-		if ((kefd = kextctl_open()) == -1) {
-			fprintf(stderr, "kextctl_open() failed: %s (%i)\n",
-			        strerror(errno), errno);
-			fprintf(stderr, "Proceeding without kext\n");
-			cfg->kextlevel = 0;
-		} else {
-			rv = kqueue_add_signal(kq, SIGTSTP, &sigtstp_ctx);
-			if (rv == -1) {
-				fprintf(stderr, "kqueue_add_signal(SIGTSTP) "
-				                "failed: %s (%i)\n",
-				                strerror(errno), errno);
-				rv = -1;
-				goto errout_silent;
-			}
-		}
-		/* from here on the kernel blocks execs until we ACK */
-	}
-
 	/* log xnumon start */
 	if (log_event_xnumon_start() == -1) {
 		fprintf(stderr, "log_event_xnumon_start() failed\n");
 		rv = -1;
 		goto errout_silent;
-	}
-
-	/* add kextctl to kqueue */
-	if (kefd != -1) {
-		rv = kqueue_add_fd_read(kq, kefd, &kefd_ctx);
-		if (rv == -1) {
-			fprintf(stderr,
-			        "kqueue_add_fd_read(/dev/xnumon) failed: "
-			        "%s (%i)\n", strerror(errno), errno);
-			rv = -1;
-			goto errout;
-		}
 	}
 
 	/* add auditpipe to kqueue */
@@ -1055,6 +1114,11 @@ evtloop_run(config_t *cfg) {
 		}
 	}
 
+	/* stop and join the kextloop thread */
+	if (cfg->kextlevel > 0) {
+		kextloop_break();
+	}
+
 	rv = 0;
 errout:
 	/* log xnumon stats and stop */
@@ -1069,10 +1133,6 @@ errout:
 errout_silent:
 	if (kq)
 		kqueue_free(kq);
-	if (kefd != -1) {
-		close(kefd);
-		kefd = -1;
-	}
 	if (auef) {
 		fclose(auef);
 		auef = NULL;

@@ -1225,20 +1225,6 @@ procmon_stats(procmon_stat_t *st) {
 }
 
 /*
- * Returns 1 if kextctl events should be handled with priority,
- * 0 if auditpipe events should be handled with priority.
- *
- * MAXPQTTL is the size of the out-of-order arrival window that we tolerate.
- * As long as that window is not full, the kext events should be prioritized
- * in order to avoid processing auditpipe events while we have unprocessed
- * kextctl events.
- */
-bool
-procmon_kpriority(void) {
-	return (pqsize < MAXPQTTL);
-}
-
-/*
  * Returns the number of exec images in existence.
  * Can be safely called after procmon_fini().
  */
