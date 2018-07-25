@@ -1,6 +1,7 @@
 ### xnumon develop
 
 -   Add capability to omit the `sid` field of processes.
+-   Rewritten event loop for improved behaviour under load (issue #33).
 
 Configuration changes:
 
