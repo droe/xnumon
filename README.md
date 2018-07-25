@@ -32,6 +32,11 @@ executable images that led to the current process state.  It does so by
 tracking fork and other syscalls instead of relying only on the ppid, which
 can change over the lifetime of a process.
 
+xnumon is configurable.  It supports different log formats and hash algorithms.
+In order to reduce log volume close to the source, xnumon implements a number
+of suppression mechanisms and allows some tuning regarding the logged
+information per event.
+
 
 ## Requirements
 
