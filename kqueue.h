@@ -24,27 +24,30 @@ typedef bool (*kevent_fd_prio_func_t)(int, void *);
 typedef int (*kevent_signal_func_t)(int, void *);
 typedef int (*kevent_timer_func_t)(int, void *);
 
-typedef struct kevent_ctx {
+typedef struct {
 	kevent_fd_read_func_t fd_read;
 	kevent_fd_prio_func_t fd_prio;
 	kevent_signal_func_t signal;
 	kevent_timer_func_t timer;
 	void *udata;
-	tommy_node node;
 } kevent_ctx_t;
 
-#define TOMMY_NODE_INIT {NULL, NULL, NULL, 0}
+#define KEVENT_CTX_SIGNAL(SF,UD)            {NULL, NULL, (SF), NULL, (UD)}
+#define KEVENT_CTX_FD_READ(RF,UD)           {(RF), NULL, NULL, NULL, (UD)}
+#define KEVENT_CTX_FD_READ_PRIO(RF,PF,UD)   {(RF), (PF), NULL, NULL, (UD)}
+#define KEVENT_CTX_TIMER(TF,UD)             {NULL, NULL, NULL, (TF), (UD)}
 
-#define KEVENT_CTX_SIGNAL(S,U)         {NULL,NULL,(S),NULL,(U),TOMMY_NODE_INIT}
-#define KEVENT_CTX_FD_READ(R,U)        {(R),NULL,NULL,NULL,(U),TOMMY_NODE_INIT}
-#define KEVENT_CTX_FD_READ_PRIO(R,P,U) {(R),(P),NULL,NULL,(U),TOMMY_NODE_INIT}
-#define KEVENT_CTX_TIMER(T,U)          {NULL,NULL,NULL,(T),(U),TOMMY_NODE_INIT}
+typedef struct {
+	int fd;
+	struct kevent *ke;
+	size_t nke;
+} kqueue_t;
 
-int kqueue_init(void) WUNRES;
-void kqueue_fini(void);
-int kqueue_dispatch(void) WUNRES;
-int kqueue_add_fd_read(int, kevent_ctx_t *) NONNULL(2) WUNRES;
-int kqueue_add_signal(int, kevent_ctx_t *) NONNULL(2) WUNRES;
-int kqueue_add_timer(int, int, kevent_ctx_t *) NONNULL(3) WUNRES;
+kqueue_t * kqueue_new(void) MALLOC;
+void kqueue_free(kqueue_t *) NONNULL(1);
+int kqueue_dispatch(kqueue_t *) NONNULL(1) WUNRES;
+int kqueue_add_fd_read(kqueue_t *, int, kevent_ctx_t *) NONNULL(1,3) WUNRES;
+int kqueue_add_signal(kqueue_t *, int, kevent_ctx_t *) NONNULL(1,3) WUNRES;
+int kqueue_add_timer(kqueue_t *, int, int, kevent_ctx_t *) NONNULL(1,4) WUNRES;
 
 #endif

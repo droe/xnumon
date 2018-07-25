@@ -830,6 +830,7 @@ evtloop_run(config_t *cfg) {
 	kevent_ctx_t auef_ctx    = KEVENT_CTX_FD_READ(auef_readable, cfg);
 	kevent_ctx_t sttm_ctx    = KEVENT_CTX_TIMER(stats_timer_fired, cfg);
 	kevent_ctx_t cftm_ctx    = KEVENT_CTX_TIMER(config_timer_fired, cfg);
+	kqueue_t *kq = NULL;
 	int pidc;
 	pid_t *pidv;
 	int rv;
@@ -898,50 +899,51 @@ evtloop_run(config_t *cfg) {
 	hackmon_init(cfg);
 
 	/* open kqueue */
-	if (kqueue_init() == -1) {
-		fprintf(stderr, "kqueue_init() failed: %s (%i)\n",
+	kq = kqueue_new();
+	if (!kq) {
+		fprintf(stderr, "kqueue_new() failed: %s (%i)\n",
 		                strerror(errno), errno);
 		rv = -1;
 		goto errout_silent;
 	}
 
 	/* install kevent-based signal handlers */
-	rv = kqueue_add_signal(SIGQUIT, &sigquit_ctx);
+	rv = kqueue_add_signal(kq, SIGQUIT, &sigquit_ctx);
 	if (rv == -1) {
 		fprintf(stderr, "kqueue_add_signal(SIGQUIT) failed: %s (%i)\n",
 		                strerror(errno), errno);
 		rv = -1;
 		goto errout_silent;
 	}
-	rv = kqueue_add_signal(SIGTERM, &sigquit_ctx);
+	rv = kqueue_add_signal(kq, SIGTERM, &sigquit_ctx);
 	if (rv == -1) {
 		fprintf(stderr, "kqueue_add_signal(SIGTERM) failed: %s (%i)\n",
 		                strerror(errno), errno);
 		rv = -1;
 		goto errout_silent;
 	}
-	rv = kqueue_add_signal(SIGINT, &sigquit_ctx);
+	rv = kqueue_add_signal(kq, SIGINT, &sigquit_ctx);
 	if (rv == -1) {
 		fprintf(stderr, "kqueue_add_signal(SIGINT) failed: %s (%i)\n",
 		                strerror(errno), errno);
 		rv = -1;
 		goto errout_silent;
 	}
-	rv = kqueue_add_signal(SIGINFO, &siginfo_ctx);
+	rv = kqueue_add_signal(kq, SIGINFO, &siginfo_ctx);
 	if (rv == -1) {
 		fprintf(stderr, "kqueue_add_signal(SIGINFO) failed: %s (%i)\n",
 		                strerror(errno), errno);
 		rv = -1;
 		goto errout_silent;
 	}
-	rv = kqueue_add_signal(SIGHUP, &sighup_ctx);
+	rv = kqueue_add_signal(kq, SIGHUP, &sighup_ctx);
 	if (rv == -1) {
 		fprintf(stderr, "kqueue_add_signal(SIGHUP) failed: %s (%i)\n",
 		                strerror(errno), errno);
 		rv = -1;
 		goto errout_silent;
 	}
-	rv = kqueue_add_signal(SIGUSR1, &sigusr1_ctx);
+	rv = kqueue_add_signal(kq, SIGUSR1, &sigusr1_ctx);
 	if (rv == -1) {
 		fprintf(stderr, "kqueue_add_signal(SIGUSR1) failed: %s (%i)\n",
 		                strerror(errno), errno);
@@ -979,7 +981,7 @@ evtloop_run(config_t *cfg) {
 			fprintf(stderr, "Proceeding without kext\n");
 			cfg->kextlevel = 0;
 		} else {
-			rv = kqueue_add_signal(SIGTSTP, &sigtstp_ctx);
+			rv = kqueue_add_signal(kq, SIGTSTP, &sigtstp_ctx);
 			if (rv == -1) {
 				fprintf(stderr, "kqueue_add_signal(SIGTSTP) "
 				                "failed: %s (%i)\n",
@@ -1000,7 +1002,7 @@ evtloop_run(config_t *cfg) {
 
 	/* add kextctl to kqueue */
 	if (kefd != -1) {
-		rv = kqueue_add_fd_read(kefd, &kefd_ctx);
+		rv = kqueue_add_fd_read(kq, kefd, &kefd_ctx);
 		if (rv == -1) {
 			fprintf(stderr,
 			        "kqueue_add_fd_read(/dev/xnumon) failed: "
@@ -1011,7 +1013,7 @@ evtloop_run(config_t *cfg) {
 	}
 
 	/* add auditpipe to kqueue */
-	rv = kqueue_add_fd_read(fileno(auef), &auef_ctx);
+	rv = kqueue_add_fd_read(kq, fileno(auef), &auef_ctx);
 	if (rv == -1) {
 		fprintf(stderr, "kqueue_add_fd_read(/dev/auditpipe) failed: "
 		                "%s (%i)\n", strerror(errno), errno);
@@ -1020,7 +1022,7 @@ evtloop_run(config_t *cfg) {
 	}
 
 	/* start stats timer */
-	rv = kqueue_add_timer(TIMER_STATS, cfg->stats_interval, &sttm_ctx);
+	rv = kqueue_add_timer(kq, TIMER_STATS, cfg->stats_interval, &sttm_ctx);
 	if (rv == -1) {
 		fprintf(stderr, "kqueue_add_timer(1) failed: %s (%i)\n",
 		                strerror(errno), errno);
@@ -1030,7 +1032,7 @@ evtloop_run(config_t *cfg) {
 
 	if (cfg->launchd_mode) {
 		/* start config file timer */
-		rv = kqueue_add_timer(TIMER_CONFIG, 300, &cftm_ctx);
+		rv = kqueue_add_timer(kq, TIMER_CONFIG, 300, &cftm_ctx);
 		if (rv == -1) {
 			fprintf(stderr, "kqueue_add_timer(2) failed: %s (%i)\n",
 			                strerror(errno), errno);
@@ -1043,7 +1045,7 @@ evtloop_run(config_t *cfg) {
 	DEBUG(cfg->debug, "xnumon_start", "init complete");
 	running = true;
 	for (;;) {
-		rv = kqueue_dispatch();
+		rv = kqueue_dispatch(kq);
 		if (rv != 0) {
 			if (!running)
 				break;
@@ -1065,7 +1067,8 @@ errout:
 	}
 
 errout_silent:
-	kqueue_fini();
+	if (kq)
+		kqueue_free(kq);
 	if (kefd != -1) {
 		close(kefd);
 		kefd = -1;
