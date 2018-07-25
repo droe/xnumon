@@ -38,6 +38,7 @@
 
 static config_t *config;
 
+/* prepq state */
 static tommy_list pqlist;
 static uint64_t pqsize;         /* current number of elements in pqlist */
 static uint64_t pqlookup;       /* counts total number of lookups in pq */
@@ -700,6 +701,106 @@ procmon_spawn(struct timespec *tv,
 	procmon_exec(tv, subject, imagepath, attr, argv);
 }
 
+/*
+ * Append an element to the prepq.
+ * Called from the kext event handler, if kextlevel is > 0.
+ */
+static void
+prepq_append(image_exec_t *ei) {
+	/* lock */
+	tommy_list_insert_tail(&pqlist, &ei->hdr.node, ei);
+	pqsize++;
+	/* unlock */
+}
+
+/*
+ * Remove an existing (!) element from the prepq.
+ * Called from the exec handler only (!).
+ */
+static void
+prepq_remove_existing(image_exec_t *ei) {
+	/* lock */
+	tommy_list_remove_existing(&pqlist,
+	                           &ei->hdr.node);
+	pqsize--;
+	/* unlock */
+}
+
+/*
+ * Look up the corresponding exec images acquired by kext events before the
+ * audit event was committed.  Linking the audit event to the correct kext
+ * events even when events are being lost for some reason is probably the most
+ * tricky part of all of this.
+ */
+static void
+prepq_lookup(image_exec_t **image, image_exec_t **interp,
+             proc_t *proc, char *imagepath, audit_attr_t *attr, char **argv) {
+	*image = NULL;
+	*interp = NULL;
+	pqlookup++;
+	for (tommy_node *node = tommy_list_head(&pqlist);
+	     node; node = node->next) {
+		image_exec_t *ei = node->data;
+		assert(ei);
+
+		if (!*image) {
+			/*
+			 * Find the image based on (pid,dev,ino) or
+			 * (pid,basename(path)) as a fallback if no attr is
+			 * available from the audit event.  When the kernel
+			 * passes a wrong path to the audit framework, it does
+			 * not provide attributes; in that case we have to rely
+			 * on just the pid and the basename.
+			 */
+			if (ei->pid == proc->pid &&
+			    ((attr && ei->stat.dev == attr->dev &&
+			              ei->stat.ino == attr->ino) ||
+			     (!attr &&
+			      !sys_basenamecmp(ei->path, imagepath)))) {
+				/* we have a match */
+				prepq_remove_existing(ei);
+				*image = ei;
+				/* script executions always have the
+				 * interpreter as argv[0] and the script file
+				 * as argv[1].  The remaining arguments are the
+				 * arguments passed to the scripts, if any */
+				if (((*image)->flags & EIFLAG_SHEBANG) &&
+				    argv && argv[0] && argv[1])
+					continue;
+				break;
+			}
+		} else {
+			assert(!interp);
+			assert(argv && argv[0] && argv[1]);
+			/* #! can be relative path and we have no attr now.
+			 * Using (pid,basename(path)) is the best we can do
+			 * at this point. */
+			if (ei->pid == proc->pid &&
+			    !sys_basenamecmp(ei->path, argv[0])) {
+				/* we have a match */
+				prepq_remove_existing(ei);
+				*interp = ei;
+				break;
+			}
+		}
+
+		pqskip++;
+#if 0
+		DEBUG(config->debug, "prepq_skip",
+		      "looking for %s[%i]: skipped %s[%i]",
+		      imagepath, proc->pid, ei->path, ei->pid);
+#endif
+		if (++ei->pqttl == MAXPQTTL) {
+			DEBUG(config->debug, "prepq_drop",
+			      "looking for %s[%i]: dropped %s[%i]",
+			      imagepath, proc->pid, ei->path, ei->pid);
+			prepq_remove_existing(ei);
+			image_exec_free(ei);
+			pqdrop++;
+		}
+	}
+	assert(!(*interp && !*image));
+}
 
 /*
  * For scripts, this will be called once, with argv[0] as the interpreter and
@@ -743,80 +844,8 @@ procmon_exec(struct timespec *tv,
 	}
 	assert(proc);
 
-	/*
-	 * Look up the corresponding exec images acquired by kext events
-	 * before the audit event was committed.  Linking the audit event to
-	 * the correct kext events even when events are being lost for some
-	 * reason is probably the most tricky part of all of this.
-	 */
-	pqlookup++;
-	image_exec_t *image = NULL, *interp = NULL;
-	for (tommy_node *node = tommy_list_head(&pqlist);
-	     node; node = node->next) {
-		image_exec_t *ei = node->data;
-		assert(ei);
-
-		if (!image) {
-			/*
-			 * Find the image based on (pid,dev,ino) or
-			 * (pid,basename(path)) as a fallback if no attr is
-			 * available from the audit event.  When the kernel
-			 * passes a wrong path to the audit framework, it does
-			 * not provide attributes; in that case we have to rely
-			 * on just the pid and the basename.
-			 */
-			if (ei->pid == proc->pid &&
-			    ((attr && ei->stat.dev == attr->dev &&
-			              ei->stat.ino == attr->ino) ||
-			     (!attr &&
-			      !sys_basenamecmp(ei->path, imagepath)))) {
-				/* we have a match */
-				tommy_list_remove_existing(&pqlist,
-				                           &ei->hdr.node);
-				pqsize--;
-				image = ei;
-				/* script executions always have the
-				 * interpreter as argv[0] and the script file
-				 * as argv[1].  The remaining arguments are the
-				 * arguments passed to the scripts, if any */
-				if ((image->flags & EIFLAG_SHEBANG) &&
-				    argv && argv[0] && argv[1])
-					continue;
-				break;
-			}
-		} else {
-			assert(!interp);
-			assert(argv && argv[0] && argv[1]);
-			/* #! can be relative path and we have no attr now.
-			 * Using (pid,basename(path)) is the best we can do
-			 * at this point. */
-			if (ei->pid == proc->pid &&
-			    !sys_basenamecmp(ei->path, argv[0])) {
-				/* we have a match */
-				tommy_list_remove_existing(&pqlist,
-				                           &ei->hdr.node);
-				pqsize--;
-				interp = ei;
-				break;
-			}
-		}
-
-		pqskip++;
-		DEBUG(config->debug, "prepq_skip",
-		      "looking for %s[%i]: skipped %s[%i]",
-		      imagepath, proc->pid, ei->path, ei->pid);
-		if (++ei->pqttl == MAXPQTTL) {
-			DEBUG(config->debug, "prepq_drop",
-			      "looking for %s[%i]: dropped %s[%i]",
-			      imagepath, proc->pid, ei->path, ei->pid);
-			tommy_list_remove_existing(&pqlist,
-			                           &ei->hdr.node);
-			pqsize--;
-			image_exec_free(ei);
-			pqdrop++;
-		}
-	}
-	assert(!(interp && !image));
+	image_exec_t *image, *interp;
+	prepq_lookup(&image, &interp, proc, imagepath, attr, argv);
 
 #if 0
 	if (image)
@@ -1061,8 +1090,7 @@ procmon_kern_preexec(struct timespec *tm, pid_t pid, const char *imagepath) {
 	ei->pid = pid;
 	image_exec_open(ei, NULL);
 	image_exec_acquire(ei, 1);
-	tommy_list_insert_tail(&pqlist, &ei->hdr.node, ei);
-	pqsize++;
+	prepq_append(ei);
 }
 
 /*
