@@ -54,7 +54,7 @@ cachehash_obj_free(void *obj) {
 }
 
 static lrucache_t lrucache;
-pthread_mutex_t mutex;
+static pthread_mutex_t mutex;
 
 void
 cachehash_init(void) {
