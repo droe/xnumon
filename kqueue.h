@@ -20,22 +20,19 @@
 #include <signal.h>
 
 typedef int (*kevent_fd_read_func_t)(int, void *);
-typedef bool (*kevent_fd_prio_func_t)(int, void *);
 typedef int (*kevent_signal_func_t)(int, void *);
 typedef int (*kevent_timer_func_t)(int, void *);
 
 typedef struct {
 	kevent_fd_read_func_t fd_read;
-	kevent_fd_prio_func_t fd_prio;
 	kevent_signal_func_t signal;
 	kevent_timer_func_t timer;
 	void *udata;
 } kevent_ctx_t;
 
-#define KEVENT_CTX_SIGNAL(SF,UD)            {NULL, NULL, (SF), NULL, (UD)}
-#define KEVENT_CTX_FD_READ(RF,UD)           {(RF), NULL, NULL, NULL, (UD)}
-#define KEVENT_CTX_FD_READ_PRIO(RF,PF,UD)   {(RF), (PF), NULL, NULL, (UD)}
-#define KEVENT_CTX_TIMER(TF,UD)             {NULL, NULL, NULL, (TF), (UD)}
+#define KEVENT_CTX_SIGNAL(SF,UD)            {NULL, (SF), NULL, (UD)}
+#define KEVENT_CTX_FD_READ(RF,UD)           {(RF), NULL, NULL, (UD)}
+#define KEVENT_CTX_TIMER(TF,UD)             {NULL, NULL, (TF), (UD)}
 
 typedef struct {
 	int fd;

@@ -65,7 +65,6 @@ int
 kqueue_dispatch(kqueue_t *kq) {
 	kevent_ctx_t *ctx;
 	int nev;
-	int rv;
 	struct timespec timeout;
 
 	if (!kq->ke)
@@ -108,51 +107,15 @@ retry:
 			return -1;
 	}
 
-	/* process prioritiy file descriptors */
+	/* process file descriptors */
 	for (size_t i = 0; i < (size_t)nev; i++) {
 		if (kq->ke[i].filter != EVFILT_READ)
 			continue;
 		ctx = (kevent_ctx_t *)kq->ke[i].udata;
 		assert(ctx);
-		if (!ctx->fd_prio)
-			continue;
-		rv = ctx->fd_prio((int)kq->ke[i].ident, ctx->udata);
-		if (rv == -1)
-			return -1;
-		if (rv == 0)
-			continue;
 		assert(ctx->fd_read);
 		if (ctx->fd_read((int)kq->ke[i].ident, ctx->udata) == -1)
 			return -1;
-		return 0; /* drain */
-	}
-
-	/* process file descriptors without priority function */
-	for (size_t i = 0; i < (size_t)nev; i++) {
-		if (kq->ke[i].filter != EVFILT_READ)
-			continue;
-		ctx = (kevent_ctx_t *)kq->ke[i].udata;
-		assert(ctx);
-		if (ctx->fd_prio)
-			continue;
-		assert(ctx->fd_read);
-		if (ctx->fd_read((int)kq->ke[i].ident, ctx->udata) == -1)
-			return -1;
-		return 0; /* drain */
-	}
-
-	/* process file descriptors with priority function, but no priority */
-	for (size_t i = 0; i < (size_t)nev; i++) {
-		if (kq->ke[i].filter != EVFILT_READ)
-			continue;
-		ctx = (kevent_ctx_t *)kq->ke[i].udata;
-		assert(ctx);
-		if (!ctx->fd_prio)
-			continue;
-		assert(ctx->fd_read);
-		if (ctx->fd_read((int)kq->ke[i].ident, ctx->udata) == -1)
-			return -1;
-		return 0; /* drain */
 	}
 
 	return 0;
