@@ -663,11 +663,11 @@ siginfo_arrived(UNUSED int sig, UNUSED void *udata) {
 		                "miss:%"PRIu64" "       /* normal at startup */
 		                "drop:%"PRIu64" "       /* too many ooo */
 		                "bktskip:%"PRIu64"\n",  /* ooo arrival search */
-		                st.pm.kqsize,
-		                st.pm.kqlookup,
-		                st.pm.kqmiss,
-		                st.pm.kqdrop,
-		                st.pm.kqskip);
+		                st.pm.pqsize,
+		                st.pm.pqlookup,
+		                st.pm.pqmiss,
+		                st.pm.pqdrop,
+		                st.pm.pqskip);
 	}
 
 	fprintf(stderr, "aupi cdevq "

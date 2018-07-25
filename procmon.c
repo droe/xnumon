@@ -38,12 +38,12 @@
 
 static config_t *config;
 
-static tommy_list kqlist;
-static uint64_t kqsize;         /* current number of elements in kqlist */
-static uint64_t kqlookup;       /* counts total number of lookups in kq */
-static uint64_t kqmiss;         /* counts no preloaded image found in kq */
-static uint64_t kqdrop;         /* counts preloaded imgs removed due max TTL */
-static uint64_t kqskip;         /* counts non-matching entries skipped in kq */
+static tommy_list pqlist;
+static uint64_t pqsize;         /* current number of elements in pqlist */
+static uint64_t pqlookup;       /* counts total number of lookups in pq */
+static uint64_t pqmiss;         /* counts no preloaded image found in pq */
+static uint64_t pqdrop;         /* counts preloaded imgs removed due max TTL */
+static uint64_t pqskip;         /* counts non-matching entries skipped in pq */
 
 static atomic32_t images;
 static uint64_t liveacq;        /* counts live process acquisitions */
@@ -749,9 +749,9 @@ procmon_exec(struct timespec *tv,
 	 * the correct kext events even when events are being lost for some
 	 * reason is probably the most tricky part of all of this.
 	 */
-	kqlookup++;
+	pqlookup++;
 	image_exec_t *image = NULL, *interp = NULL;
-	for (tommy_node *node = tommy_list_head(&kqlist);
+	for (tommy_node *node = tommy_list_head(&pqlist);
 	     node; node = node->next) {
 		image_exec_t *ei = node->data;
 		assert(ei);
@@ -771,9 +771,9 @@ procmon_exec(struct timespec *tv,
 			     (!attr &&
 			      !sys_basenamecmp(ei->path, imagepath)))) {
 				/* we have a match */
-				tommy_list_remove_existing(&kqlist,
+				tommy_list_remove_existing(&pqlist,
 				                           &ei->hdr.node);
-				kqsize--;
+				pqsize--;
 				image = ei;
 				/* script executions always have the
 				 * interpreter as argv[0] and the script file
@@ -793,27 +793,27 @@ procmon_exec(struct timespec *tv,
 			if (ei->pid == proc->pid &&
 			    !sys_basenamecmp(ei->path, argv[0])) {
 				/* we have a match */
-				tommy_list_remove_existing(&kqlist,
+				tommy_list_remove_existing(&pqlist,
 				                           &ei->hdr.node);
-				kqsize--;
+				pqsize--;
 				interp = ei;
 				break;
 			}
 		}
 
-		kqskip++;
+		pqskip++;
 		DEBUG(config->debug, "prepq_skip",
 		      "looking for %s[%i]: skipped %s[%i]",
 		      imagepath, proc->pid, ei->path, ei->pid);
-		if (++ei->kqttl == MAXKQTTL) {
+		if (++ei->pqttl == MAXPQTTL) {
 			DEBUG(config->debug, "prepq_drop",
 			      "looking for %s[%i]: dropped %s[%i]",
 			      imagepath, proc->pid, ei->path, ei->pid);
-			tommy_list_remove_existing(&kqlist,
+			tommy_list_remove_existing(&pqlist,
 			                           &ei->hdr.node);
-			kqsize--;
+			pqsize--;
 			image_exec_free(ei);
-			kqdrop++;
+			pqdrop++;
 		}
 	}
 	assert(!(interp && !image));
@@ -835,7 +835,7 @@ procmon_exec(struct timespec *tv,
 		DEBUG(config->debug, "prepq_miss",
 		      "looking for %s[%i]: not found (image)",
 		      imagepath, proc->pid);
-		kqmiss++;
+		pqmiss++;
 		image = image_exec_new(imagepath);
 		if (!image) {
 			/* no counter, oom is the only reason this can happen */
@@ -856,7 +856,7 @@ procmon_exec(struct timespec *tv,
 			      "looking for %s[%i]: not found (interp "
 			      "argv[0]=%s)",
 			      imagepath, proc->pid, argv ? argv[0] : NULL);
-			kqmiss++;
+			pqmiss++;
 			if (!argv) {
 				miss_execinterp++;
 				DEBUG(config->debug, "miss_execinterp",
@@ -1061,8 +1061,8 @@ procmon_kern_preexec(struct timespec *tm, pid_t pid, const char *imagepath) {
 	ei->pid = pid;
 	image_exec_open(ei, NULL);
 	image_exec_acquire(ei, 1);
-	tommy_list_insert_tail(&kqlist, &ei->hdr.node, ei);
-	kqsize++;
+	tommy_list_insert_tail(&pqlist, &ei->hdr.node, ei);
+	pqsize++;
 }
 
 /*
@@ -1119,12 +1119,12 @@ procmon_init(config_t *cfg) {
 	miss_chdirsubj = 0;
 	miss_getcwd = 0;
 	ooms = 0;
-	kqlookup = 0;
-	kqmiss = 0;
-	kqdrop = 0;
-	kqskip = 0;
-	kqsize = 0;
-	tommy_list_init(&kqlist);
+	pqlookup = 0;
+	pqmiss = 0;
+	pqdrop = 0;
+	pqskip = 0;
+	pqsize = 0;
+	tommy_list_init(&pqlist);
 	suppress_image_exec_by_ident = &cfg->suppress_image_exec_by_ident;
 	suppress_image_exec_by_path = &cfg->suppress_image_exec_by_path;
 	suppress_image_exec_by_ancestor_ident =
@@ -1139,14 +1139,14 @@ procmon_fini(void) {
 	if (!config)
 		return;
 
-	while (!tommy_list_empty(&kqlist)) {
+	while (!tommy_list_empty(&pqlist)) {
 		image_exec_t *ei;
-		ei = tommy_list_remove_existing(&kqlist,
-		                                tommy_list_head(&kqlist));
+		ei = tommy_list_remove_existing(&pqlist,
+		                                tommy_list_head(&pqlist));
 		image_exec_free(ei);
-		kqsize--;
+		pqsize--;
 	}
-	assert(kqsize == 0);
+	assert(pqsize == 0);
 	proctab_fini();
 	config = NULL;
 }
@@ -1165,25 +1165,25 @@ procmon_stats(procmon_stat_t *st) {
 	st->miss_chdirsubj = miss_chdirsubj;
 	st->miss_getcwd = miss_getcwd;
 	st->ooms = (uint64_t)ooms;
-	st->kqlookup = kqlookup;
-	st->kqmiss = kqmiss;
-	st->kqdrop = kqdrop;
-	st->kqskip = kqskip;
-	st->kqsize = kqsize;
+	st->pqlookup = pqlookup;
+	st->pqmiss = pqmiss;
+	st->pqdrop = pqdrop;
+	st->pqskip = pqskip;
+	st->pqsize = pqsize;
 }
 
 /*
  * Returns 1 if kextctl events should be handled with priority,
  * 0 if auditpipe events should be handled with priority.
  *
- * MAXKQTTL is the size of the out-of-order arrival window that we tolerate.
+ * MAXPQTTL is the size of the out-of-order arrival window that we tolerate.
  * As long as that window is not full, the kext events should be prioritized
  * in order to avoid processing auditpipe events while we have unprocessed
  * kextctl events.
  */
 bool
 procmon_kpriority(void) {
-	return (kqsize < MAXKQTTL);
+	return (pqsize < MAXPQTTL);
 }
 
 /*

@@ -324,15 +324,15 @@ logevt_xnumon_stats(logfmt_t *fmt, FILE *f, void *arg0) {
 	fmt->dict_item(f, "prep_queue");
 	fmt->dict_begin(f);
 	fmt->dict_item(f, "buckets");
-	fmt->value_uint(f, st->pm.kqsize);
+	fmt->value_uint(f, st->pm.pqsize);
 	fmt->dict_item(f, "lookup");
-	fmt->value_uint(f, st->pm.kqlookup);
+	fmt->value_uint(f, st->pm.pqlookup);
 	fmt->dict_item(f, "miss");
-	fmt->value_uint(f, st->pm.kqmiss);
+	fmt->value_uint(f, st->pm.pqmiss);
 	fmt->dict_item(f, "drop");
-	fmt->value_uint(f, st->pm.kqdrop);
+	fmt->value_uint(f, st->pm.pqdrop);
 	fmt->dict_item(f, "bktskip");
-	fmt->value_uint(f, st->pm.kqskip);
+	fmt->value_uint(f, st->pm.pqskip);
 	fmt->dict_end(f); /* prep-queue */
 
 	fmt->dict_item(f, "aupi_cdevq");
