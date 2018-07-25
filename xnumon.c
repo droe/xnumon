@@ -8,6 +8,7 @@
  * Licensed under the Open Software License version 3.0.
  */
 
+#include "debug.h"
 #include "config.h"
 #include "evtloop.h"
 #include "sys.h"
@@ -68,7 +69,8 @@ fversion(FILE *f) {
 
 int
 main(int argc, char *argv[]) {
-	int ch, rv;
+	int ch;
+	int rv;
 	char *cfgpath = NULL;
 	config_t *cfg;
 	int pidfd = -1;
@@ -110,8 +112,10 @@ main(int argc, char *argv[]) {
 	optreset = 1;
 	optind = 1;
 
+	debug_init();
 	fversion(stderr);
 	umask(0027);
+	rv = -1;
 
 	fprintf(stderr, "Loading configuration:\n");
 	cfg = config_new(cfgpath);
@@ -119,7 +123,7 @@ main(int argc, char *argv[]) {
 		free(cfgpath);
 	if (!cfg) {
 		fprintf(stderr, "Failed to load configuration!\n");
-		exit(EXIT_FAILURE);
+		goto errout;
 	}
 	fprintf(stderr, "Loaded '%s'\n", cfg->path);
 
@@ -132,39 +136,39 @@ main(int argc, char *argv[]) {
 				p++;
 			if (*p != '=') {
 				fprintf(stderr, "Option -o missing value\n");
-				exit(EXIT_FAILURE);
+				goto errout;
 			}
 			*p = '\0';
 			p++;
 			if (config_str(cfg, optarg, p) == -1) {
 				fprintf(stderr, "Option -o invalid value\n");
-				exit(EXIT_FAILURE);
+				goto errout;
 			}
 			break;
 		case 'l':
 			if (config_str(cfg, "log_format", optarg) == -1) {
 				fprintf(stderr, "Option -l invalid fmt '%s'\n",
 				                optarg);
-				exit(EXIT_FAILURE);
+				goto errout;
 			}
 			break;
 		case 'f':
 			if (config_str(cfg, "log_destination", optarg) == -1) {
 				fprintf(stderr, "Option -f invalid dst '%s'\n",
 				                optarg);
-				exit(EXIT_FAILURE);
+				goto errout;
 			}
 			break;
 		case '1':
 			if (config_str(cfg, "log_mode", "oneline") == -1) {
 				fprintf(stderr, "Option -1 internal error\n");
-				exit(EXIT_FAILURE);
+				goto errout;
 			}
 			break;
 		case 'm':
 			if (config_str(cfg, "log_mode", "multiline") == -1) {
 				fprintf(stderr, "Option -m internal error\n");
-				exit(EXIT_FAILURE);
+				goto errout;
 			}
 			break;
 		case 'd':
@@ -183,7 +187,6 @@ main(int argc, char *argv[]) {
 
 	if (argc > optind) {
 		fusage(stderr, argv[0]);
-		rv = -1;
 		goto errout;
 	}
 
@@ -192,58 +195,49 @@ main(int argc, char *argv[]) {
 
 	if (getuid() && (setuid(0) == -1)) {
 		fprintf(stderr, "Must be run with root privileges\n");
-		rv = -1;
 		goto errout;
 	}
 
 	if (aupolicy_ensure(AUDIT_ARGV/*|AUDIT_ARGE*/) == -1) {
 		fprintf(stderr, "Failed to configure audit policy\n");
-		rv = -1;
 		goto errout;
 	}
 
 	if (auclass_addmask(AC_XNUMON, auclass_xnumon_events_procmon) == -1) {
 		fprintf(stderr, "Failed to configure AC_XNUMON class mask\n");
-		rv = -1;
 		goto errout;
 	}
 	if (LOGEVT_WANT(cfg->events, LOGEVT_HACKMON) &&
 	    auclass_addmask(AC_XNUMON, auclass_xnumon_events_hackmon) == -1) {
 		fprintf(stderr, "Failed to configure AC_XNUMON class mask\n");
-		rv = -1;
 		goto errout;
 	}
 	if (LOGEVT_WANT(cfg->events, LOGEVT_FILEMON) &&
 	    auclass_addmask(AC_XNUMON, auclass_xnumon_events_filemon) == -1) {
 		fprintf(stderr, "Failed to configure AC_XNUMON class mask\n");
-		rv = -1;
 		goto errout;
 	}
 
 	if (policy_task_sched_priority() == -1) {
 		fprintf(stderr, "Failed to set task sched priority\n");
-		rv = -1;
 		goto errout;
 	}
 
 #if 0	/* terra pericolosa */
 	if (policy_thread_sched_priority(TP_HIGH) == -1) {
 		fprintf(stderr, "Failed to set main thread sched priority\n");
-		rv = -1;
 		goto errout;
 	}
 #endif
 
 	if (policy_thread_diskio_important() == -1) {
 		fprintf(stderr, "Failed to set main thread diskio policy\n");
-		rv = -1;
 		goto errout;
 	}
 
 	if (sys_limit_nofile(cfg->limit_nofile) == -1) {
 		fprintf(stderr, "Failed to limit open files to %zu\n",
 		        cfg->limit_nofile);
-		rv = -1;
 		goto errout;
 	}
 
@@ -252,12 +246,10 @@ main(int argc, char *argv[]) {
 		fprintf(stderr, "Failed to open pidfile%s\n",
 		                (errno == EWOULDBLOCK) ?
 		                " - already running?" : "");
-		rv = -1;
 		goto errout;
 	}
 	if (sys_pidf_write(pidfd) == -1) {
 		fprintf(stderr, "Failed to write pidfile\n");
-		rv = -1;
 		goto errout;
 	}
 
@@ -279,6 +271,7 @@ errout:
 		sys_pidf_close(pidfd, XNUMON_PIDFILE);
 	if (cfg)
 		config_free(cfg);
+	debug_fini();
 	if (rv == -1) {
 		fprintf(stderr, "Fatal error, exiting\n");
 		exit(EXIT_FAILURE);

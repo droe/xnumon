@@ -15,6 +15,8 @@
 
 #include <stdio.h>
 
+void debug_init(void);
+void debug_fini(void);
 void debug_fprintf(FILE *, const char *, ...) NONNULL(1,2);
 
 #define DEBUG(cond, topic, fmt, ...) \
