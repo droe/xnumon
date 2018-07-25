@@ -69,6 +69,8 @@ static int image_exec_work(image_exec_t *);
  * Ownership of path will be transfered to image_exec; caller must not assume
  * that path still exists after calling this function.  Path is also freed when
  * this function fails and returns NULL.
+ *
+ * Thread-safe.
  */
 static image_exec_t *
 image_exec_new(char *path) {
@@ -168,6 +170,10 @@ image_exec_prune_ancestors(image_exec_t *image, size_t level) {
 		image_exec_prune_ancestors(image->prev, level + 1);
 }
 
+/*
+ * Partially thread-safe: only a single thread may call functions on a given
+ * image_exec_t instance at a time.
+ */
 static int
 image_exec_open(image_exec_t *image, const audit_attr_t *attr) {
 	char buf[2];
@@ -229,6 +235,10 @@ fallback:
 	return 0;
 }
 
+/*
+ * Partially thread-safe: only a single thread may call functions on a given
+ * image_exec_t instance at a time.
+ */
 static void
 image_exec_close(image_exec_t *image) {
 	assert(image);
@@ -239,7 +249,10 @@ image_exec_close(image_exec_t *image) {
 }
 
 /*
- * kern true indicates that we are currently handling a kernel module callback.
+ * Kern indicates if we are currently handling a kernel module callback.
+ *
+ * Partially thread-safe: only a single thread may call functions on a given
+ * image_exec_t instance at a time.
  */
 static int
 image_exec_acquire(image_exec_t *image, bool kern) {
@@ -445,6 +458,9 @@ image_exec_match_suppressions(image_exec_t *ie,
  *
  * Returning 0 leads to the event being logged, -1 indicates that this event
  * should not be logged (may or may not be due to an error).
+ *
+ * Partially thread-safe: only a single thread may call functions on a given
+ * image_exec_t instance at a time.
  */
 static int
 image_exec_work(image_exec_t *ei) {
