@@ -24,6 +24,7 @@
 #include "work.h"
 #include "atomic.h"
 
+#include <stdbool.h>
 #include <stdint.h>
 #include <inttypes.h>
 #include <stdlib.h>
@@ -238,10 +239,10 @@ image_exec_close(image_exec_t *image) {
 }
 
 /*
- * kern != 0 indicates that we are currently handling a kernel module callback.
+ * kern true indicates that we are currently handling a kernel module callback.
  */
 static int
-image_exec_acquire(image_exec_t *image, int kern) {
+image_exec_acquire(image_exec_t *image, bool kern) {
 	stat_attr_t st;
 	off_t sz;
 	bool hit;
@@ -450,14 +451,14 @@ image_exec_work(image_exec_t *ei) {
 #ifdef DEBUG_REFS
 	fprintf(stderr, "DEBUG_REFS: image_exec_work(%p)\n", ei);
 #endif
-	image_exec_acquire(ei, 0);
+	image_exec_acquire(ei, false);
 	image_exec_close(ei);
 	if (ei->script) {
-		image_exec_acquire(ei->script, 0);
+		image_exec_acquire(ei->script, false);
 		image_exec_close(ei->script);
 	}
 	if (config->ancestors < SIZE_MAX)
-		image_exec_prune_ancestors(ei, 0);
+		image_exec_prune_ancestors(ei, false);
 	if (ei->flags & EIFLAG_ENOMEM) {
 		atomic64_inc(&ooms);
 		return -1;
@@ -1093,7 +1094,7 @@ procmon_kern_preexec(struct timespec *tm, pid_t pid, const char *imagepath) {
 	ei->hdr.tv = *tm;
 	ei->pid = pid;
 	image_exec_open(ei, NULL);
-	image_exec_acquire(ei, 1);
+	image_exec_acquire(ei, true);
 	prepq_append(ei);
 }
 
