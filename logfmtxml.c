@@ -10,6 +10,9 @@
 
 /*
  * XML log format driver
+ *
+ * The produced XML is XML log record elements separated by newlines,
+ * without global root element or XML declaration, i.e. not well-formed.
  */
 
 #include "logfmtxml.h"
