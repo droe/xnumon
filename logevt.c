@@ -362,7 +362,7 @@ logevt_xnumon_stats(logfmt_t *fmt, FILE *f, void *arg0) {
 	fmt->dict_item(f, "events");
 	fmt->list_begin(f);
 	for (int i = 0; i < LOGEVT_SIZE; i++) {
-		fmt->list_item(f);
+		fmt->list_item(f, "event");
 		fmt->value_uint(f, st->lq.counts[i]);
 	}
 	fmt->list_end(f);
@@ -581,7 +581,7 @@ logevt_process_image_exec_ancestors(logfmt_t *fmt, FILE *f, image_exec_t *ie) {
 	for (image_exec_t *pie = ie; pie && pie->pid > 0; pie = pie->prev) {
 		if (depth == config->ancestors)
 			break;
-		fmt->list_item(f);
+		fmt->list_item(f, "ancestor");
 		logevt_process_image_exec(fmt, f, pie);
 		depth++;
 	}
@@ -653,7 +653,7 @@ logevt_image_exec(logfmt_t *fmt, FILE *f, void *arg0) {
 		fmt->dict_item(f, "argv");
 		fmt->list_begin(f);
 		for (int i = 0; ie->argv[i]; i++) {
-			fmt->list_item(f);
+			fmt->list_item(f, "arg");
 			fmt->value_string(f, ie->argv[i]);
 		}
 		fmt->list_end(f); /* argv */
@@ -729,7 +729,7 @@ logevt_launchd_add(logfmt_t *fmt, FILE *f, void *arg0) {
 		fmt->dict_item(f, "argv");
 		fmt->list_begin(f);
 		for (size_t i = 0; ldadd->program_argv[i]; i++) {
-			fmt->list_item(f);
+			fmt->list_item(f, "arg");
 			fmt->value_string(f, ldadd->program_argv[i]);
 		}
 		fmt->list_end(f); /* argv */

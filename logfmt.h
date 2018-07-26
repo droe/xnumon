@@ -46,7 +46,7 @@ typedef struct {
 	logfmt_cchar_func_t     dict_item;
 	logfmt_noarg_func_t     list_begin;
 	logfmt_noarg_func_t     list_end;
-	logfmt_noarg_func_t     list_item;
+	logfmt_cchar_func_t     list_item;
 	logfmt_noarg_func_t     value_null;
 	logfmt_bool_func_t      value_bool;
 	logfmt_int_func_t       value_int;

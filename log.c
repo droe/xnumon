@@ -12,6 +12,7 @@
 #include "logfmt.h"
 #include "logfmtjson.h"
 #include "logfmtyaml.h"
+#include "logfmtxml.h"
 #include "logdstfile.h"
 #include "logdststdout.h"
 #include "logdstsyslog.h"
@@ -43,12 +44,13 @@ _Static_assert(LOGEVT_SIZE == 5, "number of logevt types initialized above");
 /*
  * Log formats.
  */
-#define LOGFMTS 3
-static logfmt_t *logfmttab[LOGFMTS] = {
+static logfmt_t *logfmttab[] = {
 	&logfmtjson,
 	&logfmtjsonseq,
-	&logfmtyaml
+	&logfmtyaml,
+	&logfmtxml
 };
+#define LOGFMTS (sizeof(logfmttab)/sizeof(logfmt_t *))
 
 
 /*
@@ -83,8 +85,7 @@ typedef struct {
 	logdst_close_func_t  ld_close;  /* normal mode only */
 } logdst_t;
 
-#define LOGDSTS 3
-static logdst_t logdsttab[LOGDSTS] = {
+static logdst_t logdsttab[] = {
 	{
 		"file", false, true, true, true,
 		logdstfile_init,
@@ -113,6 +114,7 @@ static logdst_t logdsttab[LOGDSTS] = {
 		logdstsyslog_close
 	}
 };
+#define LOGDSTS (sizeof(logdsttab)/sizeof(logdst_t))
 
 int
 logdst_parse(config_t *cfg, const char *name) {

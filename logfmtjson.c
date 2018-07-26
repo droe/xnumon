@@ -68,12 +68,12 @@ logfmtjson_indent_dec(void) {
 }
 
 static void
-logfmtjson_record_begin(UNUSED FILE *f) {
+logfmtjson_record_begin_jsonlines(UNUSED FILE *f) {
 	return;
 }
 
 static void
-logfmtjsonseq_record_begin(FILE *f) {
+logfmtjson_record_begin_jsonseq(FILE *f) {
 	fprintf(f, "\x1E");
 }
 
@@ -116,7 +116,7 @@ logfmtjson_list_end(FILE *f) {
 }
 
 static void
-logfmtjson_list_item(FILE *f) {
+logfmtjson_list_item(FILE *f, UNUSED const char *label) {
 	bool first = !indent_used[indent_level];
 	if (first)
 		indent_used[indent_level] = true;
@@ -215,7 +215,7 @@ logfmtjson_value_string(FILE *f, const char *s) {
 logfmt_t logfmtjson = {
 	"json", true, true,
 	logfmtjson_init,
-	logfmtjson_record_begin,
+	logfmtjson_record_begin_jsonlines,
 	logfmtjson_record_end,
 	logfmtjson_dict_begin,
 	logfmtjson_dict_end,
@@ -237,7 +237,7 @@ logfmt_t logfmtjson = {
 logfmt_t logfmtjsonseq = {
 	"json-seq", true, true,
 	logfmtjson_init,
-	logfmtjsonseq_record_begin,
+	logfmtjson_record_begin_jsonseq,
 	logfmtjson_record_end,
 	logfmtjson_dict_begin,
 	logfmtjson_dict_end,

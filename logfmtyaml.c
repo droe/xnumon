@@ -90,7 +90,7 @@ logfmtyaml_list_end(UNUSED FILE *f) {
 }
 
 static void
-logfmtyaml_list_item(FILE *f) {
+logfmtyaml_list_item(FILE *f, UNUSED const char *label) {
 	fprintf(f, "\n%s-", indent);
 	reuse_line = true;
 }
