@@ -12,7 +12,9 @@
 
 #include "sys.h"
 #include "attrib.h"
+#include "config.h"
 
+#include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <assert.h>
@@ -21,18 +23,20 @@ static config_t *config = NULL;
 static FILE *f = NULL;
 static gid_t gid;
 
-FILE *
+static FILE *
 logdstfile_open(void) {
 	return f;
 }
 
-int
+static int
 logdstfile_close(FILE *f) {
 	fflush(f);
 	return 0;
 }
 
-int
+static int logdstfile_reinit(void);
+
+static int
 logdstfile_init(config_t *cfg) {
 	config = cfg;
 	gid = sys_gidbyname("admin");
@@ -61,7 +65,7 @@ logdstfile_init(config_t *cfg) {
 	return 0;
 }
 
-int
+static int
 logdstfile_reinit(void) {
 	int fd;
 
@@ -78,10 +82,20 @@ logdstfile_reinit(void) {
 	return 0;
 }
 
-void
+static void
 logdstfile_fini(void) {
 	if (f)
 		fclose(f);
 	config = NULL;
 }
+
+logdst_t logdstfile = {
+	"file", false, true, true, true,
+	logdstfile_init,
+	logdstfile_reinit,
+	logdstfile_fini,
+	NULL,
+	logdstfile_open,
+	logdstfile_close
+};
 

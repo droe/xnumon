@@ -10,10 +10,12 @@
 
 #include "logdstsyslog.h"
 
+#include "config.h"
 #include "attrib.h"
 
 #include "memstream.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <syslog.h>
 #include <assert.h>
@@ -23,7 +25,7 @@ static config_t *config;
 static char *msg;
 static size_t sz;
 
-FILE *
+static FILE *
 logdstsyslog_open(void) {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunguarded-availability"
@@ -31,7 +33,7 @@ logdstsyslog_open(void) {
 #pragma clang diagnostic pop
 }
 
-int
+static int
 logdstsyslog_close(FILE *f) {
 	fclose(f);
 	if (!msg)
@@ -41,7 +43,7 @@ logdstsyslog_close(FILE *f) {
 	return 0;
 }
 
-int
+static int
 logdstsyslog_init(config_t *cfg) {
 	config = cfg;
 	assert(cfg->logoneline);
@@ -50,9 +52,19 @@ logdstsyslog_init(config_t *cfg) {
 	return 0;
 }
 
-void
+static void
 logdstsyslog_fini(void) {
 	closelog();
 	config = NULL;
 }
+
+logdst_t logdstsyslog = {
+	"syslog", false, true, false, true,
+	logdstsyslog_init,
+	NULL,
+	logdstsyslog_fini,
+	NULL,
+	logdstsyslog_open,
+	logdstsyslog_close
+};
 

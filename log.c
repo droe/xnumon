@@ -40,7 +40,6 @@ logevt_func_t le_logevt[LOGEVT_SIZE] = {
 };
 _Static_assert(LOGEVT_SIZE == 5, "number of logevt types initialized above");
 
-
 /*
  * Log formats.
  */
@@ -50,78 +49,24 @@ static logfmt_t *logfmttab[] = {
 	&logfmtyaml,
 	&logfmtxml
 };
-#define LOGFMTS (sizeof(logfmttab)/sizeof(logfmt_t *))
-
+#define LOGFMTS (sizeof(logfmttab)/sizeof(logfmttab[0]))
 
 /*
  * Log destinations.
- *
- * We may want to refactor this along the lines of logfmt above.
- *
- * There are two different kinds of log destination drivers.  Raw drivers
- * implement ld_event and receive the raw event struct for fully custom
- * logging.  Normal drivers implement ld_open and ld_close for FILE * based
- * formatted logging.  The FILE * produced by ld_open will be passed to the
- * event formatter, which will use the log format driver to write a formatted
- * log record to the FILE *.
  */
-typedef int    (*logdst_init_func_t)(config_t *);
-typedef int    (*logdst_reinit_func_t)(void);
-typedef void   (*logdst_fini_func_t)(void);
-typedef FILE * (*logdst_open_func_t)(void);
-typedef int    (*logdst_close_func_t)(FILE *);
-typedef int    (*logdst_event_func_t)(const logevt_header_t *);
-typedef struct {
-	const char *ld_name;
-	bool ld_raw;                /* wants raw event, not formatted buffer */
-	bool ld_oneline;            /* supports compact one-line format */
-	bool ld_multiline;          /* supports readable multi-line format */
-	bool ld_onelineprefered;    /* prefers oneline if both are available */
-	logdst_init_func_t   ld_init;
-	logdst_reinit_func_t ld_reinit;
-	logdst_fini_func_t   ld_fini;
-	logdst_event_func_t  ld_event;  /* raw mode only */
-	logdst_open_func_t   ld_open;   /* normal mode only */
-	logdst_close_func_t  ld_close;  /* normal mode only */
-} logdst_t;
-
-static logdst_t logdsttab[] = {
-	{
-		"file", false, true, true, true,
-		logdstfile_init,
-		logdstfile_reinit,
-		logdstfile_fini,
-		NULL,
-		logdstfile_open,
-		logdstfile_close
-	},
-	{
-		"-", false, true, true, false,
-		logdststdout_init,
-		NULL,
-		logdststdout_fini,
-		NULL,
-		logdststdout_open,
-		logdststdout_close
-	},
-	{
-		"syslog", false, true, false, true,
-		logdstsyslog_init,
-		NULL,
-		logdstsyslog_fini,
-		NULL,
-		logdstsyslog_open,
-		logdstsyslog_close
-	}
+static logdst_t *logdsttab[] = {
+	&logdstfile,
+	&logdststdout,
+	&logdstsyslog
 };
-#define LOGDSTS (sizeof(logdsttab)/sizeof(logdst_t))
+#define LOGDSTS (sizeof(logdsttab)/sizeof(logdsttab[0]))
 
 int
 logdst_parse(config_t *cfg, const char *name) {
 	assert(cfg);
 	assert(name);
 	for (size_t i = 1; i < LOGDSTS; i++) {
-		if (!strcmp(logdsttab[i].ld_name, name)) {
+		if (!strcmp(logdsttab[i]->ld_name, name)) {
 			cfg->logdst = i;
 			return 0;
 		}
@@ -137,7 +82,7 @@ logdst_parse(config_t *cfg, const char *name) {
 
 const char *
 logdst_s(config_t *cfg) {
-	return logdsttab[cfg->logdst].ld_name;
+	return logdsttab[cfg->logdst]->ld_name;
 }
 
 int
@@ -174,17 +119,17 @@ log_log(logevt_header_t *hdr) {
 	int rv;
 
 	assert(logdst != -1);
-	assert(logdsttab[logdst].ld_raw || logfmt != -1);
+	assert(logdsttab[logdst]->ld_raw || logfmt != -1);
 	assert(hdr->code >= 0 && hdr->code < LOGEVT_SIZE);
 
-	if (logdsttab[logdst].ld_raw) {
-		rv = logdsttab[logdst].ld_event(hdr);
+	if (logdsttab[logdst]->ld_raw) {
+		rv = logdsttab[logdst]->ld_event(hdr);
 	} else {
-		f = logdsttab[logdst].ld_open();
+		f = logdsttab[logdst]->ld_open();
 		if (!f)
 			return -1;
 		rv = le_logevt[hdr->code](logfmttab[logfmt], f, hdr);
-		if (logdsttab[logdst].ld_close(f) == -1)
+		if (logdsttab[logdst]->ld_close(f) == -1)
 			errors++;
 	}
 	if (rv == 0)
@@ -218,41 +163,41 @@ log_thread(UNUSED void *arg) {
 int
 log_init(config_t *cfg) {
 	logdst = cfg->logdst;
-	if (!logdsttab[logdst].ld_raw) {
+	if (!logdsttab[logdst]->ld_raw) {
 		logfmt = cfg->logfmt;
 		if ((!logfmttab[logfmt]->lf_oneline &&
-		     !logdsttab[logdst].ld_multiline) ||
+		     !logdsttab[logdst]->ld_multiline) ||
 		    (!logfmttab[logfmt]->lf_multiline &&
-		     !logdsttab[logdst].ld_oneline)) {
+		     !logdsttab[logdst]->ld_oneline)) {
 			fprintf(stderr, "Incompatible logfmt and logdst\n");
 			return -1;
 		}
 		if (cfg->logoneline == -1)
 			cfg->logoneline =
-				logdsttab[logdst].ld_onelineprefered ? 1 : 0;
+				logdsttab[logdst]->ld_onelineprefered ? 1 : 0;
 		if (cfg->logoneline && (!logfmttab[logfmt]->lf_oneline ||
-		                        !logdsttab[logdst].ld_oneline))
+		                        !logdsttab[logdst]->ld_oneline))
 			cfg->logoneline = 0;
 		if (!cfg->logoneline && (!logfmttab[logfmt]->lf_multiline ||
-		                         !logdsttab[logdst].ld_multiline))
+		                         !logdsttab[logdst]->ld_multiline))
 			cfg->logoneline = 1;
 	}
 	logevt_init(cfg);
-	if (!logdsttab[logdst].ld_raw) {
+	if (!logdsttab[logdst]->ld_raw) {
 		if (logfmttab[logfmt]->lf_init(cfg) == -1) {
 			fprintf(stderr, "Failed to initialize logfmt %i\n",
 			                logfmt);
 			return -1;
 		}
 	}
-	if (logdsttab[logdst].ld_init(cfg) == -1) {
+	if (logdsttab[logdst]->ld_init(cfg) == -1) {
 		fprintf(stderr, "Failed to initialize logdst %i\n", logdst);
 		return -1;
 	}
 	queue_init(&log_queue);
 	if (pthread_create(&log_thr, NULL, log_thread, NULL) != 0) {
 		queue_destroy(&log_queue);
-		logdsttab[logdst].ld_fini();
+		logdsttab[logdst]->ld_fini();
 		return -1;
 	}
 	errors = 0;
@@ -266,9 +211,9 @@ log_init(config_t *cfg) {
 int
 log_reinit(void) {
 	assert(log_initialized);
-	if (!logdsttab[logdst].ld_reinit)
+	if (!logdsttab[logdst]->ld_reinit)
 		return 0;
-	if (logdsttab[logdst].ld_reinit() == -1) {
+	if (logdsttab[logdst]->ld_reinit() == -1) {
 		fprintf(stderr, "Failed to reinitialize logdst %i\n", logdst);
 		return -1;
 	}
@@ -288,7 +233,7 @@ log_fini(void) {
 	}
 	assert(queue_size(&log_queue) == 0);
 	queue_destroy(&log_queue);
-	logdsttab[logdst].ld_fini();
+	logdsttab[logdst]->ld_fini();
 	logfmt = -1;
 	logdst = -1;
 	log_initialized = false;
@@ -328,7 +273,7 @@ log_version(FILE *f) {
 
 	fprintf(f, "Available log destinations are:");
 	for (size_t i = 0; i < LOGDSTS; i++) {
-		fprintf(f, " %s", logdsttab[i].ld_name);
+		fprintf(f, " %s", logdsttab[i]->ld_name);
 	}
 	fprintf(f, "\n");
 }

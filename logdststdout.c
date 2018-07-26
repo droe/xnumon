@@ -10,21 +10,23 @@
 
 #include "logdststdout.h"
 
+#include "config.h"
 #include "attrib.h"
 
+#include <stdio.h>
 #include <unistd.h>
 #include <stdbool.h>
 #include <assert.h>
 
 static config_t *config;
-bool do_flush;
+static bool do_flush;
 
-FILE *
+static FILE *
 logdststdout_open(void) {
 	return stdout;
 }
 
-int
+static int
 logdststdout_close(UNUSED FILE *f) {
 	/*
 	 * Need to flush if stdout refers to a file in order to prevent
@@ -36,15 +38,25 @@ logdststdout_close(UNUSED FILE *f) {
 	return 0;
 }
 
-int
+static int
 logdststdout_init(config_t *cfg) {
 	config = cfg;
 	do_flush = !isatty(fileno(stdout));
 	return 0;
 }
 
-void
+static void
 logdststdout_fini(void) {
 	config = NULL;
 }
+
+logdst_t logdststdout = {
+	"-", false, true, true, false,
+	logdststdout_init,
+	NULL,
+	logdststdout_fini,
+	NULL,
+	logdststdout_open,
+	logdststdout_close
+};
 

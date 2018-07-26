@@ -11,15 +11,9 @@
 #ifndef LOGDSTSYSLOG_H
 #define LOGDSTSYSLOG_H
 
-#include "config.h"
-#include "attrib.h"
+#include "logdst.h"
 
-#include <stdio.h>
-
-int logdstsyslog_init(config_t *) NONNULL(1) WUNRES;
-void logdstsyslog_fini(void);
-FILE * logdstsyslog_open(void) MALLOC;
-int logdstsyslog_close(FILE *) NONNULL(1) WUNRES;
+logdst_t logdstsyslog;
 
 #endif
 

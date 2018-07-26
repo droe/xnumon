@@ -11,15 +11,9 @@
 #ifndef LOGDSTSTDOUT_H
 #define LOGDSTSTDOUT_H
 
-#include "config.h"
-#include "attrib.h"
+#include "logdst.h"
 
-#include <stdio.h>
-
-int logdststdout_init(config_t *) NONNULL(1) WUNRES;
-void logdststdout_fini(void);
-FILE * logdststdout_open(void) MALLOC;
-int logdststdout_close(FILE *) NONNULL(1) WUNRES;
+logdst_t logdststdout;
 
 #endif
 
