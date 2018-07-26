@@ -33,6 +33,8 @@
                     prefixed by an ASCII Record Separator and terminated by an
                     ASCII Line Feed character.
        yaml         YAML documents.  Only supports multiline mode.
+       xml          XML objects separated by newlines, without root element,
+                    XML declaration or doctype, i.e. not well-formed XML.
        If unset, defaults to:   json
        -->
   <key>log_format</key>
