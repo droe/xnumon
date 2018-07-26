@@ -9,8 +9,8 @@
  */
 
 /*
- * Code to generate a launchd plist for xnumon, used as part of the build
- * process.  In c because original intent was to make xnumon self-installing.
+ * Simple code signature extraction utility that uses the xnumon code signature
+ * code to acquire code signature metadata from either a process or a path.
  */
 
 #include "codesign.h"

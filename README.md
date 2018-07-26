@@ -105,7 +105,7 @@ run `csrutil enable --without kext`.  This will also turn off the kext user
 consent requirement of High Sierra.
 
 In addition to a code signature, the kext needs more field testing, especially
-compatibility tests with other security solutions, before recommending
+compatibility tests with more security solutions, before recommending
 large-scale deployments.
 
 
