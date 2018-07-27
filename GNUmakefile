@@ -57,7 +57,10 @@ LDFLAGS+=	-mmacosx-version-min=$(MACOSX_VERSION_MIN)
 endif
 LDFLAGS+=	-arch x86_64
 
-LIBS+=		-lbsm -framework CoreFoundation -framework Security
+LIBS+=		-lbsm \
+		-framework CoreFoundation \
+		-framework Security \
+		-framework IOKit
 
 # openssl
 #CPPFLAGS+=	-DUSE_OPENSSL

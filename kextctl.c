@@ -21,38 +21,63 @@
 #include <errno.h>
 #include <assert.h>
 
+#include <IOKit/kext/KextManager.h>
+#include <libkern/OSKextLib.h>
+
+/* unavailable before 10.13 High Sierra */
+#ifndef kOSKextReturnSystemPolicy
+#define kOSKextReturnSystemPolicy libkern_kext_err(0x1b)
+#endif
+
+/*
+ * Technical Note TN2459: User-Approved Kernel Extension Loading:
+ * https://developer.apple.com/library/archive/technotes/tn2459/
+ */
 int
 kextctl_load(void) {
-	int rv;
-
 	if ((access(XNUMON_DEVPATH, F_OK) == -1) && (errno == ENOENT)) {
-		rv = system("/sbin/kextload -q -b " XNUMON_BUNDLEID);
-		if (WIFEXITED(rv)) {
-			if (WEXITSTATUS(rv) == 0) {
-				return 0;
-			}
-			fprintf(stderr, "kextload " XNUMON_BUNDLEID " "
-			                "terminated with exit status %i\n",
-			                WEXITSTATUS(rv));
-			if (WEXITSTATUS(rv) == 27) {
-				/* Starting with High Sierra; see TN 2459 */
-				fprintf(stderr, "System policy prevents "
-				                "loading the kernel "
-				                "extension\n");
-			} else if (WEXITSTATUS(rv) == 71) {
-				/* Starting with Yosemite */
-				fprintf(stderr, "The kext might not be "
-				                "installed or SIP prevents "
-				                "loading of unsigned kexts\n");
-			}
-		} else if (WIFSIGNALED(rv)) {
-			fprintf(stderr, "kextload terminated by signal %i\n",
-			                WTERMSIG(rv));
-		} else if (WIFSTOPPED(rv)) {
-			fprintf(stderr, "kextload stopped by signal %i\n",
-			                WSTOPSIG(rv));
+		OSReturn osret = KextManagerLoadKextWithIdentifier(
+		                 CFSTR(XNUMON_BUNDLEID), NULL);
+		switch (osret) {
+		case kOSReturnSuccess:
+			return 0;
+		case kOSKextReturnBootLevel:
+			/* safe boot */
+			fprintf(stderr, "KextManagerLoadKextWithIdentifier() "
+			                "=> kOSKextReturnBootLevel: "
+			                "not loadable in current bootlevel\n");
+			return -1;
+		case kOSKextReturnNotFound:
+			fprintf(stderr, "KextManagerLoadKextWithIdentifier() "
+			                "=> kOSKextReturnNotFound: "
+			                "kext or part of it not found\n");
+			return -1;
+		case kOSKextReturnValidation:
+			fprintf(stderr, "KextManagerLoadKextWithIdentifier() "
+			                "=> kOSKextReturnValidation: "
+			                "kext validation failed\n");
+			return -1;
+		case kOSKextReturnAuthentication:
+			fprintf(stderr, "KextManagerLoadKextWithIdentifier() "
+			                "=> kOSKextReturnAuthentication: "
+			                "kext authentication failed "
+			                "(check permissions)\n");
+			return -1;
+		case kOSKextReturnSystemPolicy:
+			/* Starting with 10.13 High Sierra; see TN 2459 */
+			fprintf(stderr, "KextManagerLoadKextWithIdentifier() "
+			                "=> kOSKextReturnSystemPolicy: "
+			                "System policy prevents loading of "
+			                "non-user-approved kernel extensions "
+			                "(see TN2459)\n");
+			return -1;
+		default:
+			fprintf(stderr, "KextManagerLoadKextWithIdentifier() "
+			                "=> %i: Check <libkern/OSKextLib.h> "
+			                "for error constant\n",
+			                osret);
+			return -1;
 		}
-		return -1;
 	}
 	return 0;
 }
