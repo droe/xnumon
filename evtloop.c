@@ -76,9 +76,9 @@ kextloop_thread(void *arg) {
 	kqueue_t *kq = (kqueue_t *)arg;
 
 #if 0	/* terra pericolosa */
-	(void)policy_thread_sched_standard();
+	(void)policy_thread_sched_priority(TP_HIGH);
 #endif
-	(void)policy_thread_diskio_standard();
+	(void)policy_thread_diskio_important();
 
 	/* event dispatch loop */
 	kextloop_running = true;
