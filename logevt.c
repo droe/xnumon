@@ -662,15 +662,12 @@ logevt_image_exec(logfmt_t *fmt, FILE *f, void *arg0) {
 		fmt->list_end(f); /* argv */
 	}
 
-	if (ie->envv && config->envlevel > ENVLEVEL_NONE) {
+	if (ie->envv) {
 		fmt->dict_item(f, "env");
 		fmt->list_begin(f);
 		for (int i = 0; ie->envv[i]; i++) {
-			if (config->envlevel > ENVLEVEL_DYLD ||
-			    str_beginswith(ie->envv[i], "DYLD_")) {
-				fmt->list_item(f, "var");
-				fmt->value_string(f, ie->envv[i]);
-			}
+			fmt->list_item(f, "var");
+			fmt->value_string(f, ie->envv[i]);
 		}
 		fmt->list_end(f); /* env */
 	}

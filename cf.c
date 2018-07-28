@@ -103,7 +103,8 @@ errout:
  *
  * This is not the most efficient way to do it, but given that we don't know
  * the effective length of each string before copying it out, there is no good
- * alternative.
+ * alternative.  Also, this function is not used in very performance critical
+ * code paths.
  */
 char **
 cf_aev(CFArrayRef arr) {

@@ -93,7 +93,7 @@ auevent_type_in_typelist(const uint16_t type, const uint16_t typelist[]) {
  * returns -1 on errors
  */
 ssize_t
-auevent_fread(audit_event_t *ev, const uint16_t aues[], FILE *f) {
+auevent_fread(audit_event_t *ev, const uint16_t aues[], int flags, FILE *f) {
 	int rv;
 	int reclen;
 	u_char *recbuf;
@@ -381,12 +381,23 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], FILE *f) {
 			break;
 		/* exec env */
 		case AUT_EXEC_ENV:
+			if (!(flags & (AUEVENT_FLAG_ENV_DYLD |
+			               AUEVENT_FLAG_ENV_FULL)))
+				break;
 			assert(ev->execenv == NULL);
 			if (ev->execenv)
 				free(ev->execenv);
-			ev->execenv = aev_new(tok.tt.execenv.count,
-			                      tok.tt.execenv.text);
-			if (!ev->execenv)
+			if (flags & AUEVENT_FLAG_ENV_DYLD) {
+				ev->execenv = aev_new_prefix(
+				              tok.tt.execenv.count,
+				              tok.tt.execenv.text,
+				              "DYLD_");
+			} else {
+				assert(flags & AUEVENT_FLAG_ENV_FULL);
+				ev->execenv = aev_new(tok.tt.execenv.count,
+				                      tok.tt.execenv.text);
+			}
+			if (!ev->execenv && errno == ENOMEM)
 				ev->flags |= AEFLAG_ENOMEM;
 			break;
 		/* process exit status */

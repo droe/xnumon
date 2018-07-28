@@ -15,7 +15,8 @@
 
 #include <stddef.h>
 
-char ** aev_new(size_t, char **) MALLOC NONNULL(2);
+char ** aev_new(size_t, char **) MALLOC;
+char ** aev_new_prefix(size_t, char **, const char *) MALLOC;
 
 #endif
 

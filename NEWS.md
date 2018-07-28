@@ -4,9 +4,13 @@
 -   Add capability to omit the `sid` field of processes.
 -   Rewritten event loop for improved behaviour under load (issue #33).
 -   No longer shelling out to `kextload` to load kext (issue #17).
+-   Capability to log all environment variables at image exec (`full`),
+    only log variables affecting dyld (`dyld`) or not log the environment
+    (`none`) (issue #7).
 
 Configuration changes:
 
+-   Added `envlevel`.
 -   Added `omit_sid`.
 
 Event schema changes:

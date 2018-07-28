@@ -183,7 +183,7 @@ auef_readable(UNUSED int fd, void *udata) {
 	int rv;
 
 	auevent_create(&ev);
-	rv = auevent_fread(&ev, NULL, auef);
+	rv = auevent_fread(&ev, NULL, cfg->envlevel /* HACK */, auef);
 	if (rv == -1 || rv == 0) {
 		if (ev.flags & AEFLAG_ENOMEM)
 			ooms++;
