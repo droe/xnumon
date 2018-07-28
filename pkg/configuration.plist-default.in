@@ -179,6 +179,21 @@
   <false/>
   -->
 
+  <!-- Environment level:
+       0 none       Do not include the environment in eventcode 2 events.
+       1 dyld       Only include DYLD_* environment variables in eventcode 2
+                    events.  These influence the operation of the dynamic
+                    linker and can be used to inject libraries into a process.
+       2 full       Include the full environment in eventcode 2 events.
+       If unset, defaults to:   dyld
+       -->
+  <!--
+  <key>envlevel</key>
+  <string>none</string>
+  <string>dyld</string>
+  <string>full</string>
+  -->
+
   <!-- Resolve users and groups
        Enable (<true/>) or disable (<false/>) the acquisition of user and group
        names from numerical user and group IDs using getpwuid() and getgrgid(),

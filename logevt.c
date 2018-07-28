@@ -32,6 +32,7 @@
 #include "procmon.h"
 #include "filemon.h"
 #include "hackmon.h"
+#include "str.h"
 #include "sys.h"
 
 #include <assert.h>
@@ -151,6 +152,8 @@ logevt_xnumon_ops(logfmt_t *fmt, FILE *f, void *arg0) {
 	fmt->value_string(f, hashes_flags_s(config->hflags));
 	fmt->dict_item(f, "codesign");
 	fmt->value_bool(f, config->codesign);
+	fmt->dict_item(f, "envlevel");
+	fmt->value_string(f, config_envlevel_s(config));
 	fmt->dict_item(f, "resolve_users_groups");
 	fmt->value_bool(f, config->resolve_users_groups);
 	fmt->dict_item(f, "omit_mode");
@@ -657,6 +660,19 @@ logevt_image_exec(logfmt_t *fmt, FILE *f, void *arg0) {
 			fmt->value_string(f, ie->argv[i]);
 		}
 		fmt->list_end(f); /* argv */
+	}
+
+	if (ie->envv && config->envlevel > ENVLEVEL_NONE) {
+		fmt->dict_item(f, "env");
+		fmt->list_begin(f);
+		for (int i = 0; ie->envv[i]; i++) {
+			if (config->envlevel > ENVLEVEL_DYLD ||
+			    str_beginswith(ie->envv[i], "DYLD_")) {
+				fmt->list_item(f, "var");
+				fmt->value_string(f, ie->envv[i]);
+			}
+		}
+		fmt->list_end(f); /* env */
 	}
 
 	if (ie->cwd) {

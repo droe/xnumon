@@ -184,6 +184,9 @@ config_str(config_t *cfg, const char *key, const char *value) {
 		return 0;
 	}
 
+	if (!strcmp(key, "envlevel"))
+		return config_envlevel(cfg, value);
+
 	if (!strcmp(key, "resolve_users_groups")) {
 		if (config_set_bool(&cfg->resolve_users_groups, value) == -1)
 			return -1;
@@ -386,6 +389,7 @@ config_new(const char *cfgpath) {
 	cfg->kextlevel = KEXTLEVEL_HASH;
 	cfg->hflags = HASH_SHA256;
 	cfg->codesign = true;
+	cfg->envlevel = ENVLEVEL_DYLD;
 	cfg->resolve_users_groups = true;
 	cfg->omit_apple_hashes = true;
 	cfg->ancestors = SIZE_MAX;
@@ -428,6 +432,7 @@ config_new(const char *cfgpath) {
 	CONFIG_STR_FROM_PLIST(rv, cfg, plist, "kextlevel");
 	CONFIG_STR_FROM_PLIST(rv, cfg, plist, "hashes");
 	CONFIG_BOOL_FROM_PLIST(rv, cfg, plist, "codesign");
+	CONFIG_STR_FROM_PLIST(rv, cfg, plist, "envlevel");
 	CONFIG_BOOL_FROM_PLIST(rv, cfg, plist, "resolve_users_groups");
 	CONFIG_BOOL_FROM_PLIST(rv, cfg, plist, "omit_mode");
 	CONFIG_BOOL_FROM_PLIST(rv, cfg, plist, "omit_size");
@@ -517,5 +522,31 @@ static const char *kextlevels[] = {"none", "open", "hash", "csig"};
 const char *
 config_kextlevel_s(config_t *cfg) {
 	return kextlevels[cfg->kextlevel];
+}
+
+int
+config_envlevel(config_t *cfg, const char *opt) {
+	assert(opt);
+
+	if (opt[0] == 'n' || opt[0] == '0') {
+		cfg->envlevel = ENVLEVEL_NONE;
+		return 0;
+	}
+	if (opt[0] == 'd' || opt[0] == '1') {
+		cfg->envlevel = ENVLEVEL_DYLD;
+		return 0;
+	}
+	if (opt[0] == 'f' || opt[0] == '2') {
+		cfg->envlevel = ENVLEVEL_FULL;
+		return 0;
+	}
+	return -1;
+}
+
+static const char *envlevels[] = {"none", "dyld", "full"};
+
+const char *
+config_envlevel_s(config_t *cfg) {
+	return envlevels[cfg->envlevel];
 }
 

@@ -35,6 +35,10 @@ typedef struct {
 #define KEXTLEVEL_CSIG 3
 	int hflags;
 	/* HASH_* see hashes.h */
+	int envlevel;
+#define ENVLEVEL_NONE 0
+#define ENVLEVEL_DYLD 1
+#define ENVLEVEL_FULL 2
 	bool codesign;
 	bool resolve_users_groups;
 
@@ -69,6 +73,8 @@ int config_str(config_t *, const char *, const char *) NONNULL(1,2,3) WUNRES;
 
 int config_kextlevel(config_t *, const char *) NONNULL(1,2);
 const char * config_kextlevel_s(config_t *) NONNULL(1);
+int config_envlevel(config_t *, const char *) NONNULL(1,2);
+const char * config_envlevel_s(config_t *) NONNULL(1);
 
 char * config_events_s(config_t *) NONNULL(1);
 

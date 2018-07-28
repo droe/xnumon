@@ -198,26 +198,6 @@ main(int argc, char *argv[]) {
 		goto errout;
 	}
 
-	if (aupolicy_ensure(AUDIT_ARGV/*|AUDIT_ARGE*/) == -1) {
-		fprintf(stderr, "Failed to configure audit policy\n");
-		goto errout;
-	}
-
-	if (auclass_addmask(AC_XNUMON, auclass_xnumon_events_procmon) == -1) {
-		fprintf(stderr, "Failed to configure AC_XNUMON class mask\n");
-		goto errout;
-	}
-	if (LOGEVT_WANT(cfg->events, LOGEVT_HACKMON) &&
-	    auclass_addmask(AC_XNUMON, auclass_xnumon_events_hackmon) == -1) {
-		fprintf(stderr, "Failed to configure AC_XNUMON class mask\n");
-		goto errout;
-	}
-	if (LOGEVT_WANT(cfg->events, LOGEVT_FILEMON) &&
-	    auclass_addmask(AC_XNUMON, auclass_xnumon_events_filemon) == -1) {
-		fprintf(stderr, "Failed to configure AC_XNUMON class mask\n");
-		goto errout;
-	}
-
 	if (policy_task_sched_priority() == -1) {
 		fprintf(stderr, "Failed to set task sched priority\n");
 		goto errout;
@@ -253,10 +233,34 @@ main(int argc, char *argv[]) {
 		goto errout;
 	}
 
+	/* system-global configuration, only run this if holding pidfile */
+	int pol = AUDIT_ARGV;
+	if (cfg->envlevel > 0)
+		pol |= AUDIT_ARGE;
+	if (aupolicy_ensure(pol) == -1) {
+		fprintf(stderr, "Failed to configure audit policy\n");
+		goto errout;
+	}
+	if (auclass_addmask(AC_XNUMON, auclass_xnumon_events_procmon) == -1) {
+		fprintf(stderr, "Failed to configure AC_XNUMON class mask\n");
+		goto errout;
+	}
+	if (LOGEVT_WANT(cfg->events, LOGEVT_HACKMON) &&
+	    auclass_addmask(AC_XNUMON, auclass_xnumon_events_hackmon) == -1) {
+		fprintf(stderr, "Failed to configure AC_XNUMON class mask\n");
+		goto errout;
+	}
+	if (LOGEVT_WANT(cfg->events, LOGEVT_FILEMON) &&
+	    auclass_addmask(AC_XNUMON, auclass_xnumon_events_filemon) == -1) {
+		fprintf(stderr, "Failed to configure AC_XNUMON class mask\n");
+		goto errout;
+	}
+
 	rv = evtloop_run(cfg);
 	if (rv == -1) {
 		fprintf(stderr, "Event loop returned error\n");
 	}
+
 	/* this is system-global, only run this if holding pidfile */
 	if (auclass_removemask(AC_XNUMON,
 	                       auclass_xnumon_events_procmon) == -1 ||
@@ -266,6 +270,7 @@ main(int argc, char *argv[]) {
 	                       auclass_xnumon_events_filemon) == -1) {
 		fprintf(stderr, "Failed to configure AC_XNUMON class mask\n");
 	}
+
 errout:
 	if (pidfd != -1)
 		sys_pidf_close(pidfd, XNUMON_PIDFILE);

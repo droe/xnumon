@@ -707,7 +707,7 @@ procmon_spawn(struct timespec *tv,
               audit_proc_t *subject,
               pid_t childpid,
               char *imagepath, audit_attr_t *attr,
-              char **argv) {
+              char **argv, char **envv) {
 #ifdef DEBUG_PROCMON
 	DEBUG(config->debug, "procmon_spawn",
 	      "subject->pid=%i childpid=%i imagepath=%s",
@@ -716,7 +716,7 @@ procmon_spawn(struct timespec *tv,
 
 	procmon_fork(tv, subject, childpid);
 	subject->pid = childpid;
-	procmon_exec(tv, subject, imagepath, attr, argv);
+	procmon_exec(tv, subject, imagepath, attr, argv, envv);
 }
 
 /*
@@ -835,7 +835,7 @@ void
 procmon_exec(struct timespec *tv,
              audit_proc_t *subject,
              char *imagepath, audit_attr_t *attr,
-             char **argv) {
+             char **argv, char **envv) {
 	proc_t *proc;
 	image_exec_t *prev_image_exec;
 	char *cwd;
@@ -859,6 +859,8 @@ procmon_exec(struct timespec *tv,
 			free(imagepath);
 			if (argv)
 				free(argv);
+			if (envv)
+				free(envv);
 			return;
 		}
 		liveacq++;
@@ -891,6 +893,8 @@ procmon_exec(struct timespec *tv,
 			/* no counter, oom is the only reason this can happen */
 			if (argv)
 				free(argv);
+			if (envv)
+				free(envv);
 			assert(!interp);
 			return;
 		}
@@ -915,6 +919,8 @@ procmon_exec(struct timespec *tv,
 				      subject->pid, imagepath,
 				      attr ? "y" : "n");
 				image_exec_free(image);
+				if (envv)
+					free(envv);
 				return;
 			}
 			if (argv[0][0] == '/' || proc->cwd) {
@@ -933,6 +939,8 @@ procmon_exec(struct timespec *tv,
 					      attr ? "y" : "n");
 					image_exec_free(image);
 					free(argv);
+					if (envv)
+						free(envv);
 					return;
 				}
 				interp = image_exec_new(p);
@@ -947,6 +955,8 @@ procmon_exec(struct timespec *tv,
 				      attr ? "y" : "n");
 				image_exec_free(image);
 				free(argv);
+				if (envv)
+					free(envv);
 				return;
 			}
 		}
@@ -974,6 +984,8 @@ procmon_exec(struct timespec *tv,
 			image_exec_free(prev_image_exec);
 		if (argv)
 			free(argv);
+		if (envv)
+			free(envv);
 		return;
 	}
 	assert(proc->image_exec->refs == 1);
@@ -982,6 +994,7 @@ procmon_exec(struct timespec *tv,
 	proc->image_exec->pid = proc->pid;
 	proc->image_exec->subject = *subject;
 	proc->image_exec->argv = argv;
+	proc->image_exec->envv = envv;
 	proc->image_exec->cwd = cwd;
 	proc->image_exec->prev = prev_image_exec;
 

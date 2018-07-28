@@ -9,6 +9,11 @@ Configuration changes:
 
 -   Added `omit_sid`.
 
+Event schema changes:
+
+-   Event schema version increased to 6.  Changes affect eventcode 2.
+-   Eventcode 2 added `env`.
+
 ---
 
 ### xnumon 0.1.5 2018-07-23

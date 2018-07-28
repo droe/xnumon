@@ -299,8 +299,10 @@ auef_readable(UNUSED int fd, void *udata) {
 			             &ev.subject,
 			             path,
 			             ev.attr_present ? &ev.attr : NULL,
-			             ev.execarg);
+			             ev.execarg,
+			             ev.execenv);
 			ev.execarg = NULL; /* pass ownership to procmon */
+			ev.execenv = NULL; /* pass ownership to procmon */
 			break;
 		}
 		TOKEN_ASSERT("execve", "args[0]", ev.args[0].present);
@@ -309,8 +311,10 @@ auef_readable(UNUSED int fd, void *udata) {
 		              ev.args[0].value,
 		              path,
 		              ev.attr_present ? &ev.attr : NULL,
-		              ev.execarg);
+		              ev.execarg,
+		              ev.execenv);
 		ev.execarg = NULL; /* pass ownership to procmon */
+		ev.execenv = NULL; /* pass ownership to procmon */
 		break;
 
 	case AUE_EXEC:
@@ -345,8 +349,10 @@ auef_readable(UNUSED int fd, void *udata) {
 		             &ev.subject,
 		             path,
 		             ev.attr_present ? &ev.attr : NULL,
-		             ev.execarg);
+		             ev.execarg,
+		             ev.execenv);
 		ev.execarg = NULL; /* pass ownership to procmon */
+		ev.execenv = NULL; /* pass ownership to procmon */
 		break;
 
 	case AUE_EXIT:
