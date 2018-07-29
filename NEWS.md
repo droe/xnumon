@@ -1,4 +1,4 @@
-### xnumon develop
+### xnumon 0.1.6 2018-07-29
 
 -   Capability to log all environment variables at image exec (`full`),
     only log variables affecting dyld (`dyld`) or not log the environment
