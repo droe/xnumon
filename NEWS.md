@@ -1,3 +1,7 @@
+### xnumon develop
+
+---
+
 ### xnumon 0.1.6 2018-07-29
 
 -   Capability to log all environment variables at image exec (`full`),
@@ -17,7 +21,7 @@ Configuration changes:
 
 Event schema changes:
 
--   Event schema version increased to 6.  Changes affect eventcode 2.
+-   Event schema version increased to 6.  Changes affect eventcodes 1 and 2.
 -   Eventcode 1 added `evtloop.aupclobber`.
 -   Eventcode 2 added `env`.
 
