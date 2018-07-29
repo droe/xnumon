@@ -11,6 +11,11 @@
 #ifndef TOMMY_EXT_H
 #define TOMMY_EXT_H
 
+/*
+ * Trivial extensions to TommyDS, dual-licenced under the licensing terms of
+ * xnumon (OSL 3.0) and TommyDS (2-Clause BSD).
+ */
+
 #include "tommytypes.h"
 
 /* go for 75% of next power of two to stay clear of hashtable

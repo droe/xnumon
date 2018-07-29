@@ -85,8 +85,8 @@ using `envlevel` `dyld` or `full`, then `arge` is needed in addition to `argv`.
 
 In order to make the logs useful and to get them out of reach of malware and
 attackers, it is recommended to continuously forward logs to central log
-collection infrastructure.  A sample Splunk configuration for ingesting xnumon
-logs can be found in `extra/splunk`.
+collection infrastructure.  A minimal sample Splunk configuration for ingesting
+xnumon logs can be found in `extra/splunk`.
 
 
 ## Kernel Extension

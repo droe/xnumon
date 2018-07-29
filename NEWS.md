@@ -6,7 +6,7 @@
 -   Add `xml` log format (issue #12).
 -   Add capability to omit the `sid` field of processes.
 -   Rewritten event loop for improved behaviour under load (issue #33).
--   No longer shelling out to `kextload` to load kext (issue #17).
+-   Use IOKit API instead of `kextload` to load the xnumon kext (issue #17).
 -   Check global audit(4) policy settings every five minutes for clobbering
     (issue #35).
 
