@@ -33,7 +33,7 @@
  * means that changes may happen between different commits during development
  * without increasing LOGEVT_VERSION every time.
  */
-#define LOGEVT_VERSION  5
+#define LOGEVT_VERSION  6
 
 /*
  * This must be the very first element of all log event data structs passed
