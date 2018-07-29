@@ -16,6 +16,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
@@ -61,22 +62,22 @@ main(int argc, char *argv[]) {
 	FILE *f;
 	int ch, rv;
 	char del[2] = {',', 0};
-	int binary = 0;
+	bool binary = false;
 	int oflags = AU_OFLAG_NONE;
 	unsigned int classmask = AC_ALL;
-	int clearmask = 0;
+	bool clearmask = false;
 	const char *argv0 = argv[0];
 
 	while ((ch = getopt(argc, argv, "c:Cd:hnrsxb")) != -1) {
 		switch (ch) {
 			case 'b':
-				binary = 1;
+				binary = true;
 				break;
 			case 'c':
 				classmask = auclass_maskparse(optarg);
 				break;
 			case 'C':
-				clearmask = 1;
+				clearmask = true;
 				break;
 			case 'd':
 				del[0] = optarg[0];
