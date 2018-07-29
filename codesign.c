@@ -49,6 +49,12 @@ codesign_init(config_t *cfg) {
 		return -1;
 	config = cfg;
 
+	/*
+	 * Order needs to match the order of the origin values in reqs above;
+	 * should be most specific first.  Will be tested from top to bottom
+	 * until the first fulfilled requirement.  Current list obtained from
+	 * 10.11.6 El Capitan using `spctl --list --type execute`.
+	 */
 	CREATE_REQ(reqs[0].req, "anchor apple");
 	CREATE_REQ(reqs[1].req, "anchor apple generic and "
 		"certificate leaf[field.1.2.840.113635.100.6.1.9] exists");
