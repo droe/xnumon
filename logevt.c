@@ -235,6 +235,8 @@ logevt_xnumon_stats(logfmt_t *fmt, FILE *f, void *arg0) {
 
 	fmt->dict_item(f, "evtloop");
 	fmt->dict_begin(f);
+	fmt->dict_item(f, "aupclobber");
+	fmt->value_uint(f, st->el_aupclobbers);
 	fmt->dict_item(f, "aueunknown");
 	fmt->value_uint(f, st->el_aueunknowns);
 	fmt->dict_item(f, "failedsyscall");

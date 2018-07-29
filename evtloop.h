@@ -34,6 +34,7 @@ typedef struct {
 	hackmon_stat_t hm;
 	xnumon_stat_t ke;
 	uint64_t el_aueunknowns;
+	uint64_t el_aupclobbers;
 	uint64_t el_failedsyscalls;
 	uint64_t el_radar38845422_fatal;
 	uint64_t el_radar38845422;

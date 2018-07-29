@@ -12,6 +12,7 @@
 
 #include "auclass.h"
 #include "auevent.h"
+#include "aupolicy.h"
 #include "procmon.h"
 #include "filemon.h"
 #include "hackmon.h"
@@ -38,6 +39,7 @@ static bool running = true;     /* shared */
 static int kefd = -1;           /* shared */
 static FILE *auef = NULL;
 static pid_t xnumon_pid;
+static uint64_t aupclobbers = 0;
 static uint64_t aueunknowns = 0;
 static uint64_t failedsyscalls = 0;
 static uint64_t radar38845422 = 0;
@@ -638,6 +640,7 @@ evtloop_stats(evtloop_stat_t *st) {
 	procmon_stats(&st->pm);
 	hackmon_stats(&st->hm);
 	filemon_stats(&st->fm);
+	st->el_aupclobbers = aupclobbers;
 	st->el_aueunknowns = aueunknowns;
 	st->el_failedsyscalls = failedsyscalls;
 	st->el_radar38845422_fatal = radar38845422_fatal;
@@ -667,6 +670,7 @@ siginfo_arrived(UNUSED int sig, UNUSED void *udata) {
 	evtloop_stats(&st);
 
 	fprintf(stderr, "evtloop "
+	                "aupclobber:%"PRIu64" "
 	                "aueunknown:%"PRIu64" "
 	                "failedsyscalls:%"PRIu64" "
 	                "missingtoken:%"PRIu64" "
@@ -675,6 +679,7 @@ siginfo_arrived(UNUSED int sig, UNUSED void *udata) {
 	                "r38845784:0/%"PRIu64" "
 	                "r39267328:%"PRIu64"/%"PRIu64" "
 	                "r39623812:%"PRIu64"/%"PRIu64"\n",
+	                st.el_aupclobbers,
 	                st.el_aueunknowns,
 	                st.el_failedsyscalls,
 	                st.el_missingtoken,
@@ -839,13 +844,33 @@ sighup_arrived(UNUSED int sig, UNUSED void *udata) {
 }
 
 /*
- * Called by stats timer, every hour.
+ * Called by stats timer, configurable interval.
  */
 static int
 stats_timer_fired(UNUSED int ident, UNUSED void *udata) {
 	if ((log_event_xnumon_stats() == -1) && (errno == ENOMEM))
 		ooms++;
 	return 0;
+}
+
+/*
+ * Called by audit policy watchdog timer, every five minutes.
+ */
+int aupol_wanted = -1;
+static int
+aupol_timer_fired(UNUSED int ident, UNUSED void *udata) {
+	assert(aupol_wanted != -1);
+	switch (aupolicy_ensure(aupol_wanted)) {
+	case 0:
+		return 0;
+	case 1:
+		aupclobbers++;
+		return 0;
+	default:
+		fprintf(stderr, "Failed to configure audit policy\n");
+		return -1;
+	}
+	/* not reached */
 }
 
 static stat_attr_t cfgattr[2];
@@ -899,8 +924,9 @@ sigusr1_arrived(UNUSED int sig, UNUSED void *udata) {
 	return 0;
 }
 
-#define TIMER_STATS     1
-#define TIMER_CONFIG    2
+#define TIMER_AUPOL     1
+#define TIMER_STATS     2
+#define TIMER_CONFIG    3
 
 int
 evtloop_run(config_t *cfg) {
@@ -910,6 +936,7 @@ evtloop_run(config_t *cfg) {
 	kevent_ctx_t sighup_ctx  = KEVENT_CTX_SIGNAL(sighup_arrived, cfg);
 	kevent_ctx_t sigusr1_ctx = KEVENT_CTX_SIGNAL(sigusr1_arrived, cfg);
 	kevent_ctx_t auef_ctx    = KEVENT_CTX_FD_READ(auef_readable, cfg);
+	kevent_ctx_t aptm_ctx    = KEVENT_CTX_TIMER(aupol_timer_fired, cfg);
 	kevent_ctx_t sttm_ctx    = KEVENT_CTX_TIMER(stats_timer_fired, cfg);
 	kevent_ctx_t cftm_ctx    = KEVENT_CTX_TIMER(config_timer_fired, cfg);
 	kqueue_t *kq = NULL;
@@ -918,6 +945,7 @@ evtloop_run(config_t *cfg) {
 	int rv;
 
 	auef = NULL;
+	aupclobbers = 0;
 	aueunknowns = 0;
 	failedsyscalls = 0;
 	radar38845422_fatal = 0;
@@ -931,6 +959,30 @@ evtloop_run(config_t *cfg) {
 	ooms = 0;
 	xnumon_pid = getpid();
 
+	/* system-global audit(4) setup: audit policy */
+	aupol_wanted = AUDIT_ARGV;
+	if (cfg->envlevel > 0)
+		aupol_wanted |= AUDIT_ARGE;
+	if (aupol_timer_fired(TIMER_AUPOL, NULL) == -1)
+		goto errout;
+
+	/* system-global audit(4) setup: audit class */
+	if (auclass_addmask(AC_XNUMON, auclass_xnumon_events_procmon) == -1) {
+		fprintf(stderr, "Failed to configure AC_XNUMON class mask\n");
+		goto errout;
+	}
+	if (LOGEVT_WANT(cfg->events, LOGEVT_HACKMON) &&
+	    auclass_addmask(AC_XNUMON, auclass_xnumon_events_hackmon) == -1) {
+		fprintf(stderr, "Failed to configure AC_XNUMON class mask\n");
+		goto errout;
+	}
+	if (LOGEVT_WANT(cfg->events, LOGEVT_FILEMON) &&
+	    auclass_addmask(AC_XNUMON, auclass_xnumon_events_filemon) == -1) {
+		fprintf(stderr, "Failed to configure AC_XNUMON class mask\n");
+		goto errout;
+	}
+
+	/* load kext */
 	if ((cfg->kextlevel > 0) && (kextctl_load() == -1)) {
 		fprintf(stderr, "Failed to load kernel extension\n");
 	}
@@ -1086,11 +1138,20 @@ evtloop_run(config_t *cfg) {
 		goto errout;
 	}
 
+	/* start audit(4) policy watchdog timer */
+	rv = kqueue_add_timer(kq, TIMER_AUPOL, 300, &aptm_ctx);
+	if (rv == -1) {
+		fprintf(stderr, "kqueue_add_timer(TIMER_AUPOL) failed: "
+		                "%s (%i)\n", strerror(errno), errno);
+		rv = -1;
+		goto errout;
+	}
+
 	/* start stats timer */
 	rv = kqueue_add_timer(kq, TIMER_STATS, cfg->stats_interval, &sttm_ctx);
 	if (rv == -1) {
-		fprintf(stderr, "kqueue_add_timer(1) failed: %s (%i)\n",
-		                strerror(errno), errno);
+		fprintf(stderr, "kqueue_add_timer(TIMER_STATS) failed: "
+		                "%s (%i)\n", strerror(errno), errno);
 		rv = -1;
 		goto errout;
 	}
@@ -1099,8 +1160,8 @@ evtloop_run(config_t *cfg) {
 		/* start config file timer */
 		rv = kqueue_add_timer(kq, TIMER_CONFIG, 300, &cftm_ctx);
 		if (rv == -1) {
-			fprintf(stderr, "kqueue_add_timer(2) failed: %s (%i)\n",
-			                strerror(errno), errno);
+			fprintf(stderr, "kqueue_add_timer(TIMER_CONFIG) failed"
+			                ": %s (%i)\n", strerror(errno), errno);
 			rv = -1;
 			goto errout;
 		}
@@ -1137,6 +1198,16 @@ errout:
 	}
 
 errout_silent:
+	/* system-global audit(4) cleanup */
+	if (auclass_removemask(AC_XNUMON,
+	                       auclass_xnumon_events_procmon) == -1 ||
+	    auclass_removemask(AC_XNUMON,
+	                       auclass_xnumon_events_hackmon) == -1 ||
+	    auclass_removemask(AC_XNUMON,
+	                       auclass_xnumon_events_filemon) == -1) {
+		fprintf(stderr, "Failed to configure AC_XNUMON class mask\n");
+	}
+
 	if (kq)
 		kqueue_free(kq);
 	if (auef) {

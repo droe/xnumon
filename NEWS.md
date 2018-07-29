@@ -7,6 +7,8 @@
 -   Capability to log all environment variables at image exec (`full`),
     only log variables affecting dyld (`dyld`) or not log the environment
     (`none`) (issue #7).
+-   Check global audit(4) policy settings every five minutes for clobbering
+    (issue #35).
 
 Configuration changes:
 
@@ -16,6 +18,7 @@ Configuration changes:
 Event schema changes:
 
 -   Event schema version increased to 6.  Changes affect eventcode 2.
+-   Eventcode 1 added `evtloop.aupclobber`.
 -   Eventcode 2 added `env`.
 
 ---
