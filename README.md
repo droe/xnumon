@@ -80,9 +80,8 @@ in favour of the default configuration, especially for enterprise deployments.
 
 In addition to installing xnumon, you will want to make sure that auditd does
 not clobber the global kernel audit policy.  Make sure the `argv` policy flag
-is enabled in `/etc/security/audit_control`, which is the default.  Right now,
-xnumon does not process the additional information provided by the `arge` flag,
-but most likely will start doing so in a future release.
+is enabled in `/etc/security/audit_control`, which is the default.  If you are
+using `envlevel` `dyld` or `full`, then `arge` is needed in addition to `argv`.
 
 In order to make the logs useful and to get them out of reach of malware and
 attackers, it is recommended to continuously forward logs to central log

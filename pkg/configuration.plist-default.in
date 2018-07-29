@@ -185,6 +185,11 @@
                     events.  These influence the operation of the dynamic
                     linker and can be used to inject libraries into a process.
        2 full       Include the full environment in eventcode 2 events.
+       When using envlevel dyld or full, xnumon will set the arge policy flag
+       at runtime.  The default configuration of auditd does not include the
+       arge policy flag.  It is recommended to either disable auditd or to
+       enable the arge policy flag in /etc/security/audit_control, so that
+       auditd does not clobber the global audit policy at runtime.
        If unset, defaults to:   dyld
        -->
   <!--

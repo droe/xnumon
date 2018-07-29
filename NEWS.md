@@ -1,12 +1,12 @@
 ### xnumon develop
 
+-   Capability to log all environment variables at image exec (`full`),
+    only log variables affecting dyld (`dyld`) or not log the environment
+    (`none`) (issue #7).
 -   Add `xml` log format (issue #12).
 -   Add capability to omit the `sid` field of processes.
 -   Rewritten event loop for improved behaviour under load (issue #33).
 -   No longer shelling out to `kextload` to load kext (issue #17).
--   Capability to log all environment variables at image exec (`full`),
-    only log variables affecting dyld (`dyld`) or not log the environment
-    (`none`) (issue #7).
 -   Check global audit(4) policy settings every five minutes for clobbering
     (issue #35).
 
