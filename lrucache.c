@@ -15,6 +15,8 @@
 
 #include "lrucache.h"
 
+#include "tommy_ext.h"
+
 #include <assert.h>
 #include <string.h>
 
@@ -54,11 +56,7 @@ lrucache_init(lrucache_t *this, tommy_count_t buckets,
 	assert(this);
 	assert(freefunc);
 
-	/* go for 75% of next power of two to stay clear of hashtable
-	 * performance drop but also avoiding overmuch slack space */
-	this->bucket_max = (tommy_roundup_pow2_u32(buckets) >> 2) * 3;
-	if (buckets > this->bucket_max)
-		this->bucket_max <<= 1;
+	this->bucket_max = bucket_max_for_buckets(buckets);
 	this->hashsz = hashsz;
 	this->compsz = compsz;
 	this->condsz = condsz;
