@@ -240,7 +240,7 @@ auef_readable(UNUSED int fd, void *udata) {
 		 * issue.
 		 */
 		path = (char *)(ev.path[1] ? ev.path[1] : ev.path[0]);
-		if (!ev.attr_present || !path ||
+		if (ev.attr_count == 0 || !path ||
 		    !str_beginswith(path, "/dev/")) {
 			radar38845422++;
 			path = sys_pidpath(ev.args[0].present ?
@@ -300,7 +300,7 @@ auef_readable(UNUSED int fd, void *udata) {
 			procmon_exec(&ev.tv,
 			             &ev.subject,
 			             path,
-			             ev.attr_present ? &ev.attr : NULL,
+			             ev.attr_count > 0 ? &ev.attr[0] : NULL,
 			             ev.execarg,
 			             ev.execenv);
 			ev.execarg = NULL; /* pass ownership to procmon */
@@ -312,7 +312,7 @@ auef_readable(UNUSED int fd, void *udata) {
 		              &ev.subject,
 		              ev.args[0].value,
 		              path,
-		              ev.attr_present ? &ev.attr : NULL,
+		              ev.attr_count > 0 ? &ev.attr[0] : NULL,
 		              ev.execarg,
 		              ev.execenv);
 		ev.execarg = NULL; /* pass ownership to procmon */
@@ -350,7 +350,7 @@ auef_readable(UNUSED int fd, void *udata) {
 		procmon_exec(&ev.tv,
 		             &ev.subject,
 		             path,
-		             ev.attr_present ? &ev.attr : NULL,
+		             ev.attr_count > 0 ? &ev.attr[0] : NULL,
 		             ev.execarg,
 		             ev.execenv);
 		ev.execarg = NULL; /* pass ownership to procmon */
@@ -487,7 +487,7 @@ auef_readable(UNUSED int fd, void *udata) {
 				ooms++;
 		} else if (ev.path[0]) {
 			/* one path token, assume unresolved if no attr */
-			if (ev.attr_present) {
+			if (ev.attr_count > 0) {
 				path = strdup(ev.path[0]);
 				if (!path)
 					ooms++;

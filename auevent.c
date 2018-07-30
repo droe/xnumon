@@ -350,24 +350,38 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], int flags, FILE *f) {
 			break;
 		/* attr */
 		case AUT_ATTR32:
-			assert(!ev->attr_present);
-			ev->attr_present = true;
-			ev->attr.mode = tok.tt.attr32.mode;
-			ev->attr.uid = tok.tt.attr32.uid;
-			ev->attr.gid = tok.tt.attr32.gid;
-			ev->attr.dev = tok.tt.attr32.fsid;
-			ev->attr.ino = tok.tt.attr32.nid;
-			/* ev->attr.rdev = tok.tt.attr32.dev; */
+			if (!(ev->attr_count <
+			      sizeof(ev->attr)/sizeof(ev->attr[0]))) {
+				fprintf(stderr, "Too many attr tokens, "
+				                "skipping record\n");
+				goto skip_rec;
+			}
+			ev->attr[ev->attr_count].mode = tok.tt.attr32.mode;
+			ev->attr[ev->attr_count].uid  = tok.tt.attr32.uid;
+			ev->attr[ev->attr_count].gid  = tok.tt.attr32.gid;
+			ev->attr[ev->attr_count].dev  = tok.tt.attr32.fsid;
+			ev->attr[ev->attr_count].ino  = tok.tt.attr32.nid;
+#if 0
+			ev->attr[ev->attr_count].rdev = tok.tt.attr32.dev;
+#endif
+			ev->attr_count++;
 			break;
 		case AUT_ATTR64:
-			assert(!ev->attr_present);
-			ev->attr_present = true;
-			ev->attr.mode = tok.tt.attr64.mode;
-			ev->attr.uid = tok.tt.attr64.uid;
-			ev->attr.gid = tok.tt.attr64.gid;
-			ev->attr.dev = tok.tt.attr64.fsid;
-			ev->attr.ino = tok.tt.attr64.nid;
-			/* ev->attr.rdev = tok.tt.attr64.dev; */
+			if (!(ev->attr_count <
+			      sizeof(ev->attr)/sizeof(ev->attr[0]))) {
+				fprintf(stderr, "Too many attr tokens, "
+				                "skipping record\n");
+				goto skip_rec;
+			}
+			ev->attr[ev->attr_count].mode = tok.tt.attr64.mode;
+			ev->attr[ev->attr_count].uid  = tok.tt.attr64.uid;
+			ev->attr[ev->attr_count].gid  = tok.tt.attr64.gid;
+			ev->attr[ev->attr_count].dev  = tok.tt.attr64.fsid;
+			ev->attr[ev->attr_count].ino  = tok.tt.attr64.nid;
+#if 0
+			ev->attr[ev->attr_count].rdev = tok.tt.attr64.dev;
+#endif
+			ev->attr_count++;
 			break;
 		/* exec argv */
 		case AUT_EXEC_ARGS:
@@ -508,11 +522,12 @@ auevent_fprint(FILE *f, audit_event_t *ev) {
 			fprintf(f, " path[%zu]='%s'", i, ev->path[i]);
 		}
 	}
-	if (ev->attr_present) {
-		fprintf(f, " attr_mode=%o attr_uid=%u attr_gid=%u",
-		        ev->attr.mode,
-		        ev->attr.uid,
-		        ev->attr.gid);
+	for (size_t i = 0; i < ev->attr_count; i++) {
+		fprintf(f, " attr[%zu] mode=%o uid=%u gid=%u",
+		        i,
+		        ev->attr[i].mode,
+		        ev->attr[i].uid,
+		        ev->attr[i].gid);
 	}
 	if (ev->execarg) {
 		fprintf(f, " execarg");

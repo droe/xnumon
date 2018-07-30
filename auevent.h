@@ -75,10 +75,10 @@ typedef struct {
 	bool            process_present;
 	audit_proc_t    process;
 
+	/* space for two path arguments (unresolved and resolved) */
 	const char *    path[4];
-
-	bool            attr_present; // XXX size_t
-	audit_attr_t    attr;
+	size_t          attr_count;
+	audit_attr_t    attr[2];
 
 	bool            exit_present;
 	uint32_t        exit_status;
