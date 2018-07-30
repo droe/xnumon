@@ -183,8 +183,8 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], int flags, FILE *f) {
 			break;
 		/* subject */
 		case AUT_SUBJECT32:
-			assert(ev->subject_present == 0);
-			ev->subject_present = 1;
+			assert(!ev->subject_present);
+			ev->subject_present = true;
 			ev->subject.auid = tok.tt.subj32.auid;
 			ev->subject.euid = tok.tt.subj32.euid;
 			ev->subject.egid = tok.tt.subj32.egid;
@@ -196,8 +196,8 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], int flags, FILE *f) {
 			SET_ADDR(ev->subject.addr, tok.tt.subj32.tid);
 			break;
 		case AUT_SUBJECT32_EX:
-			assert(ev->subject_present == 0);
-			ev->subject_present = 1;
+			assert(!ev->subject_present);
+			ev->subject_present = true;
 			ev->subject.auid = tok.tt.subj32_ex.auid;
 			ev->subject.euid = tok.tt.subj32_ex.euid;
 			ev->subject.egid = tok.tt.subj32_ex.egid;
@@ -209,8 +209,8 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], int flags, FILE *f) {
 			SET_ADDR_EX(ev->subject.addr, tok.tt.subj32_ex.tid);
 			break;
 		case AUT_SUBJECT64:
-			assert(ev->subject_present == 0);
-			ev->subject_present = 1;
+			assert(!ev->subject_present);
+			ev->subject_present = true;
 			ev->subject.auid = tok.tt.subj64.auid;
 			ev->subject.euid = tok.tt.subj64.euid;
 			ev->subject.egid = tok.tt.subj64.egid;
@@ -222,8 +222,8 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], int flags, FILE *f) {
 			SET_ADDR(ev->subject.addr, tok.tt.subj64.tid);
 			break;
 		case AUT_SUBJECT64_EX:
-			assert(ev->subject_present == 0);
-			ev->subject_present = 1;
+			assert(!ev->subject_present);
+			ev->subject_present = true;
 			ev->subject.auid = tok.tt.subj64_ex.auid;
 			ev->subject.euid = tok.tt.subj64_ex.euid;
 			ev->subject.egid = tok.tt.subj64_ex.egid;
@@ -236,8 +236,8 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], int flags, FILE *f) {
 			break;
 		/* process (as object, other than subject) */
 		case AUT_PROCESS32:
-			assert(ev->process_present == 0);
-			ev->process_present = 1;
+			assert(!ev->process_present);
+			ev->process_present = true;
 			ev->process.auid = tok.tt.proc32.auid;
 			ev->process.euid = tok.tt.proc32.euid;
 			ev->process.egid = tok.tt.proc32.egid;
@@ -249,8 +249,8 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], int flags, FILE *f) {
 			SET_ADDR(ev->process.addr, tok.tt.proc32.tid);
 			break;
 		case AUT_PROCESS32_EX:
-			assert(ev->process_present == 0);
-			ev->process_present = 1;
+			assert(!ev->process_present);
+			ev->process_present = true;
 			ev->process.auid = tok.tt.proc32_ex.auid;
 			ev->process.euid = tok.tt.proc32_ex.euid;
 			ev->process.egid = tok.tt.proc32_ex.egid;
@@ -262,8 +262,8 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], int flags, FILE *f) {
 			SET_ADDR_EX(ev->process.addr, tok.tt.proc32_ex.tid);
 			break;
 		case AUT_PROCESS64:
-			assert(ev->process_present == 0);
-			ev->process_present = 1;
+			assert(!ev->process_present);
+			ev->process_present = true;
 			ev->process.auid = tok.tt.proc64.auid;
 			ev->process.euid = tok.tt.proc64.euid;
 			ev->process.egid = tok.tt.proc64.egid;
@@ -275,8 +275,8 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], int flags, FILE *f) {
 			SET_ADDR(ev->process.addr, tok.tt.proc64.tid);
 			break;
 		case AUT_PROCESS64_EX:
-			assert(ev->process_present == 0);
-			ev->process_present = 1;
+			assert(!ev->process_present);
+			ev->process_present = true;
 			ev->process.auid = tok.tt.proc64_ex.auid;
 			ev->process.euid = tok.tt.proc64_ex.euid;
 			ev->process.egid = tok.tt.proc64_ex.egid;
@@ -289,8 +289,8 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], int flags, FILE *f) {
 			break;
 		/* syscall arguments */
 		case AUT_ARG32:
-			assert(ev->args[tok.tt.arg32.no].present == 0);
-			ev->args[tok.tt.arg32.no].present = 1;
+			assert(!ev->args[tok.tt.arg32.no].present);
+			ev->args[tok.tt.arg32.no].present = true;
 			ev->args[tok.tt.arg32.no].value = tok.tt.arg32.val;
 #ifdef DEBUG_AUDITPIPE
 			ev->args[tok.tt.arg32.no].text =
@@ -299,11 +299,11 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], int flags, FILE *f) {
 				ev->flags |= AEFLAG_ENOMEM;
 #endif /* DEBUG_AUDITPIPE */
 			ev->args_count = max(ev->args_count,
-			                     tok.tt.arg32.no + 1);
+			                     (size_t)tok.tt.arg32.no + 1);
 			break;
 		case AUT_ARG64:
-			assert(ev->args[tok.tt.arg64.no].present == 0);
-			ev->args[tok.tt.arg64.no].present = 1;
+			assert(!ev->args[tok.tt.arg64.no].present);
+			ev->args[tok.tt.arg64.no].present = true;
 			ev->args[tok.tt.arg64.no].value = tok.tt.arg64.val;
 #ifdef DEBUG_AUDITPIPE
 			ev->args[tok.tt.arg64.no].text =
@@ -312,18 +312,18 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], int flags, FILE *f) {
 				ev->flags |= AEFLAG_ENOMEM;
 #endif /* DEBUG_AUDITPIPE */
 			ev->args_count = max(ev->args_count,
-			                     tok.tt.arg64.no + 1);
+			                     (size_t)tok.tt.arg64.no + 1);
 			break;
 		/* syscall return value */
 		case AUT_RETURN32:
-			assert(ev->return_present == 0);
-			ev->return_present = 1;
+			assert(!ev->return_present);
+			ev->return_present = true;
 			ev->return_error = tok.tt.ret32.status;
 			ev->return_value = tok.tt.ret32.ret;
 			break;
 		case AUT_RETURN64:
-			assert(ev->return_present == 0);
-			ev->return_present = 1;
+			assert(!ev->return_present);
+			ev->return_present = true;
 			ev->return_error = tok.tt.ret64.err;
 			ev->return_value = tok.tt.ret64.val;
 			break;
@@ -350,8 +350,8 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], int flags, FILE *f) {
 			break;
 		/* attr */
 		case AUT_ATTR32:
-			assert(ev->attr_present == 0);
-			ev->attr_present = 1;
+			assert(!ev->attr_present);
+			ev->attr_present = true;
 			ev->attr.mode = tok.tt.attr32.mode;
 			ev->attr.uid = tok.tt.attr32.uid;
 			ev->attr.gid = tok.tt.attr32.gid;
@@ -360,8 +360,8 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], int flags, FILE *f) {
 			/* ev->attr.rdev = tok.tt.attr32.dev; */
 			break;
 		case AUT_ATTR64:
-			assert(ev->attr_present == 0);
-			ev->attr_present = 1;
+			assert(!ev->attr_present);
+			ev->attr_present = true;
 			ev->attr.mode = tok.tt.attr64.mode;
 			ev->attr.uid = tok.tt.attr64.uid;
 			ev->attr.gid = tok.tt.attr64.gid;
@@ -402,8 +402,8 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], int flags, FILE *f) {
 			break;
 		/* process exit status */
 		case AUT_EXIT:
-			assert(ev->exit_present == 0);
-			ev->exit_present = 1;
+			assert(!ev->exit_present);
+			ev->exit_present = true;
 			ev->exit_status = tok.tt.exit.status;
 			ev->exit_return = tok.tt.exit.ret;
 			break;
@@ -483,14 +483,14 @@ auevent_fprint(FILE *f, audit_event_t *ev) {
 		        ev->process.ruid,
 		        ev->process.rgid);
 	}
-	for (int i = 0; i < ev->args_count; i++) {
+	for (size_t i = 0; i < ev->args_count; i++) {
 		if (ev->args[i].present) {
 #ifdef DEBUG_AUDITPIPE
-			fprintf(f, " args[%i:%s]=%"PRIu64, i,
+			fprintf(f, " args[%zu:%s]=%"PRIu64, i,
 			        ev->args[i].text,
 			        ev->args[i].value);
 #else
-			fprintf(f, " args[%i]=%"PRIu64, i,
+			fprintf(f, " args[%zu]=%"PRIu64, i,
 			        ev->args[i].value);
 #endif
 		}

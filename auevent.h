@@ -14,6 +14,7 @@
 #include "ipaddr.h"
 #include "attrib.h"
 
+#include <stdbool.h>
 #include <stdint.h>
 #include <inttypes.h>
 #include <limits.h>
@@ -40,11 +41,13 @@ typedef struct {
 	gid_t           gid;
 	dev_t           dev;
 	ino_t           ino;
-	/* dev_t rdev; */
+#if 0
+	dev_t           rdev;
+#endif
 } audit_attr_t;
 
 typedef struct {
-	int             present;
+	bool            present;
 	uint64_t        value;
 #ifdef DEBUG_AUDITPIPE
 	char *          text;                   /* strdup/free */
@@ -59,25 +62,25 @@ typedef struct {
 	uint16_t        mod;
 	struct timespec tv;
 
-	int             args_count;
+	size_t          args_count;
 	audit_arg_t     args[UCHAR_MAX+1];
 
-	int             return_present;
+	bool            return_present;
 	unsigned char   return_error;
 	uint32_t        return_value;
 
-	int             subject_present;
+	bool            subject_present;
 	audit_proc_t    subject;
 
-	int             process_present;
+	bool            process_present;
 	audit_proc_t    process;
 
 	const char *    path[4];
 
-	int             attr_present;
+	bool            attr_present; // XXX size_t
 	audit_attr_t    attr;
 
-	int             exit_present;
+	bool            exit_present;
 	uint32_t        exit_status;
 	uint32_t        exit_return;
 
