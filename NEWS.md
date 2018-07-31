@@ -1,5 +1,15 @@
 ### xnumon develop
 
+-   Detect a bug in audit(4) where calls to renameat(2) sometimes lead to
+    `AUE_RENAMEAT` records with only one instead of four path tokens
+    (radar 42770257).
+
+Event schema changes:
+
+-   Event schema version increased to 7.  Changes affect eventcode 1.
+-   Eventcode 1 added `evtloop.radar42770257` and
+    `evtloop.radar42770257_fatal`.
+
 ---
 
 ### xnumon 0.1.6 2018-07-29

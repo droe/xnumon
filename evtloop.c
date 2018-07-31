@@ -49,6 +49,7 @@ static uint64_t radar39267328 = 0;
 static uint64_t radar39267328_fatal = 0;
 static uint64_t radar39623812 = 0;
 static uint64_t radar39623812_fatal = 0;
+static uint64_t radar42770257_fatal = 0;
 static uint64_t missingtoken = 0;
 static uint64_t ooms = 0;
 
@@ -166,6 +167,7 @@ errout:
  * 38845784: audit(4): spurious return value for execve(2)
  * 39267328: audit(4): target path not resolved for rename(2)
  * 39623812: audit(4): path not resolved for utimes(2)
+ * 42770257: audit(4): only one instead of four path tokens for renameat(2)
  */
 #define TOKEN_ASSERT(EVENT, TOKEN, COND) \
 	if (!(COND)) { \
@@ -232,7 +234,7 @@ auef_readable(UNUSED int fd, void *udata) {
 		 * in all of these cases, no attr token is provided, and there
 		 * is only one path instead of two.
 		 *
-		 * Reported to Apple as bug 38845422 on 2018-03-25.
+		 * Reported to Apple as radar 38845422 on 2018-03-25.
 		 *
 		 * As a result, whenever no attr is present or path starts in
 		 * /dev, assume a buggy path.  First try the path by pid.
@@ -329,7 +331,7 @@ auef_readable(UNUSED int fd, void *udata) {
 		 * example when being spawned from make, which does not
 		 * indicate failure; only treat negative values as errors.
 		 *
-		 * Reported to Apple as bug 38845784 on 2018-03-25.
+		 * Reported to Apple as radar 38845784 on 2018-03-25.
 		 */
 		if (ev.return_present) {
 			if (ev.return_value > INT_MAX) {
@@ -478,7 +480,7 @@ auef_readable(UNUSED int fd, void *udata) {
 		 * On at least 10.11.6, records include only an unresolved
 		 * path.
 		 *
-		 * Reported to Apple as bug 39623812 on 2018-04-21.
+		 * Reported to Apple as radar 39623812 on 2018-04-21.
 		 */
 		if (ev.path[1]) {
 			/* two path tokens */
@@ -541,7 +543,7 @@ auef_readable(UNUSED int fd, void *udata) {
 		 * On at least 10.11.6, records include only an unresolved
 		 * target path.
 		 *
-		 * Reported to Apple as bug 39267328 on 2018-04-08.
+		 * Reported to Apple as radar 39267328 on 2018-04-08.
 		 */
 		if (ev.path[1] && !ev.path[2]) {
 			/* two path tokens, assume both resolved */
@@ -577,10 +579,24 @@ auef_readable(UNUSED int fd, void *udata) {
 			}
 		} else {
 			path = NULL;
-			missingtoken++;
-			DEBUG(cfg->debug, "missingtoken",
-			      "event=rename%s token=path",
-			      (ev.type == AUE_RENAMEAT ? "at" : ""));
+			if (ev.type == AUE_RENAMEAT) {
+				/*
+				 * AUE_RENAMEAT records sometimes have only a
+				 * single path token instead of four.  Unable
+				 * to reproduce with regular calls to
+				 * renameat(2).
+				 *
+				 * Reported to Apple as radar 42770257 on
+				 * 2018-07-31.
+				 */
+				radar42770257_fatal++;
+				DEBUG(cfg->debug, "radar42770257_fatal",
+				      "event=renameat token=path");
+			} else {
+				missingtoken++;
+				DEBUG(cfg->debug, "missingtoken",
+				      "event=rename token=path");
+			}
 			if (cfg->debug)
 				auevent_fprint(stderr, &ev);
 		}
@@ -650,6 +666,8 @@ evtloop_stats(evtloop_stat_t *st) {
 	st->el_radar39623812 = radar39623812;
 	st->el_radar39267328_fatal = radar39267328_fatal;
 	st->el_radar39267328 = radar39267328;
+	st->el_radar42770257 = radar42770257_fatal;
+	st->el_radar42770257_fatal = radar42770257_fatal;
 	st->el_missingtoken = missingtoken;
 	st->el_ooms = ooms;
 	aupipe_stats(fileno(auef), &st->ap);
@@ -678,7 +696,8 @@ siginfo_arrived(UNUSED int sig, UNUSED void *udata) {
 	                "r38845422:%"PRIu64"/%"PRIu64" "
 	                "r38845784:0/%"PRIu64" "
 	                "r39267328:%"PRIu64"/%"PRIu64" "
-	                "r39623812:%"PRIu64"/%"PRIu64"\n",
+	                "r39623812:%"PRIu64"/%"PRIu64" "
+	                "r42770257:%"PRIu64"/%"PRIu64"\n",
 	                st.el_aupclobbers,
 	                st.el_aueunknowns,
 	                st.el_failedsyscalls,
@@ -690,7 +709,9 @@ siginfo_arrived(UNUSED int sig, UNUSED void *udata) {
 	                st.el_radar39267328_fatal,
 	                st.el_radar39267328,
 	                st.el_radar39623812_fatal,
-	                st.el_radar39623812);
+	                st.el_radar39623812,
+	                st.el_radar42770257_fatal,
+	                st.el_radar42770257);
 
 	fprintf(stderr, "procmon "
 	                "actprc:%"PRIu32" "
@@ -955,6 +976,7 @@ evtloop_run(config_t *cfg) {
 	radar39267328 = 0;
 	radar39623812_fatal = 0;
 	radar39623812 = 0;
+	radar42770257_fatal = 0;
 	missingtoken = 0;
 	ooms = 0;
 	xnumon_pid = getpid();
