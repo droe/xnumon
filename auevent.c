@@ -98,7 +98,7 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], int flags, FILE *f) {
 	int reclen;
 	u_char *recbuf;
 	tokenstr_t tok;
-	size_t pathc = 0;
+	size_t pathc;
 
 	assert(ev);
 
@@ -140,6 +140,7 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], int flags, FILE *f) {
 		 * and no addr represented by address family 0, respectively.
 		 */
 
+		pathc = 0;
 		switch (tok.id) {
 		/* record header and trailer */
 		case AUT_HEADER32:
