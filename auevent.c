@@ -344,9 +344,7 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], int flags, FILE *f) {
 				                "skipping record\n");
 				goto skip_rec;
 			}
-			ev->path[pathc] = strdup(tok.tt.path.path);
-			if (!ev->path[pathc])
-				ev->flags |= AEFLAG_ENOMEM;
+			ev->path[pathc] = tok.tt.path.path;
 			pathc++;
 			break;
 		/* attr */
@@ -574,14 +572,6 @@ auevent_destroy(audit_event_t *ev) {
 	if (ev->execenv) {
 		free(ev->execenv);
 		ev->execenv = NULL;
-	}
-	for (size_t i = 0; i < sizeof(ev->path)/sizeof(ev->path[0]); i++) {
-		if (ev->path[i]) {
-			free(ev->path[i]);
-			ev->path[i] = NULL;
-		} else {
-			break;
-		}
 	}
 #ifdef DEBUG_AUDITPIPE
 	for (size_t i = 0; i < ev->args_count; i++) {

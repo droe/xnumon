@@ -76,7 +76,7 @@ typedef struct {
 	audit_proc_t    process;
 
 	/* space for two path arguments (unresolved and resolved) */
-	char *          path[4];                /* strdup/free */
+	const char *    path[4];
 	size_t          attr_count;
 	audit_attr_t    attr[2];
 
