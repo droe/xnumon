@@ -8,12 +8,16 @@
 -   Detect a bug in audit(4) where calls to link(2) always lead to
     `AUE_LINK` records with only three instead of four path tokens
     (radar 42783724).
+-   Detect a bug in audit(4) where calls to symlink(2) always lead to
+    `AUE_SYMLINK` records with only one instead of two path tokens
+    (radar 42784847).
 
 Event schema changes:
 
 -   Event schema version increased to 7.  Changes affect eventcode 1.
 -   Eventcode 1 added `evtloop.radar42770257`, `evtloop.radar42770257_fatal`,
-    `evtloop.radar42783724` and `evtloop.radar42783724_fatal`.
+    `evtloop.radar42783724`, `evtloop.radar42783724_fatal`,
+    `evtloop.radar42784847` and `evtloop.radar42784847_fatal`.
 
 ---
 
