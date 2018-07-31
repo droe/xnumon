@@ -75,6 +75,8 @@ typedef struct {
 	bool            process_present;
 	audit_proc_t    process;
 
+	const char *    text;
+
 	/* space for two path arguments (unresolved and resolved) */
 	const char *    path[4];
 	size_t          attr_count;

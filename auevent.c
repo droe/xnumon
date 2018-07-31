@@ -328,16 +328,21 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], int flags, FILE *f) {
 			ev->return_error = tok.tt.ret64.err;
 			ev->return_value = tok.tt.ret64.val;
 			break;
+		/* symlink text */
+		case AUT_TEXT:
+			assert(!ev->text);
+			ev->text = tok.tt.text.text;
+			break;
 		/* path */
 		case AUT_PATH:
 			/*
-			 * Records for syscalls with a single path argument
-			 * should only have a single path token.  However, at
-			 * least on 10.11.6, there are two tokens if the path
-			 * can be resolved (unresolved and resolved), and one
-			 * if it cannot be resolved.  Since there are syscalls
-			 * with two path arguments, we store a maximum of four
-			 * path arguments.
+			 * Historically, on other BSM implementations, records
+			 * for syscalls with a single path argument had only
+			 * had a single path token.  However, macOS includes an
+			 * unresolved and a resolved version of each token, as
+			 * confirmed by Apple in radar 39267988 on 2018-06-13.
+			 * Since there are syscalls with two path arguments, we
+			 * store a maximum of four path arguments.
 			 */
 			if (!(pathc < sizeof(ev->path)/sizeof(ev->path[0]))) {
 				fprintf(stderr, "Too many path tokens, "
@@ -517,6 +522,9 @@ auevent_fprint(FILE *f, audit_event_t *ev) {
 	if (ev->exit_present) {
 		fprintf(f, " exit_status=%"PRIu32" exit_return=%"PRIu32,
 		        ev->exit_status, ev->exit_return);
+	}
+	if (ev->text) {
+		fprintf(f, " text=%s", ev->text);
 	}
 	for (size_t i = 0; i < sizeof(ev->path)/sizeof(ev->path[0]); i++) {
 		if (ev->path[i]) {
