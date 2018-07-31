@@ -47,6 +47,8 @@ typedef struct {
 	uint64_t el_radar42770257;
 	uint64_t el_radar42783724;
 	uint64_t el_radar42783724_fatal;
+	uint64_t el_radar42784847;
+	uint64_t el_radar42784847_fatal;
 	uint64_t el_missingtoken;
 	uint64_t el_ooms;
 	aupipe_stat_t ap;

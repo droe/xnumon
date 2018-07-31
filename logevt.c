@@ -263,6 +263,10 @@ logevt_xnumon_stats(logfmt_t *fmt, FILE *f, void *arg0) {
 	fmt->value_uint(f, st->el_radar42783724);
 	fmt->dict_item(f, "radar42783724_fatal");
 	fmt->value_uint(f, st->el_radar42783724_fatal);
+	fmt->dict_item(f, "radar42784847");
+	fmt->value_uint(f, st->el_radar42784847);
+	fmt->dict_item(f, "radar42784847_fatal");
+	fmt->value_uint(f, st->el_radar42784847_fatal);
 	fmt->dict_item(f, "missingtoken");
 	fmt->value_uint(f, st->el_missingtoken);
 	fmt->dict_item(f, "oom");

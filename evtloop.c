@@ -52,6 +52,8 @@ static uint64_t radar39623812_fatal = 0;
 static uint64_t radar42770257_fatal = 0;
 static uint64_t radar42783724 = 0;
 static uint64_t radar42783724_fatal = 0;
+static uint64_t radar42784847 = 0;
+static uint64_t radar42784847_fatal = 0;
 static uint64_t missingtoken = 0;
 static uint64_t ooms = 0;
 
@@ -171,6 +173,7 @@ errout:
  * 39623812: audit(4): path not resolved for utimes(2)
  * 42770257: audit(4): only one instead of four path tokens for renameat(2)
  * 42783724: audit(4): target path not resolved for link(2)
+ * 42784847: audit(4): path not resolved for symlink(2)
  */
 #define TOKEN_ASSERT(EVENT, TOKEN, COND) \
 	if (!(COND)) { \
@@ -538,12 +541,12 @@ auef_readable(UNUSED int fd, void *udata) {
 	case AUE_LINKAT:
 		if (!LOGEVT_WANT(cfg->events, LOGEVT_FILEMON))
 			break;
-		TOKEN_ASSERT("rename", "return", ev.return_present);
+		TOKEN_ASSERT("rename|link", "return", ev.return_present);
 		if (ev.return_value) {
 			failedsyscalls++;
 			break;
 		}
-		TOKEN_ASSERT("rename", "subject", ev.subject_present);
+		TOKEN_ASSERT("rename|link", "subject", ev.subject_present);
 		/*
 		 * On at least 10.11.6, AUE_RENAME and AUE_LINK records
 		 * include only an unresolved target path.
@@ -570,7 +573,7 @@ auef_readable(UNUSED int fd, void *udata) {
 			} else {
 				missingtoken++;
 				DEBUG(cfg->debug, "missingtoken",
-				      "event=!rename token=path");
+				      "event=rename|link token=path");
 				if (cfg->debug)
 					auevent_fprint(stderr, &ev);
 			}
@@ -621,7 +624,7 @@ auef_readable(UNUSED int fd, void *udata) {
 			} else {
 				missingtoken++;
 				DEBUG(cfg->debug, "missingtoken",
-				      "event=rename token=path");
+				      "event=rename|link token=path");
 			}
 			if (cfg->debug)
 				auevent_fprint(stderr, &ev);
@@ -634,7 +637,59 @@ auef_readable(UNUSED int fd, void *udata) {
 
 	case AUE_SYMLINK:
 	case AUE_SYMLINKAT:
-		// XXX
+		if (!LOGEVT_WANT(cfg->events, LOGEVT_FILEMON))
+			break;
+		TOKEN_ASSERT("symlink", "return", ev.return_present);
+		if (ev.return_value) {
+			failedsyscalls++;
+			break;
+		}
+		TOKEN_ASSERT("symlink", "subject", ev.subject_present);
+		/*
+		 * On at least 10.11.6, AUE_SYMLINK records include only an
+		 * unresolved target path.
+		 *
+		 * Reported to Apple as radar 42784847 on 2018-07-31.
+		 */
+		if (ev.path[1]) {
+			path = strdup(ev.path[1]);
+			if (!path)
+				ooms++;
+		} else if (ev.path[0] && !ev.path[1]) {
+			/* only an unresolved target path token */
+			radar42784847++;
+			cwd = procmon_getcwd(ev.subject.pid);
+			if (!cwd && (errno == ENOMEM))
+				ooms++;
+			path = sys_realpath(ev.path[0], cwd);
+			if (!path) {
+				if (errno == ENOMEM)
+					ooms++;
+				else {
+					radar42784847_fatal++;
+					DEBUG(cfg->debug,
+					      "radar42784847_fatal",
+					      "path[0]=%s "
+					      "pid=%i "
+					      "procmon_getcwd(pid)=>%s",
+					      ev.path[0],
+					      ev.subject.pid,
+					      cwd);
+				}
+			}
+		} else {
+			path = NULL;
+			missingtoken++;
+			DEBUG(cfg->debug, "missingtoken",
+			      "event=symlink token=path");
+			if (cfg->debug)
+				auevent_fprint(stderr, &ev);
+		}
+		if (!path)
+			/* counted above */
+			break;
+		filemon_touched(&ev.tv, &ev.subject, path);
+		break;
 
 	/*
 	 * Unhandled events.
@@ -700,6 +755,8 @@ evtloop_stats(evtloop_stat_t *st) {
 	st->el_radar42770257_fatal = radar42770257_fatal;
 	st->el_radar42783724 = radar42783724;
 	st->el_radar42783724_fatal = radar42783724_fatal;
+	st->el_radar42784847 = radar42784847;
+	st->el_radar42784847_fatal = radar42784847_fatal;
 	st->el_missingtoken = missingtoken;
 	st->el_ooms = ooms;
 	aupipe_stats(fileno(auef), &st->ap);
@@ -730,7 +787,8 @@ siginfo_arrived(UNUSED int sig, UNUSED void *udata) {
 	                "r39267328:%"PRIu64"/%"PRIu64" "
 	                "r39623812:%"PRIu64"/%"PRIu64" "
 	                "r42770257:%"PRIu64"/%"PRIu64" "
-	                "r42783724:%"PRIu64"/%"PRIu64"\n",
+	                "r42783724:%"PRIu64"/%"PRIu64" "
+	                "r42784847:%"PRIu64"/%"PRIu64"\n",
 	                st.el_aupclobbers,
 	                st.el_aueunknowns,
 	                st.el_failedsyscalls,
@@ -746,7 +804,9 @@ siginfo_arrived(UNUSED int sig, UNUSED void *udata) {
 	                st.el_radar42770257_fatal,
 	                st.el_radar42770257,
 	                st.el_radar42783724_fatal,
-	                st.el_radar42783724);
+	                st.el_radar42783724,
+	                st.el_radar42784847_fatal,
+	                st.el_radar42784847);
 
 	fprintf(stderr, "procmon "
 	                "actprc:%"PRIu32" "
@@ -1014,6 +1074,8 @@ evtloop_run(config_t *cfg) {
 	radar42770257_fatal = 0;
 	radar42783724 = 0;
 	radar42783724_fatal = 0;
+	radar42784847 = 0;
+	radar42784847_fatal = 0;
 	missingtoken = 0;
 	ooms = 0;
 	xnumon_pid = getpid();
