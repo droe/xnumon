@@ -121,6 +121,7 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], int flags, FILE *f) {
 	if (reclen == 0)
 		goto skip_rec;
 
+	pathc = 0;
 	for (int recpos = 0; recpos < reclen;) {
 		rv = au_fetch_tok(&tok, recbuf+recpos, reclen-recpos);
 		if (rv == -1) {
@@ -140,7 +141,6 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], int flags, FILE *f) {
 		 * and no addr represented by address family 0, respectively.
 		 */
 
-		pathc = 0;
 		switch (tok.id) {
 		/* record header and trailer */
 		case AUT_HEADER32:
