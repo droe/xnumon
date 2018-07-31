@@ -52,6 +52,10 @@ const uint16_t auclass_xnumon_events_hackmon[] = {
 	0
 };
 
+/*
+ * The number and hotness of the events we need to track here seems excessive;
+ * there should be better ways to achieve the same.
+ */
 const uint16_t auclass_xnumon_events_filemon[] = {
 	/* file modification tracking */
 #if 0
@@ -83,6 +87,8 @@ const uint16_t auclass_xnumon_events_filemon[] = {
 	AUE_OPENBYID_WT,
 	AUE_OPENBYID_RW,
 	AUE_OPENBYID_RWT,
+	AUE_MMAP,       /* mmap */
+	AUE_MUNMAP,     /* munmap */
 #endif
 	AUE_CLOSE,      /* close, close_nocancel, guarded_close_np */
 	AUE_RENAME,     /* rename */
