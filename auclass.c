@@ -53,13 +53,52 @@ const uint16_t auclass_xnumon_events_hackmon[] = {
 };
 
 const uint16_t auclass_xnumon_events_filemon[] = {
-	/* file modification tracking for monitoring launch daemons */
+	/* file modification tracking */
+#if 0
+	AUE_OPEN_W,   /* open, open_nocancel, guarded_open_np */
+	AUE_OPEN_WC,
+	AUE_OPEN_WT,
+	AUE_OPEN_WTC,
+	AUE_OPEN_RW,
+	AUE_OPEN_RWC,
+	AUE_OPEN_RWT,
+	AUE_OPEN_RWTC,
+	AUE_OPEN_EXTENDED_W, /* open_extended */
+	AUE_OPEN_EXTENDED_WC,
+	AUE_OPEN_EXTENDED_WT,
+	AUE_OPEN_EXTENDED_WTC,
+	AUE_OPEN_EXTENDED_RW,
+	AUE_OPEN_EXTENDED_RWC,
+	AUE_OPEN_EXTENDED_RWT,
+	AUE_OPEN_EXTENDED_RWTC,
+	AUE_OPENAT_W,   /* openat, openat_nocancel */
+	AUE_OPENAT_WC,
+	AUE_OPENAT_WT,
+	AUE_OPENAT_WTC,
+	AUE_OPENAT_RW,
+	AUE_OPENAT_RWC,
+	AUE_OPENAT_RWT,
+	AUE_OPENAT_RWTC,
+	AUE_OPENBYID_W, /* openbyid_np */
+	AUE_OPENBYID_WT,
+	AUE_OPENBYID_RW,
+	AUE_OPENBYID_RWT,
+#endif
 	AUE_CLOSE,      /* close, close_nocancel, guarded_close_np */
 	AUE_RENAME,     /* rename */
 	AUE_RENAMEAT,   /* renameat, renameatx_np */
+	AUE_LINK,       /* link */
+	AUE_LINKAT,     /* linkat */
+	AUE_SYMLINK,    /* symlink */
+	AUE_SYMLINKAT,  /* symlinkat */
 	AUE_UTIMES,     /* utimes */
 	AUE_FUTIMES,    /* futimes */
+#if 0
+	AUE_CLONEFILEAT, /* clonefileat 10.12+ */
+	AUE_FCLONEFILEAT, /* fclonefileat 10.12+ */
+#endif
 	/*
+	 * AUE_CREAT          - syscall not implemented on macOS
 	 * AUE_UTIME          - syscall not implemented on macOS
 	 * AUE_FUTIMESAT      - syscall not implemented on macOS
 	 * AUE_LUTIMES        - syscall not implemented on macOS

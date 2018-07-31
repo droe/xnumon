@@ -531,6 +531,10 @@ auef_readable(UNUSED int fd, void *udata) {
 
 	case AUE_RENAME:
 	case AUE_RENAMEAT:
+	case AUE_LINK:
+	case AUE_LINKAT:
+	case AUE_SYMLINK:
+	case AUE_SYMLINKAT:
 		if (!LOGEVT_WANT(cfg->events, LOGEVT_FILEMON))
 			break;
 		TOKEN_ASSERT("rename", "return", ev.return_present);
@@ -557,7 +561,15 @@ auef_readable(UNUSED int fd, void *udata) {
 				ooms++;
 		} else if (ev.path[2] && !ev.path[3]) {
 			/* three path tokens, assume third unresolved dpath */
-			radar39267328++;
+			if (ev.type == AUE_RENAME) {
+				radar39267328++;
+			} else {
+				missingtoken++;
+				DEBUG(cfg->debug, "missingtoken",
+				      "event=rename token=path");
+				if (cfg->debug)
+					auevent_fprint(stderr, &ev);
+			}
 			cwd = procmon_getcwd(ev.subject.pid);
 			if (!cwd && (errno == ENOMEM))
 				ooms++;

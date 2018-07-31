@@ -4,7 +4,7 @@ https://www.roe.ch/xnumon
 [//]: # (__BUILD_VERSION__)
 
 This version is considered safe to deploy in production environments without
-kext, but still subject to active development with frequent releases.
+kext, but is still subject to active development with frequent releases.
 
 
 ## Overview
