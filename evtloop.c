@@ -566,7 +566,7 @@ auef_readable(UNUSED int fd, void *udata) {
 			} else {
 				missingtoken++;
 				DEBUG(cfg->debug, "missingtoken",
-				      "event=rename token=path");
+				      "event=!rename token=path");
 				if (cfg->debug)
 					auevent_fprint(stderr, &ev);
 			}
