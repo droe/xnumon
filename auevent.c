@@ -470,8 +470,9 @@ auevent_fprint(FILE *f, audit_event_t *ev) {
 		        " subject_rgid=%u",
 		        ev->subject.pid,
 		        ev->subject.sid,
-		        sys_ttydevname(ev->subject.dev),
-		        ipaddrtoa(&ev->subject.addr, "n/a"),
+		        ev->subject.dev == -1 ? "-"
+		                              : sys_ttydevname(ev->subject.dev),
+		        ipaddrtoa(&ev->subject.addr, "-"),
 		        ev->subject.auid,
 		        ev->subject.euid,
 		        ev->subject.egid,
@@ -490,8 +491,9 @@ auevent_fprint(FILE *f, audit_event_t *ev) {
 		        " process_rgid=%u",
 		        ev->process.pid,
 		        ev->process.sid,
-		        sys_ttydevname(ev->process.dev),
-		        ipaddrtoa(&ev->process.addr, "n/a"),
+		        ev->subject.dev == -1 ? "-"
+		                              : sys_ttydevname(ev->process.dev),
+		        ipaddrtoa(&ev->process.addr, "-"),
 		        ev->process.auid,
 		        ev->process.euid,
 		        ev->process.egid,
