@@ -101,8 +101,10 @@ launchd_add_free(launchd_add_t *ldadd) {
 static int
 launchd_add_open(launchd_add_t *ldadd) {
 	ldadd->plist_fd = open(ldadd->plist_path, O_RDONLY);
-	if (ldadd->plist_fd == -1)
+	if (ldadd->plist_fd == -1) {
+		atomic64_inc(&lpmiss);
 		return -1;
+	}
 	return sys_fdattr(&ldadd->plist_stat, ldadd->plist_fd);
 }
 
