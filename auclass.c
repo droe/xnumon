@@ -87,6 +87,8 @@ const uint16_t auclass_xnumon_events_filemon[] = {
 	AUE_OPENBYID_WT,
 	AUE_OPENBYID_RW,
 	AUE_OPENBYID_RWT,
+	AUE_DUP,        /* dup */
+	AUE_DUP2,       /* dup2 */
 	AUE_MMAP,       /* mmap */
 	AUE_MUNMAP,     /* munmap */
 #endif
