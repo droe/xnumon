@@ -1,8 +1,12 @@
+# Build on the oldest xcode for each major macOS release, plus the latest one
+# https://docs.travis-ci.com/user/reference/osx/
 language: c
 os: osx
 script: make travis
 matrix:
   include:
+    - os: osx
+      osx_image: xcode9.4
     - os: osx
       osx_image: xcode9.3
     - os: osx
