@@ -17,6 +17,8 @@
 #include <bsm/audit.h>
 #include <bsm/audit_kevents.h>
 
+#include <Availability.h>
+
 /*
  * The events that are configured to be part of the custom AC_XNUMON class.
  * This list needs to be in line with what is actually handled in evtloop.c.
@@ -101,10 +103,8 @@ const uint16_t auclass_xnumon_events_filemon[] = {
 	AUE_SYMLINKAT,  /* symlinkat */
 	AUE_UTIMES,     /* utimes */
 	AUE_FUTIMES,    /* futimes */
-#if 0
-	AUE_CLONEFILEAT, /* clonefileat 10.12+ */
-	AUE_FCLONEFILEAT, /* fclonefileat 10.12+ */
-#endif
+	AUE_CLONEFILEAT, /* clonefileat */
+	AUE_FCLONEFILEAT, /* fclonefileat */
 	/*
 	 * AUE_CREAT          - syscall not implemented on macOS
 	 * AUE_UTIME          - syscall not implemented on macOS

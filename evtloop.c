@@ -539,14 +539,18 @@ auef_readable(UNUSED int fd, void *udata) {
 	case AUE_RENAMEAT:
 	case AUE_LINK:
 	case AUE_LINKAT:
+	case AUE_CLONEFILEAT:
+	case AUE_FCLONEFILEAT:
 		if (!LOGEVT_WANT(cfg->events, LOGEVT_FILEMON))
 			break;
-		TOKEN_ASSERT("rename|link", "return", ev.return_present);
+		TOKEN_ASSERT("rename|link|clonefile",
+		             "return", ev.return_present);
 		if (ev.return_value) {
 			failedsyscalls++;
 			break;
 		}
-		TOKEN_ASSERT("rename|link", "subject", ev.subject_present);
+		TOKEN_ASSERT("rename|link|clonefile",
+		             "subject", ev.subject_present);
 		/*
 		 * On at least 10.11.6, AUE_RENAME and AUE_LINK records
 		 * include only an unresolved target path.
@@ -573,7 +577,7 @@ auef_readable(UNUSED int fd, void *udata) {
 			} else {
 				missingtoken++;
 				DEBUG(cfg->debug, "missingtoken",
-				      "event=rename|link token=path");
+				      "event=rename|link|clonefile token=path");
 				if (cfg->debug)
 					auevent_fprint(stderr, &ev);
 			}

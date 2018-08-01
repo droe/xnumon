@@ -16,6 +16,19 @@
 #include <stdint.h>
 
 /*
+ * clonefile(2) and friends are available on 10.12 Sierra and later.
+ * bsd/bsm/audit_kevents.h
+ */
+#if __MAC_OS_X_VERSION_MIN_REQUIRED < 101200
+#ifndef AUE_CLONEFILEAT
+#define AUE_CLONEFILEAT         43210
+#endif
+#ifndef AUE_FCLONEFILEAT
+#define AUE_FCLONEFILEAT        43211
+#endif
+#endif
+
+/*
  * audit_class(5), /etc/security/audit_class
  */
 #define AC_NONE         0x00000000
