@@ -707,8 +707,10 @@ auef_readable(UNUSED int fd, void *udata) {
 			failedsyscalls++;
 			break;
 		}
+		if (!ev.sockinet_present)
+			/* unix socket */
+			break;
 		TOKEN_ASSERT("bind", "subject", ev.subject_present);
-		TOKEN_ASSERT("bind", "sockinet", ev.sockinet_present);
 		sockmon_bind(&ev.tv, &ev.subject,
 		             &ev.sockinet_addr, ev.sockinet_port);
 		break;
@@ -722,8 +724,10 @@ auef_readable(UNUSED int fd, void *udata) {
 			failedsyscalls++;
 			break;
 		}
+		if (!ev.sockinet_present)
+			/* unix socket */
+			break;
 		TOKEN_ASSERT("accept", "subject", ev.subject_present);
-		TOKEN_ASSERT("accept", "sockinet", ev.sockinet_present);
 		sockmon_accept(&ev.tv, &ev.subject,
 		               &ev.sockinet_addr, ev.sockinet_port);
 		break;
@@ -732,9 +736,11 @@ auef_readable(UNUSED int fd, void *udata) {
 		if (!LOGEVT_WANT(cfg->events,
 		                 LOGEVT_FLAG(LOGEVT_SOCKET_CONNECT)))
 			break;
-		TOKEN_ASSERT("connect", "return", ev.return_present);
+		if (!ev.sockinet_present)
+			/* unix socket */
+			break;
 		TOKEN_ASSERT("connect", "subject", ev.subject_present);
-		TOKEN_ASSERT("connect", "sockinet", ev.sockinet_present);
+		TOKEN_ASSERT("connect", "return", ev.return_present);
 		sockmon_connect(&ev.tv, &ev.subject,
 		                &ev.sockinet_addr, ev.sockinet_port,
 		                ev.return_value);
@@ -835,7 +841,7 @@ siginfo_arrived(UNUSED int sig, UNUSED void *udata) {
 	                "r38845422:%"PRIu64"/%"PRIu64" "
 	                "r38845784:0/%"PRIu64" "
 	                "r39267328:%"PRIu64"/%"PRIu64" "
-	                "r39623812:%"PRIu64"/%"PRIu64" "
+	                "r39623812:%"PRIu64"/%"PRIu64"\n        "
 	                "r42770257:%"PRIu64"/%"PRIu64" "
 	                "r42783724:%"PRIu64"/%"PRIu64" "
 	                "r42784847:%"PRIu64"/%"PRIu64"\n",
@@ -1221,6 +1227,7 @@ evtloop_run(config_t *cfg) {
 		goto errout_silent;
 	}
 	hackmon_init(cfg);
+	sockmon_init(cfg);
 
 	/* try to spawn kextloop thread */
 	if (cfg->kextlevel > 0 && kextloop_spawn(&kefd_ctx) == -1) {
@@ -1406,6 +1413,7 @@ errout_silent:
 		auef = NULL;
 	}
 	work_fini();            /* drain work queue */
+	sockmon_fini();
 	hackmon_fini();
 	filemon_fini();
 	procmon_fini();         /* clear kext queue */
