@@ -7,12 +7,6 @@ CFLAGS+=	-std=c11 \
 
 #LIBS+=		
 
-# openssl
-#CPPFLAGS+=	-DUSE_OPENSSL
-#CPPFLAGS+=	-I/opt/local/include
-#LDFLAGS+=	-L/opt/local/lib
-#LIBS+=		-lcrypto
-
 TARGETS=	$(SRCS:.c=.test)
 SRCS=		$(wildcard *.c)
 HDRS=		$(wildcard *.h)

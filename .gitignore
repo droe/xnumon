@@ -1,5 +1,8 @@
 *.o
 *.dSYM
+*~
+*.swp
+.DS_Store
 *.signed
 xnumon
 timeops
@@ -7,14 +10,10 @@ mklaunchdplist
 chkcs
 auditdump
 test/sizeof/sizeof
-test/bin/*.test
-test/bin/true.unsigned
+test/**/*.test
+test/**/true.unsigned
 kext/*.kext
-pkg/ch.roe.kext.xnumon.pkg
-pkg/ch.roe.xnumon.pkg
+pkg/*.pkg
 pkg/resources/license.html
 pkg/resources/readme.rtf
-*~
-*.swp
-.DS_Store
 dist/

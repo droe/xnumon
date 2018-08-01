@@ -1,7 +1,7 @@
 ### xnumon develop
 
 -   Also consider link(2), linkat(2), symlink(2) and symlinkat(2) for file
-    monitoring.
+    monitoring, i.e. for launchd-add[4] events.
 -   Detect a bug in audit(4) where calls to renameat(2) sometimes lead to
     `AUE_RENAMEAT` records with only one instead of four path tokens
     (radar 42770257).
