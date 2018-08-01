@@ -2,7 +2,7 @@
 <installer-gui-script minSpecVersion="1">
     <title>xnumon</title>
     <organization>ch.roe</organization>
-    <domains enable_localSystem="true"/>
+    <domains enable_localSystem="true" enable_currentUserHome="false"/>
     <options customize="never" require-scripts="true" rootVolumeOnly="true"/>
     <license file="license.html" mime-type="text/html"/>
     <readme  file="readme.rtf"   mime-type="text/rtf" />
