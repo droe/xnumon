@@ -66,18 +66,19 @@
 
   <!-- Events:
        The events that should be produced.  Available eventcodes are:
-       0 * xnumon-ops       agent start and stop, with active configuration
-       1 * xnumon-stats     agent metrics for in-band health monitoring
-       2 * image-exec       a process executed an executable image
-       3 * process-access   a process has accessed another process using
+       0   xnumon-ops       agent start and stop, with active configuration
+       1   xnumon-stats     agent metrics for in-band health monitoring
+       2   image-exec       a process executed an executable image
+       3   process-access   a process has accessed another process using
                             task_for_pid or ptrace
-       4   launchd-add      a process has added or modified a Launch Agent or
-                            Launch Daemon plist; incurs file close audit load
+       4 * launchd-add      a process has added or modified a Launch Agent or
+                            Launch Daemon plist; EXPERIMENTAL, does not cover
+                            all methods to install a file, and requires a
+                            significant number of file-related audit(4) events
+                            to be enabled (see issue #26)
        The agent will only monitor the audit events that are needed to produce
-       the selected events.  Disabling events that use hotter audit events is
-       one way to reduce load.  The events marked with * are recommended to
-       keep enabled, disabling them does not result in a significant reduction
-       of load.
+       the selected events.  The events marked with an asterisk(*) are good
+       candidates for disabling.
        If unset, defaults to:   0,1,2,3,4
        -->
   <!--
