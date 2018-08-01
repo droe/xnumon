@@ -1,3 +1,10 @@
+### xnumon 0.1.6.1 2018-08-01
+
+-   Hotfix release fixing a crash in the kext event handling loop of the
+    xnumon daemon (issue #36).
+
+---
+
 ### xnumon 0.1.6 2018-07-29
 
 -   Capability to log all environment variables at image exec (`full`),
