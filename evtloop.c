@@ -113,8 +113,7 @@ kextloop_break(void) {
 }
 
 static int
-kextloop_spawn(config_t *cfg) {
-	kevent_ctx_t kefd_ctx = KEVENT_CTX_FD_READ(kefd_readable, cfg);
+kextloop_spawn(kevent_ctx_t *ctx) {
 	kqueue_t *kq = NULL;
 
 	if ((kefd = kextctl_open()) == -1) {
@@ -131,7 +130,7 @@ kextloop_spawn(config_t *cfg) {
 		goto errout;
 	}
 
-	if (kqueue_add_fd_read(kq, kefd, &kefd_ctx) == -1) {
+	if (kqueue_add_fd_read(kq, kefd, ctx) == -1) {
 		fprintf(stderr, "kqueue_add_fd_read(/dev/xnumon) failed: "
 		                "%s (%i)\n", strerror(errno), errno);
 		goto errout;
@@ -1117,6 +1116,7 @@ evtloop_run(config_t *cfg) {
 	kevent_ctx_t sighup_ctx  = KEVENT_CTX_SIGNAL(sighup_arrived, cfg);
 	kevent_ctx_t sigusr1_ctx = KEVENT_CTX_SIGNAL(sigusr1_arrived, cfg);
 	kevent_ctx_t auef_ctx    = KEVENT_CTX_FD_READ(auef_readable, cfg);
+	kevent_ctx_t kefd_ctx    = KEVENT_CTX_FD_READ(kefd_readable, cfg);
 	kevent_ctx_t aptm_ctx    = KEVENT_CTX_TIMER(aupol_timer_fired, cfg);
 	kevent_ctx_t sttm_ctx    = KEVENT_CTX_TIMER(stats_timer_fired, cfg);
 	kevent_ctx_t cftm_ctx    = KEVENT_CTX_TIMER(config_timer_fired, cfg);
@@ -1223,7 +1223,7 @@ evtloop_run(config_t *cfg) {
 	hackmon_init(cfg);
 
 	/* try to spawn kextloop thread */
-	if (cfg->kextlevel > 0 && kextloop_spawn(cfg) == -1) {
+	if (cfg->kextlevel > 0 && kextloop_spawn(&kefd_ctx) == -1) {
 		cfg->kextlevel = 0;
 		fprintf(stderr, "Proceeding without kext\n");
 	}
