@@ -1,7 +1,8 @@
 ### xnumon develop
 
 -   Also consider link(2), linkat(2), symlink(2), symlinkat(2), clonefile(2),
-    clonefileat(2) and fclonefileat(2) for file monitoring based events.
+    clonefileat(2), fclonefileat(2), copyfile(2) and fcopyfile(2) for file
+    monitoring based events.
 -   Detect a bug in audit(4) where calls to renameat(2) sometimes lead to
     `AUE_RENAMEAT` records with only one instead of four path tokens
     (radar 42770257).

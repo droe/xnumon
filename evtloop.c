@@ -541,15 +541,18 @@ auef_readable(UNUSED int fd, void *udata) {
 	case AUE_LINKAT:
 	case AUE_CLONEFILEAT:
 	case AUE_FCLONEFILEAT:
+	case AUE_COPYFILE:
+		/* FIXME handle copyfile separately in order to be able to
+		 * handle all the corner cases like recursive copying */
 		if (!LOGEVT_WANT(cfg->events, LOGEVT_FILEMON))
 			break;
-		TOKEN_ASSERT("rename|link|clonefile",
+		TOKEN_ASSERT("rename|link|clonefile|copyfile",
 		             "return", ev.return_present);
 		if (ev.return_value) {
 			failedsyscalls++;
 			break;
 		}
-		TOKEN_ASSERT("rename|link|clonefile",
+		TOKEN_ASSERT("rename|link|clonefile|copyfile",
 		             "subject", ev.subject_present);
 		/*
 		 * On at least 10.11.6, AUE_RENAME and AUE_LINK records
@@ -577,7 +580,8 @@ auef_readable(UNUSED int fd, void *udata) {
 			} else {
 				missingtoken++;
 				DEBUG(cfg->debug, "missingtoken",
-				      "event=rename|link|clonefile token=path");
+				      "event=rename|link|clonefile|copyfile "
+				      "token=path");
 				if (cfg->debug)
 					auevent_fprint(stderr, &ev);
 			}
