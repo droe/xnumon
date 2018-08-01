@@ -18,6 +18,7 @@
 #include "procmon.h"
 #include "hackmon.h"
 #include "filemon.h"
+#include "sockmon.h"
 #include "log.h"
 #include "work.h"
 #include "cachehash.h"
@@ -30,8 +31,9 @@ typedef struct {
 	logevt_header_t hdr;
 
 	procmon_stat_t pm;
-	filemon_stat_t fm;
 	hackmon_stat_t hm;
+	filemon_stat_t fm;
+	sockmon_stat_t sm;
 	xnumon_stat_t ke;
 	uint64_t el_aueunknowns;
 	uint64_t el_aupclobbers;

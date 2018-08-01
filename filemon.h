@@ -21,8 +21,8 @@
 #include <sys/types.h>
 
 typedef struct {
-	uint64_t receiveds;
-	uint64_t processeds;
+	uint64_t recvd;
+	uint64_t procd;
 	uint64_t lpmiss;
 	uint64_t ooms;
 } filemon_stat_t;

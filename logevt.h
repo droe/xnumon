@@ -48,17 +48,23 @@ typedef struct {
 #define LOGEVT_IMAGE_EXEC       2       /* image_exec_t */
 #define LOGEVT_PROCESS_ACCESS   3       /* process_access_t */
 #define LOGEVT_LAUNCHD_ADD      4       /* launchd_add_t */
-#define LOGEVT_SIZE             5
+#define LOGEVT_SOCKET_BIND      5       /* socket_bind_t */
+#define LOGEVT_SOCKET_ACCEPT    6       /* socket_accept_t */
+#define LOGEVT_SOCKET_CONNECT   7       /* socket_connect_t */
+#define LOGEVT_SIZE             8
 	struct timespec tv;
 	logevt_work_func_t le_work;
 	logevt_free_func_t le_free;
 	tommy_node node;
 } logevt_header_t;
 
-#define LOGEVT_FLAG(E) (1 << (E))
-#define LOGEVT_WANT(F,E) ((E) & (F))
-#define LOGEVT_HACKMON LOGEVT_FLAG(LOGEVT_PROCESS_ACCESS)
-#define LOGEVT_FILEMON LOGEVT_FLAG(LOGEVT_LAUNCHD_ADD)
+#define LOGEVT_FLAG(E)          (1 << (E))
+#define LOGEVT_WANT(F,E)        ((E) & (F))
+#define LOGEVT_HACKMON          LOGEVT_FLAG(LOGEVT_PROCESS_ACCESS)
+#define LOGEVT_FILEMON          LOGEVT_FLAG(LOGEVT_LAUNCHD_ADD)
+#define LOGEVT_SOCKMON          LOGEVT_FLAG(LOGEVT_SOCKET_BIND)|\
+                                LOGEVT_FLAG(LOGEVT_SOCKET_ACCEPT)|\
+                                LOGEVT_FLAG(LOGEVT_SOCKET_CONNECT)
 
 typedef struct {
 	logevt_header_t hdr;
@@ -66,11 +72,14 @@ typedef struct {
 	const char *subtype;
 } xnumon_ops_t;
 
-int logevt_xnumon_ops(logfmt_t *, FILE *, void *) NONNULL(1,2) WUNRES;
-int logevt_xnumon_stats(logfmt_t *, FILE *, void *) NONNULL(1,2) WUNRES;
-int logevt_image_exec(logfmt_t *, FILE *, void *) NONNULL(1,2) WUNRES;
-int logevt_process_access(logfmt_t *, FILE *, void *) NONNULL(1,2) WUNRES;
-int logevt_launchd_add(logfmt_t *, FILE *, void *) NONNULL(1,2) WUNRES;
+int logevt_xnumon_ops(logfmt_t *, FILE *, void *) NONNULL(1,2,3) WUNRES;
+int logevt_xnumon_stats(logfmt_t *, FILE *, void *) NONNULL(1,2,3) WUNRES;
+int logevt_image_exec(logfmt_t *, FILE *, void *) NONNULL(1,2,3) WUNRES;
+int logevt_process_access(logfmt_t *, FILE *, void *) NONNULL(1,2,3) WUNRES;
+int logevt_launchd_add(logfmt_t *, FILE *, void *) NONNULL(1,2,3) WUNRES;
+int logevt_socket_bind(logfmt_t *, FILE *, void *) NONNULL(1,2,3) WUNRES;
+int logevt_socket_accept(logfmt_t *, FILE *, void *) NONNULL(1,2,3) WUNRES;
+int logevt_socket_connect(logfmt_t *, FILE *, void *) NONNULL(1,2,3) WUNRES;
 
 void logevt_init(config_t *);
 

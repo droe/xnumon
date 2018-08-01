@@ -64,6 +64,8 @@ typedef struct {
 	strset_t suppress_image_exec_by_ancestor_path;
 	strset_t suppress_process_access_by_subject_ident;
 	strset_t suppress_process_access_by_subject_path;
+	strset_t suppress_socket_op_by_subject_ident;
+	strset_t suppress_socket_op_by_subject_path;
 } config_t;
 
 config_t * config_new(const char *) MALLOC;

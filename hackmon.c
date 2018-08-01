@@ -22,8 +22,8 @@
 
 static config_t *config;
 
-static uint64_t events_received;    /* number of events received */
-static uint64_t events_processed;   /* number of events processed */
+static uint64_t events_recvd;       /* number of events received */
+static uint64_t events_procd;       /* number of events processed */
 static atomic64_t ooms;             /* counts events impaired due to OOM */
 
 strset_t *suppress_process_access_by_subject_ident;
@@ -99,7 +99,7 @@ hackmon_process_access(struct timespec *tv,
                        const char *method) {
 	pid_t objpid;
 
-	events_received++;
+	events_recvd++;
 	objpid = object ? object->pid : objectpid;
 
 	if (objpid <= 0)
@@ -110,7 +110,7 @@ hackmon_process_access(struct timespec *tv,
 	/* XNU only omits the process token if pid <= 0. */
 	assert(object);
 
-	events_processed++;
+	events_procd++;
 	log_event_process_access(tv, subject, object, method);
 }
 
@@ -140,8 +140,8 @@ void
 hackmon_init(config_t *cfg) {
 	config = cfg;
 	ooms = 0;
-	events_received = 0;
-	events_processed = 0;
+	events_recvd = 0;
+	events_procd = 0;
 	suppress_process_access_by_subject_ident =
 		&cfg->suppress_process_access_by_subject_ident;
 	suppress_process_access_by_subject_path =
@@ -159,8 +159,8 @@ void
 hackmon_stats(hackmon_stat_t *st) {
 	assert(st);
 
-	st->receiveds = events_received;
-	st->processeds = events_processed;
+	st->recvd = events_recvd;
+	st->procd = events_procd;
 	st->ooms = (uint64_t)ooms;
 }
 

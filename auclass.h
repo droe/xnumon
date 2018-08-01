@@ -15,6 +15,8 @@
 
 #include <stdint.h>
 
+#include <Availability.h>
+
 /*
  * clonefile(2) and friends are available on 10.12 Sierra and later.
  * bsd/bsm/audit_kevents.h
@@ -59,6 +61,7 @@
 extern const uint16_t auclass_xnumon_events_procmon[];
 extern const uint16_t auclass_xnumon_events_hackmon[];
 extern const uint16_t auclass_xnumon_events_filemon[];
+extern const uint16_t auclass_xnumon_events_sockmon[];
 int auclass_addmask(unsigned int, const uint16_t[]) NONNULL(2);
 int auclass_removemask(unsigned int, const uint16_t[]) NONNULL(2);
 

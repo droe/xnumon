@@ -37,8 +37,11 @@ logevt_func_t le_logevt[LOGEVT_SIZE] = {
 	logevt_image_exec,
 	logevt_process_access,
 	logevt_launchd_add,
+	logevt_socket_bind,
+	logevt_socket_accept,
+	logevt_socket_connect
 };
-_Static_assert(LOGEVT_SIZE == 5, "number of logevt types initialized above");
+_Static_assert(LOGEVT_SIZE == 8, "number of logevt types initialized above");
 
 /*
  * Log formats.

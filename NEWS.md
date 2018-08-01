@@ -1,5 +1,9 @@
 ### xnumon develop
 
+-   Initial version of socket events: socket-bind[5], socket-accept[6] and
+    socket-connect[7] (issue #14).  The socket-bind[5] events are considered
+    EXPERIMENTAL and will be replaced by a socket-listen[5] event in a future
+    version.
 -   Also consider link(2), linkat(2), symlink(2), symlinkat(2), clonefile(2),
     clonefileat(2), fclonefileat(2), copyfile(2) and fcopyfile(2) for file
     monitoring based events.
@@ -15,10 +19,12 @@
 
 Event schema changes:
 
--   Event schema version increased to 7.  Changes affect eventcode 1.
+-   Event schema version increased to 7.  Changes affect eventcodes 1,5,6,7.
 -   Eventcode 1 added `evtloop.radar42770257`, `evtloop.radar42770257_fatal`,
     `evtloop.radar42783724`, `evtloop.radar42783724_fatal`,
-    `evtloop.radar42784847` and `evtloop.radar42784847_fatal`.
+    `evtloop.radar42784847`, `evtloop.radar42784847_fatal`,
+    `sockmon.recvd`, `sockmon.procd` and `sockmon.ooms`.
+-   Eventcodes 5, 6 and 7 added.
 
 ---
 

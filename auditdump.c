@@ -127,7 +127,9 @@ main(int argc, char *argv[]) {
 		    auclass_addmask(AC_XNUMON,
 		                    auclass_xnumon_events_hackmon) == -1 ||
 		    auclass_addmask(AC_XNUMON,
-		                    auclass_xnumon_events_filemon) == -1) {
+		                    auclass_xnumon_events_filemon) == -1 ||
+		    auclass_addmask(AC_XNUMON,
+		                    auclass_xnumon_events_sockmon) == -1) {
 			fprintf(stderr, "%s: addmask(AC_XNUMON) failed\n",
 			                argv0);
 			exit(EXIT_FAILURE);

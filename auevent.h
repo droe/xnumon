@@ -89,6 +89,10 @@ typedef struct {
 	char **         execarg;                /* malloc/free */
 	char **         execenv;                /* malloc/free */
 
+#define sockinet_present sockinet_addr.family
+	ipaddr_t        sockinet_addr;
+	uint16_t        sockinet_port;
+
 	unsigned char   unk_tokids[UCHAR_MAX+1]; /* zero-terminated list */
 } audit_event_t;
 

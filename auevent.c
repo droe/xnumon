@@ -425,6 +425,31 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], int flags, FILE *f) {
 			ev->exit_status = tok.tt.exit.status;
 			ev->exit_return = tok.tt.exit.ret;
 			break;
+		case AUT_SOCKINET32: /* Darwin */
+			if (tok.tt.sockinet_ex32.family != AF_INET)
+				break;
+			ev->sockinet_addr.family = AF_INET;
+			ev->sockinet_addr.ev_addr =
+				tok.tt.sockinet_ex32.addr[0];
+			ev->sockinet_port = tok.tt.sockinet_ex32.port;
+			break;
+		case AUT_SOCKINET128: /* Darwin */
+			if (tok.tt.sockinet_ex32.family != AF_INET6)
+				break;
+			ev->sockinet_addr.family = AF_INET6;
+			ev->sockinet_addr.ev6_addr[0] =
+				tok.tt.sockinet_ex32.addr[0];
+			ev->sockinet_addr.ev6_addr[1] =
+				tok.tt.sockinet_ex32.addr[1];
+			ev->sockinet_addr.ev6_addr[2] =
+				tok.tt.sockinet_ex32.addr[2];
+			ev->sockinet_addr.ev6_addr[3] =
+				tok.tt.sockinet_ex32.addr[3];
+			ev->sockinet_port = tok.tt.sockinet_ex32.port;
+			break;
+		case AUT_SOCKUNIX: /* Darwin */
+			/* ignore for now */
+			break;
 		/* unhandled tokens */
 		default:
 			for (int i = 0; i < 256; i++) {
@@ -551,6 +576,11 @@ auevent_fprint(FILE *f, audit_event_t *ev) {
 			fprintf(f, "%s'%s'", i ? " ": "=",
 			        ev->execenv[i]);
 		}
+	}
+	if (ev->sockinet_present) {
+		fprintf(f, " sockinet=%s:%i",
+		        ipaddrtoa(&ev->sockinet_addr, "-"),
+		        ev->sockinet_port);
 	}
 	if (ev->unk_tokids[0]) {
 		fprintf(f, " unk_tokids");

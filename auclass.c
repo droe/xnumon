@@ -17,14 +17,15 @@
 #include <bsm/audit.h>
 #include <bsm/audit_kevents.h>
 
-#include <Availability.h>
-
 /*
  * The events that are configured to be part of the custom AC_XNUMON class.
- * This list needs to be in line with what is actually handled in evtloop.c.
+ * These lists need to be in line with what is actually handled in evtloop.c.
+ */
+
+/*
+ * Process tracking.
  */
 const uint16_t auclass_xnumon_events_procmon[] = {
-	/* process tracking */
 	AUE_FORK,       /* fork */
 	AUE_VFORK,      /* vfork */
 	AUE_POSIX_SPAWN,/* posix_spawn, posix_spawnp +/- POSIX_SPAWN_SETEXEC */
@@ -32,6 +33,8 @@ const uint16_t auclass_xnumon_events_procmon[] = {
 	AUE_MAC_EXECVE, /* __mac_execve */
 	AUE_EXIT,       /* exit */
 	AUE_WAIT4,      /* wait, wait3, wait4, waitpid */
+	AUE_CHDIR,      /* chdir */
+	AUE_FCHDIR,     /* fchdir */
 	/*
 	 * AUE_FORK1          - syscall not implemented on macOS
 	 * AUE_DARWIN_RFORK   - syscall not implemented on macOS
@@ -39,14 +42,13 @@ const uint16_t auclass_xnumon_events_procmon[] = {
 	 * AUE_FEXECVE        - syscall not implemented on macOS
 	 * Mach task_create   - RPC via mach_msg syscall, always fails
 	 */
-	/* cwd tracking for handling of relative-path interpreters et al */
-	AUE_CHDIR,      /* chdir */
-	AUE_FCHDIR,     /* fchdir */
 	0
 };
 
+/*
+ * Tracking of inter-process access for potential manipulation.
+ */
 const uint16_t auclass_xnumon_events_hackmon[] = {
-	/* tracking of inter-process access for potential manipulation */
 	AUE_PTRACE,     /* ptrace */
 	AUE_TASKFORPID, /* task_for_pid */
 	                /* processor_set_tasks cannot be audited (40755284);
@@ -55,11 +57,12 @@ const uint16_t auclass_xnumon_events_hackmon[] = {
 };
 
 /*
+ * File modification tracking.
+ *
  * The number and hotness of the events we need to track here seems excessive;
  * there should be better ways to achieve the same.
  */
 const uint16_t auclass_xnumon_events_filemon[] = {
-	/* file modification tracking */
 #if 0
 	AUE_OPEN_W,   /* open, open_nocancel, guarded_open_np */
 	AUE_OPEN_WC,
@@ -113,6 +116,23 @@ const uint16_t auclass_xnumon_events_filemon[] = {
 	 * AUE_LUTIMES        - syscall not implemented on macOS
 	 * AUE_DARWIN_FUTIMES - syscall not implemented on macOS
 	 */
+	0
+};
+
+/* Socket tracking, TCP only for now. */
+const uint16_t auclass_xnumon_events_sockmon[] = {
+	AUE_CONNECT,
+	AUE_ACCEPT,
+	AUE_BIND,
+#if 0
+	AUE_SOCKET,
+	AUE_LISTEN,
+	AUE_RECVMSG,
+	AUE_SENDMSG,
+	AUE_RECVFROM,
+	AUE_SENDTO,
+	AUE_SHUTDOWN,
+#endif
 	0
 };
 

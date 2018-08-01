@@ -13,9 +13,6 @@
 #include "auclass.h"
 #include "auevent.h"
 #include "aupolicy.h"
-#include "procmon.h"
-#include "filemon.h"
-#include "hackmon.h"
 #include "sys.h"
 #include "str.h"
 #include "time.h"
@@ -700,6 +697,51 @@ auef_readable(UNUSED int fd, void *udata) {
 		break;
 
 	/*
+	 * Events for socket tracking.
+	 */
+
+	case AUE_BIND:
+		if (!LOGEVT_WANT(cfg->events, LOGEVT_FLAG(LOGEVT_SOCKET_BIND)))
+			break;
+		TOKEN_ASSERT("bind", "return", ev.return_present);
+		if (ev.return_value) {
+			failedsyscalls++;
+			break;
+		}
+		TOKEN_ASSERT("bind", "subject", ev.subject_present);
+		TOKEN_ASSERT("bind", "sockinet", ev.sockinet_present);
+		sockmon_bind(&ev.tv, &ev.subject,
+		             &ev.sockinet_addr, ev.sockinet_port);
+		break;
+
+	case AUE_ACCEPT:
+		if (!LOGEVT_WANT(cfg->events,
+		                 LOGEVT_FLAG(LOGEVT_SOCKET_ACCEPT)))
+			break;
+		TOKEN_ASSERT("accept", "return", ev.return_present);
+		if (ev.return_value > INT_MAX) {
+			failedsyscalls++;
+			break;
+		}
+		TOKEN_ASSERT("accept", "subject", ev.subject_present);
+		TOKEN_ASSERT("accept", "sockinet", ev.sockinet_present);
+		sockmon_accept(&ev.tv, &ev.subject,
+		               &ev.sockinet_addr, ev.sockinet_port);
+		break;
+
+	case AUE_CONNECT:
+		if (!LOGEVT_WANT(cfg->events,
+		                 LOGEVT_FLAG(LOGEVT_SOCKET_CONNECT)))
+			break;
+		TOKEN_ASSERT("connect", "return", ev.return_present);
+		TOKEN_ASSERT("connect", "subject", ev.subject_present);
+		TOKEN_ASSERT("connect", "sockinet", ev.sockinet_present);
+		sockmon_connect(&ev.tv, &ev.subject,
+		                &ev.sockinet_addr, ev.sockinet_port,
+		                ev.return_value);
+		break;
+
+	/*
 	 * Unhandled events.
 	 */
 
@@ -749,6 +791,7 @@ evtloop_stats(evtloop_stat_t *st) {
 	procmon_stats(&st->pm);
 	hackmon_stats(&st->hm);
 	filemon_stats(&st->fm);
+	sockmon_stats(&st->sm);
 	st->el_aupclobbers = aupclobbers;
 	st->el_aueunknowns = aueunknowns;
 	st->el_failedsyscalls = failedsyscalls;
@@ -842,8 +885,8 @@ siginfo_arrived(UNUSED int sig, UNUSED void *udata) {
 	                "recvd:%"PRIu64" "
 	                "procd:%"PRIu64" "
 	                "oom:%"PRIu64"\n",
-	                st.hm.receiveds,
-	                st.hm.processeds,
+	                st.hm.recvd,
+	                st.hm.procd,
 	                st.hm.ooms);
 
 	fprintf(stderr, "filemon "
@@ -851,10 +894,18 @@ siginfo_arrived(UNUSED int sig, UNUSED void *udata) {
 	                "procd:%"PRIu64" "
 	                "lpmiss:%"PRIu64" "
 	                "oom:%"PRIu64"\n",
-	                st.fm.receiveds,
-	                st.fm.processeds,
+	                st.fm.recvd,
+	                st.fm.procd,
 	                st.fm.lpmiss,
 	                st.fm.ooms);
+
+	fprintf(stderr, "sockmon "
+	                "recvd:%"PRIu64" "
+	                "procd:%"PRIu64" "
+	                "oom:%"PRIu64"\n",
+	                st.sm.recvd,
+	                st.sm.procd,
+	                st.sm.ooms);
 
 	if (kefd != -1) {
 		fprintf(stderr, "kext cdevq "
@@ -906,6 +957,9 @@ siginfo_arrived(UNUSED int sig, UNUSED void *udata) {
 	                "[2]:%"PRIu64" "
 	                "[3]:%"PRIu64" "
 	                "[4]:%"PRIu64" "
+	                "[5]:%"PRIu64" "
+	                "[6]:%"PRIu64" "
+	                "[7]:%"PRIu64" "
 	                "err:%"PRIu64"\n",
 	                st.lq.qsize,
 	                st.lq.counts[LOGEVT_XNUMON_OPS],
@@ -913,8 +967,11 @@ siginfo_arrived(UNUSED int sig, UNUSED void *udata) {
 	                st.lq.counts[LOGEVT_IMAGE_EXEC],
 	                st.lq.counts[LOGEVT_PROCESS_ACCESS],
 	                st.lq.counts[LOGEVT_LAUNCHD_ADD],
+	                st.lq.counts[LOGEVT_SOCKET_BIND],
+	                st.lq.counts[LOGEVT_SOCKET_ACCEPT],
+	                st.lq.counts[LOGEVT_SOCKET_CONNECT],
 	                st.lq.errors);
-	_Static_assert(LOGEVT_SIZE == 5, "number of handled event types here");
+	_Static_assert(LOGEVT_SIZE == 8, "number of handled event types here");
 
 	fprintf(stderr, "hash cache "
 	                "buckets:%"PRIu32"/%"PRIu32" "
@@ -1107,6 +1164,11 @@ evtloop_run(config_t *cfg) {
 	}
 	if (LOGEVT_WANT(cfg->events, LOGEVT_FILEMON) &&
 	    auclass_addmask(AC_XNUMON, auclass_xnumon_events_filemon) == -1) {
+		fprintf(stderr, "Failed to configure AC_XNUMON class mask\n");
+		goto errout;
+	}
+	if (LOGEVT_WANT(cfg->events, LOGEVT_SOCKMON) &&
+	    auclass_addmask(AC_XNUMON, auclass_xnumon_events_sockmon) == -1) {
 		fprintf(stderr, "Failed to configure AC_XNUMON class mask\n");
 		goto errout;
 	}

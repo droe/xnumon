@@ -463,6 +463,10 @@ config_new(const char *cfgpath) {
 	                         suppress_process_access_by_subject_ident);
 	CONFIG_STRSET_FROM_PLIST(rv, cfg, plist,
 	                         suppress_process_access_by_subject_path);
+	CONFIG_STRSET_FROM_PLIST(rv, cfg, plist,
+	                         suppress_socket_op_by_subject_ident);
+	CONFIG_STRSET_FROM_PLIST(rv, cfg, plist,
+	                         suppress_socket_op_by_subject_path);
 
 	if (plist)
 		CFRelease(plist);
@@ -485,6 +489,8 @@ config_free(config_t *cfg) {
 	strset_destroy(&cfg->suppress_image_exec_by_ancestor_path);
 	strset_destroy(&cfg->suppress_process_access_by_subject_ident);
 	strset_destroy(&cfg->suppress_process_access_by_subject_path);
+	strset_destroy(&cfg->suppress_socket_op_by_subject_ident);
+	strset_destroy(&cfg->suppress_socket_op_by_subject_path);
 	if (cfg->path)
 		free(cfg->path);
 	if (cfg->id)

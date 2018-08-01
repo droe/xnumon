@@ -21,8 +21,8 @@
 #include <sys/types.h>
 
 typedef struct {
-	uint64_t receiveds;
-	uint64_t processeds;
+	uint64_t recvd;
+	uint64_t procd;
 	uint64_t ooms;
 } hackmon_stat_t;
 
@@ -35,9 +35,9 @@ typedef struct {
 	const char *method; /* "ptrace" or "task_for_pid" */
 } process_access_t;
 
-void hackmon_taskforpid(struct timespec *tv, audit_proc_t *, audit_proc_t *,
+void hackmon_taskforpid(struct timespec *, audit_proc_t *, audit_proc_t *,
                         pid_t) NONNULL(1,2);
-void hackmon_ptrace(struct timespec *tv, audit_proc_t *, audit_proc_t *,
+void hackmon_ptrace(struct timespec *, audit_proc_t *, audit_proc_t *,
                     pid_t) NONNULL(1,2);
 
 void hackmon_init(config_t *) NONNULL(1);

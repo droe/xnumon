@@ -30,8 +30,8 @@
 
 static config_t *config;
 
-static uint64_t events_received;    /* number of filesystem events received */
-static uint64_t events_processed;   /* number of filesystem events processed */
+static uint64_t events_recvd;       /* number of filesystem events received */
+static uint64_t events_procd;       /* number of filesystem events processed */
 static atomic64_t ooms;             /* counts events impaired due to OOM */
 static atomic64_t lpmiss;           /* plists that were not present anymore */
 
@@ -223,9 +223,9 @@ filemon_launchd_touched(struct timespec *tv, audit_proc_t *subject,
  */
 void
 filemon_touched(struct timespec *tv, audit_proc_t *subject, char *path) {
-	events_received++;
+	events_recvd++;
 	if (filemon_is_launchd_path(path)) {
-		events_processed++;
+		events_procd++;
 		filemon_launchd_touched(tv, subject, path);
 		return;
 	}
@@ -263,8 +263,8 @@ filemon_init(config_t *cfg) {
 	config = cfg;
 	ooms = 0;
 	lpmiss = 0;
-	events_received = 0;
-	events_processed = 0;
+	events_recvd = 0;
+	events_procd = 0;
 	glob_t g;
 
 	(void)sys_dir_eachfile("/System/Library/LaunchDaemons/",
@@ -296,8 +296,8 @@ void
 filemon_stats(filemon_stat_t *st) {
 	assert(st);
 
-	st->receiveds = events_received;
-	st->processeds = events_processed;
+	st->recvd = events_recvd;
+	st->procd = events_procd;
 	st->lpmiss = (uint64_t)lpmiss;
 	st->ooms = (uint64_t)ooms;
 }

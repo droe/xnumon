@@ -76,14 +76,19 @@
                             all methods to install a file, and requires a
                             significant number of file-related audit(4) events
                             to be enabled (see issue #26)
+       5 * socket-bind      a process has called bind() on a socket;
+                            EXPERIMENTAL, to be replaced by socket-listen
+       6   socket-accept    a process has accepted an incoming TCP connection
+       7   socket-connect   a process has initiated an outgoint TCP connection
        The agent will only monitor the audit events that are needed to produce
        the selected events.  The events marked with an asterisk(*) are good
        candidates for disabling.
-       If unset, defaults to:   0,1,2,3,4
+       If unset, defaults to:   0,1,2,3,4,5,6,7
        -->
   <!--
   <key>events</key>
-  <string>0,1,2,3,4</string>
+  <string>0,1,2,3,4,5,6,7</string>
+  <string>0,1,2,3,6,7</string>
   -->
 
   <!-- Stats interval:
@@ -426,6 +431,33 @@
     <string>/usr/libexec/sysmond</string>
     <string>/bin/ps</string>
     -->
+  </array>
+
+  <!-- Suppress socket op events by subject ident:
+       Subjects with code signing ident strings matching this list will be
+       excluded from logging socket-bind[5], socket-accept[6] and
+       socket-connect[7] events.
+       Non-Apple identifiers in this list can be restricted to a team ID by
+       postfixing an @ and the team ID, e.g. ch.roe.xnumon@C9BFEG985N only
+       matches the ident ch.roe.xnumon if the signing team ID is C9BFEG985N.
+       This requires codesign to be enabled.  If codesign is false, suppression
+       by ident is disabled.
+       If unset, defaults to:   no suppressions
+       -->
+  <key>suppress_socket_op_by_subject_ident</key>
+  <array>
+  </array>
+
+  <!-- Suppress socket op events by subject path:
+       Subject processes with executable image paths matching this list will be
+       excluded from logging socket-bind[5], socket-accept[6] and
+       socket-connect[7] events.
+       It is generally preferable to suppress by ident instead, unless the
+       binaries to suppress are unsigned or codesign is disabled.
+       If unset, defaults to:   no suppressions
+       -->
+  <key>suppress_socket_op_by_subject_path</key>
+  <array>
   </array>
 
 

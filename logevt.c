@@ -32,6 +32,7 @@
 #include "procmon.h"
 #include "filemon.h"
 #include "hackmon.h"
+#include "sockmon.h"
 #include "str.h"
 #include "sys.h"
 
@@ -211,6 +212,12 @@ logevt_xnumon_ops(logfmt_t *fmt, FILE *f, void *arg0) {
 	fmt->dict_item(f, "suppress_process_access_by_subject_path");
 	fmt->value_uint(f,
 		strset_size(&config->suppress_process_access_by_subject_path));
+	fmt->dict_item(f, "suppress_socket_op_by_subject_ident");
+	fmt->value_uint(f,
+		strset_size(&config->suppress_socket_op_by_subject_ident));
+	fmt->dict_item(f, "suppress_socket_op_by_subject_path");
+	fmt->value_uint(f,
+		strset_size(&config->suppress_socket_op_by_subject_path));
 	fmt->dict_end(f); /* config */
 
 	fmt->dict_item(f, "system");
@@ -303,9 +310,9 @@ logevt_xnumon_stats(logfmt_t *fmt, FILE *f, void *arg0) {
 	fmt->dict_item(f, "hackmon");
 	fmt->dict_begin(f);
 	fmt->dict_item(f, "recvd");
-	fmt->value_uint(f, st->hm.receiveds);
+	fmt->value_uint(f, st->hm.recvd);
 	fmt->dict_item(f, "procd");
-	fmt->value_uint(f, st->hm.processeds);
+	fmt->value_uint(f, st->hm.procd);
 	fmt->dict_item(f, "oom");
 	fmt->value_uint(f, st->hm.ooms);
 	fmt->dict_end(f); /* hackmon */
@@ -313,14 +320,24 @@ logevt_xnumon_stats(logfmt_t *fmt, FILE *f, void *arg0) {
 	fmt->dict_item(f, "filemon");
 	fmt->dict_begin(f);
 	fmt->dict_item(f, "recvd");
-	fmt->value_uint(f, st->fm.receiveds);
+	fmt->value_uint(f, st->fm.recvd);
 	fmt->dict_item(f, "procd");
-	fmt->value_uint(f, st->fm.processeds);
+	fmt->value_uint(f, st->fm.procd);
 	fmt->dict_item(f, "lpmiss");
 	fmt->value_uint(f, st->fm.lpmiss);
 	fmt->dict_item(f, "oom");
 	fmt->value_uint(f, st->fm.ooms);
 	fmt->dict_end(f); /* filemon */
+
+	fmt->dict_item(f, "sockmon");
+	fmt->dict_begin(f);
+	fmt->dict_item(f, "recvd");
+	fmt->value_uint(f, st->sm.recvd);
+	fmt->dict_item(f, "procd");
+	fmt->value_uint(f, st->sm.procd);
+	fmt->dict_item(f, "oom");
+	fmt->value_uint(f, st->sm.ooms);
+	fmt->dict_end(f); /* sockmon */
 
 	fmt->dict_item(f, "kext_cdevq");
 	fmt->dict_begin(f);
@@ -769,6 +786,78 @@ logevt_launchd_add(logfmt_t *fmt, FILE *f, void *arg0) {
 	               ldadd->subject_image_exec ?
 	                   &ldadd->subject_image_exec->fork_tv : NULL,
 	               ldadd->subject_image_exec);
+
+	logevt_footer(fmt, f);
+	return 0;
+}
+
+int
+logevt_socket_bind(logfmt_t *fmt, FILE *f, void *arg0) {
+	socket_bind_t *so = (socket_bind_t *)arg0;
+
+	logevt_header(fmt, f, (logevt_header_t *)arg0);
+
+	fmt->dict_item(f, "addr");
+	fmt->value_string(f, ipaddrtoa(&so->addr, NULL));
+
+	fmt->dict_item(f, "port");
+	fmt->value_uint(f, so->port);
+
+	fmt->dict_item(f, "subject");
+	logevt_process(fmt, f,
+	               &so->subject,
+	               so->subject_image_exec ?
+	                   &so->subject_image_exec->fork_tv : NULL,
+	               so->subject_image_exec);
+
+	logevt_footer(fmt, f);
+	return 0;
+}
+
+int
+logevt_socket_accept(logfmt_t *fmt, FILE *f, void *arg0) {
+	socket_accept_t *so = (socket_accept_t *)arg0;
+
+	logevt_header(fmt, f, (logevt_header_t *)arg0);
+
+	fmt->dict_item(f, "addr");
+	fmt->value_string(f, ipaddrtoa(&so->addr, NULL));
+
+	fmt->dict_item(f, "port");
+	fmt->value_uint(f, so->port);
+
+	fmt->dict_item(f, "subject");
+	logevt_process(fmt, f,
+	               &so->subject,
+	               so->subject_image_exec ?
+	                   &so->subject_image_exec->fork_tv : NULL,
+	               so->subject_image_exec);
+
+	logevt_footer(fmt, f);
+	return 0;
+}
+
+int
+logevt_socket_connect(logfmt_t *fmt, FILE *f, void *arg0) {
+	socket_connect_t *so = (socket_connect_t *)arg0;
+
+	logevt_header(fmt, f, (logevt_header_t *)arg0);
+
+	fmt->dict_item(f, "addr");
+	fmt->value_string(f, ipaddrtoa(&so->addr, NULL));
+
+	fmt->dict_item(f, "port");
+	fmt->value_uint(f, so->port);
+
+	fmt->dict_item(f, "success");
+	fmt->value_bool(f, so->success);
+
+	fmt->dict_item(f, "subject");
+	logevt_process(fmt, f,
+	               &so->subject,
+	               so->subject_image_exec ?
+	                   &so->subject_image_exec->fork_tv : NULL,
+	               so->subject_image_exec);
 
 	logevt_footer(fmt, f);
 	return 0;
