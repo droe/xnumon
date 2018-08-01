@@ -23,6 +23,7 @@
 #include <errno.h>
 #include <assert.h>
 #include <limits.h>
+#include <arpa/inet.h>
 
 #include <bsm/libbsm.h>
 #include <bsm/audit_kevents.h>
@@ -431,7 +432,7 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], int flags, FILE *f) {
 			ev->sockinet_addr.family = AF_INET;
 			ev->sockinet_addr.ev_addr =
 				tok.tt.sockinet_ex32.addr[0];
-			ev->sockinet_port = tok.tt.sockinet_ex32.port;
+			ev->sockinet_port = ntohs(tok.tt.sockinet_ex32.port);
 			break;
 		case AUT_SOCKINET128: /* Darwin */
 			if (tok.tt.sockinet_ex32.family != AF_INET6)
@@ -445,7 +446,7 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], int flags, FILE *f) {
 				tok.tt.sockinet_ex32.addr[2];
 			ev->sockinet_addr.ev6_addr[3] =
 				tok.tt.sockinet_ex32.addr[3];
-			ev->sockinet_port = tok.tt.sockinet_ex32.port;
+			ev->sockinet_port = ntohs(tok.tt.sockinet_ex32.port);
 			break;
 		case AUT_SOCKUNIX: /* Darwin */
 			/* ignore for now */
