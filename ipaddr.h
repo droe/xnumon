@@ -13,6 +13,7 @@
 
 #include "attrib.h"
 
+#include <stdbool.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 
@@ -28,7 +29,8 @@ typedef struct ipaddr {
 	};
 } ipaddr_t;
 
-const char * ipaddrtoa(ipaddr_t *, const char *) NONNULL(1);
+const char * ipaddrtoa(ipaddr_t *, const char *) NONNULL(1) WUNRES;
+bool ipaddr_is_localhost(ipaddr_t *) NONNULL(1) WUNRES;
 
 #define ipaddr_is_empty(PIPADDR) ((PIPADDR)->family == 0)
 

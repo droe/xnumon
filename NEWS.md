@@ -1,9 +1,9 @@
 ### xnumon develop
 
 -   Initial version of socket events: socket-bind[5], socket-accept[6] and
-    socket-connect[7] (issue #14).  The socket-bind[5] events are considered
-    EXPERIMENTAL and will be replaced by a socket-listen[5] event in a future
-    version.
+    socket-connect[7] (issue #14) including associated suppression options.
+    The socket-bind[5] events are considered EXPERIMENTAL and will be replaced
+    by a socket-listen[5] event in a future version.
 -   Also consider link(2), linkat(2), symlink(2), symlinkat(2), clonefile(2),
     clonefileat(2), fclonefileat(2), copyfile(2) and fcopyfile(2) for file
     monitoring based events.
@@ -16,6 +16,11 @@
 -   Detect a bug in audit(4) where calls to symlink(2) always lead to
     `AUE_SYMLINK` records with only one instead of two path tokens
     (radar 42784847).
+
+Configuration changes:
+
+-   Added `suppress_socket_op_localhost`, `suppress_socket_op_by_subject_ident`
+    and `suppress_socket_op_by_subject_path`.
 
 Event schema changes:
 

@@ -433,6 +433,20 @@
     -->
   </array>
 
+  <!-- Suppress socket op events on localhost addresses:
+       If enabled (<true/>), suppress socket-bind[5], socket-accept[6] and
+       socket-connect[7] events for localhost addresses, that is, for the
+       addresses ::1, ::ffff:127.0.0.0/104 and 127.0.0.0/8.
+       If disabled (<false/>), produce socket op events for all addresses,
+       including localhost.
+       If unset, defaults to:   true
+       -->
+  <!--
+  <key>suppress_socket_op_localhost</key>
+  <true/>
+  <false/>
+  -->
+
   <!-- Suppress socket op events by subject ident:
        Subjects with code signing ident strings matching this list will be
        excluded from logging socket-bind[5], socket-accept[6] and

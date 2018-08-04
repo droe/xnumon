@@ -30,3 +30,30 @@ ipaddrtoa(ipaddr_t *addr, const char *nullstr) {
 	return ipaddrtoa_buf;
 }
 
+/* ::1 - compare all 16 bytes */
+static const unsigned char v6_localhost_bytes[] =
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 };
+/* ::ffff:127.0.0.1 - compare size-3 bytes for 127.0.0.0/0 */
+static const unsigned char v6_mapped_v4_localhost_bytes[] =
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff, 0x7f, 0, 0, 1 };
+
+bool
+ipaddr_is_localhost(ipaddr_t *addr) {
+	switch (addr->family) {
+	case AF_INET:
+		return ((addr->sin_addr.s_addr & 0xff) == 0x7f);
+	case AF_INET6:
+		if (memcmp(addr->sin6_addr.s6_addr,
+		           v6_localhost_bytes,
+		           sizeof(v6_localhost_bytes)) == 0)
+			return true;
+		if (memcmp(addr->sin6_addr.s6_addr,
+		           v6_mapped_v4_localhost_bytes,
+		           sizeof(v6_mapped_v4_localhost_bytes) - 3) == 0)
+			return true;
+		return false;
+	default:
+		return false;
+	}
+}
+

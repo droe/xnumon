@@ -95,6 +95,8 @@ sockmon_socket_op(struct timespec *tv,
                   ipaddr_t *addr, uint16_t port, bool success,
                   uint64_t code) {
 	events_recvd++;
+	if (config->suppress_socket_op_localhost && ipaddr_is_localhost(addr))
+		return;
 	events_procd++;
 	log_event_socket_op(tv, subject, addr, port, success, code);
 }

@@ -284,6 +284,13 @@ config_str(config_t *cfg, const char *key, const char *value) {
 		return 0;
 	}
 
+	if (!strcmp(key, "suppress_socket_op_localhost")) {
+		if (config_set_bool(&cfg->suppress_socket_op_localhost,
+		                    value) == -1)
+			return -1;
+		return 0;
+	}
+
 	return -1;
 }
 
@@ -395,6 +402,7 @@ config_new(const char *cfgpath) {
 	cfg->ancestors = SIZE_MAX;
 	cfg->logoneline = -1; /* any */
 	cfg->suppress_image_exec_at_start = true;
+	cfg->suppress_socket_op_localhost = true;
 	if (logfmt_parse(cfg, "json") == -1) {
 		fprintf(stderr, "Failed to set default logfmt 'json'\n");
 		goto errout;
@@ -448,6 +456,7 @@ config_new(const char *cfgpath) {
 	CONFIG_STR_FROM_PLIST(rv, cfg, plist, "rlimit_nofile");
 	CONFIG_BOOL_FROM_PLIST(rv, cfg, plist, "debug");
 	CONFIG_BOOL_FROM_PLIST(rv, cfg, plist, "suppress_image_exec_at_start");
+	CONFIG_BOOL_FROM_PLIST(rv, cfg, plist, "suppress_socket_op_localhost");
 
 	/* The strset initializations must be called even if we were to allow
 	 * xnumon to run without a config file; they handle plist==NULL. */
