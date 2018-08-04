@@ -3,8 +3,8 @@ https://www.roe.ch/xnumon
 
 [//]: # (__BUILD_VERSION__)
 
-This version is considered safe to deploy in production environments without
-kext, but is still subject to active development with frequent releases.
+Releases are considered safe to deploy in production environments, but xnumon
+is still subject to active development with frequent releases.
 
 
 ## Overview
