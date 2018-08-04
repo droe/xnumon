@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="utf-8" standalone="no"?>
-<installer-gui-script minSpecVersion="1">
+<installer-gui-script minSpecVersion="2">
     <title>xnumon</title>
     <organization>ch.roe</organization>
     <domains enable_localSystem="true" enable_currentUserHome="false"/>
     <options customize="never" require-scripts="true" rootVolumeOnly="true"/>
+    <allowed-os-versions>
+        <os-version min="10.11" />
+    </allowed-os-versions>
     <license file="license.html" mime-type="text/html"/>
     <readme  file="readme.rtf"   mime-type="text/rtf" />
     <pkg-ref id="ch.roe.xnumon"
