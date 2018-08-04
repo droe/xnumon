@@ -16,6 +16,7 @@
 -   Detect a bug in audit(4) where calls to symlink(2) always lead to
     `AUE_SYMLINK` records with only one instead of two path tokens
     (radar 42784847).
+-   The installer package now refuses to install on unsupported OS versions.
 
 Configuration changes:
 
