@@ -19,6 +19,10 @@ For c test cases, a few defines are available, see `GNUmakefile` for details.
 Also, there are convenience includes under `include`.  Global files used by
 multiple tests are located in the top-level test directory.
 
+Test cases with a filename beginning in `sudo-` will be executed prepending
+`sudo -n`.  This allows to write test cases that need root privileges to
+execute successfully.
+
 
 ### Test specs
 
@@ -79,4 +83,7 @@ could be fixed by introducing a notion of "this spec can fail due to radar XY".
 
 There should be more and better convenience helpers simplifying common tasks
 in test cases and reducing code duplication.
+
+The test framework only reduces log volume based on timestamps.  It could also
+reduce based on process ancestry to itself.
 
