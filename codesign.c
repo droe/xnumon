@@ -19,6 +19,7 @@
 #include <CoreFoundation/CoreFoundation.h>
 #include <Security/Security.h>
 
+/* CarbonCore MacErrors.h */
 #ifndef kPOSIXErrorESRCH
 #define kPOSIXErrorESRCH 100003
 #endif
