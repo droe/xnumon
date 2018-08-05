@@ -395,7 +395,7 @@ image_exec_acquire(image_exec_t *image, bool kern) {
 
 		/*
 		 * If 3rd stat does not match 1st, invalidate codesign.
-		 * If 3rd stat fails, return error but don't invalidate anything.
+		 * If 3rd stat fails, return error but don't invalidate.
 		 * The codesign routines fail internally if the data is changed
 		 * during signature verification.
 		 */

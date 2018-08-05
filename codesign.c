@@ -19,6 +19,10 @@
 #include <CoreFoundation/CoreFoundation.h>
 #include <Security/Security.h>
 
+#ifndef kPOSIXErrorESRCH
+#define kPOSIXErrorESRCH 100003
+#endif
+
 config_t *config;
 
 typedef struct {
@@ -138,6 +142,12 @@ errout:
  * We cannot safely acquire code signature information by pid in xnumon.
  * Nevertheless, the chkcs utility can acquire code signature information from
  * running processes for experimentation and comparison against codesign(1).
+ *
+ * Returns NULL and errno = ENOENT if the path could not be found.
+ * Returns NULL and errno = ESRCH if the pid could not be found.
+ * Returns NULL and errno = ENOMEM if out of memory.
+ * All other, unexpected errors return a newly allocated codesign_t with result
+ * CODESIGN_RESULT_ERROR.
  */
 codesign_t *
 codesign_new(const char *cpath, pid_t pid) {
@@ -160,10 +170,20 @@ codesign_new(const char *cpath, pid_t pid) {
 		                                 kSecCSDefaultFlags,
 		                                 &scode);
 		CFRelease(url);
-		DEBUG(config->debug && rv != errSecSuccess,
-		      "codesign_error",
-		      "SecStaticCodeCreateWithPath(%s) => %i",
-		      cpath, rv);
+		switch (rv) {
+		case errSecSuccess:
+			break;
+		case errSecCSStaticCodeNotFound:
+			errno = ENOENT;
+			goto errout;
+		default:
+			DEBUG(config->debug,
+			      "codesign_error",
+			      "SecStaticCodeCreateWithPath(%s) => %i",
+			      cpath, rv);
+			cs->result = CODESIGN_RESULT_ERROR;
+			return cs;
+		}
 	} else {
 		CFNumberRef cfnpid = cf_number(pid);
 		if (!cfnpid)
@@ -180,19 +200,20 @@ codesign_new(const char *cpath, pid_t pid) {
 		                                    (SecCodeRef*)&scode);
 		CFRelease(cfdpid);
 		CFRelease(cfnpid);
-		if (rv != errSecSuccess) {
+		switch (rv) {
+		case errSecSuccess:
+			break;
+		case kPOSIXErrorESRCH: /* 100003 */
+			errno = ESRCH;
+			goto errout;
+		default:
 			DEBUG(config->debug,
 			      "codesign_error",
 			      "SecCodeCopyGuestWithAttributes(%i) => %i",
 			      pid, rv);
-			CFRelease(scode);
-			errno = 0;
-			goto errout;
+			cs->result = CODESIGN_RESULT_ERROR;
+			return cs;
 		}
-	}
-	if (rv != errSecSuccess) {
-		cs->result = CODESIGN_RESULT_ERROR;
-		return cs;
 	}
 
 	/* verify signature using embedded designated requirement */
