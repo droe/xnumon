@@ -557,12 +557,7 @@ auef_readable(UNUSED int fd, void *udata) {
 		 * Reported to Apple as radar 39267328 on 2018-04-08 and
 		 * radar 42783724 on 2018-07-31 respectively.
 		 */
-		if (ev.path[1] && !ev.path[2]) {
-			/* two path tokens, assume both resolved */
-			path = strdup(ev.path[1]);
-			if (!path)
-				ooms++;
-		} else if (ev.path[3]) {
+		if (ev.path[3]) {
 			/* four path tokens, as expected */
 			path = strdup(ev.path[3]);
 			if (!path)
@@ -611,13 +606,12 @@ auef_readable(UNUSED int fd, void *udata) {
 				}
 			}
 		} else {
+			/* less than three path tokens */
 			path = NULL;
 			if (ev.type == AUE_RENAMEAT) {
 				/*
-				 * AUE_RENAMEAT records sometimes have only a
-				 * single path token instead of four.  Unable
-				 * to reproduce with regular calls to
-				 * renameat(2).
+				 * AUE_RENAMEAT records sometimes have only one
+				 * or two path tokens instead of four.
 				 *
 				 * Reported to Apple as radar 42770257 on
 				 * 2018-07-31.
