@@ -17,6 +17,7 @@
     `AUE_SYMLINK` records with only one instead of two path tokens
     (radar 42784847).
 -   The installer package now refuses to install on unsupported OS versions.
+-   Initial version of an automated test framework (issue #9).
 
 Configuration changes:
 
