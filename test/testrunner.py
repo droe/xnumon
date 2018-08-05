@@ -10,6 +10,8 @@
 #
 # Licensed under the Open Software License version 3.0.
 
+# Plenty of refactoring opportunities here, feel free to submit pull requests.
+
 import datetime
 import hashlib
 import json
@@ -18,6 +20,7 @@ import sys
 import time
 
 import haklib.dt
+
 
 def colour(code, text, extra=''):
     return '\x1b[38;5;%i%sm%s\x1b[0m' % (code, extra, text)
@@ -34,7 +37,11 @@ def green(text):
 def yellow(text):
     return colour(11, text)
 
+
 class Logs:
+    """
+    Encapsulates log access and spec evaluation against a set of logs.
+    """
     def __init__(self, logfilepath, begin=None, end=None):
         self._records_by_eventcode = []
         with open(logfilepath, 'r') as f:
@@ -117,8 +124,16 @@ class Logs:
                 matching_records.append(record)
         return matching_records
 
+
 class Specs:
+    """
+    Represents a list of Spec instances.
+    """
     class Spec:
+        """
+        Represents a single test spec as parsed from the stdout of the executed
+        test case executables.
+        """
         _EVENTMAP = {
             'xnumon-ops':     0,
             'xnumon-stats':   1,
@@ -180,8 +195,17 @@ class Specs:
                 print("success %s" % spec)
         return result
 
-class TestRunner:
+
+class TestSuite:
+    """
+    This class is responsible for managing the complete set of tests.
+    """
     class Run:
+        """
+        Represents a single test case execution and encapsulates all the
+        relevant meta-data from the execution, such as hashes of the executable
+        before execution, stdout/stderr, pid and returncode.
+        """
         def __init__(self, argv, timeout=None):
             self.path = argv[0]
             if self.path == 'sudo':
@@ -229,11 +253,16 @@ class TestRunner:
         self.count_success += 1
 
     def add_test(self, path):
+        """
+        Add a single test case to the test suite.
+        Results in the test case being executed and the spec collected for
+        later evaluation.
+        """
         print("running %s" % path)
         argv = [path]
         if '/sudo-' in path:
             argv = ['sudo', '-n'] + argv
-        ex = TestRunner.Run(argv, timeout=10)
+        ex = TestSuite.Run(argv, timeout=10)
         specs = ex.stdout.strip().splitlines()
         specs = [line for line in specs if line.startswith('spec:')]
         if len(specs) > 0:
@@ -244,6 +273,10 @@ class TestRunner:
             self.ignored_testcases.append(path)
 
     def evaluate(self, debug=False):
+        """
+        Evaluate the added tests and their specs against the logs from the
+        relevant time window.
+        """
         logfile = '/var/log/xnumon.log'
         self._dt_end = haklib.dt.utcnow() + datetime.timedelta(seconds=1)
         print("waiting for logs to be written")
@@ -268,33 +301,40 @@ class TestRunner:
             print("%s %s" % (keyword, path))
             print()
 
+
 def main(paths, debug=False):
-    runner = TestRunner()
+    """
+    Add the requested test cases, evaluate the specs and print the results.
+    """
+    suite = TestSuite()
     for path in paths:
         if path == '-':
             for line in sys.stdin:
-                runner.add_test(line)
+                suite.add_test(line)
         else:
-            runner.add_test(path)
-    runner.evaluate(debug=debug)
-    if runner.count_ignored > 0:
-        print("%i testcases ignored:" % runner.count_ignored)
-        for tc in runner.ignored_testcases:
+            suite.add_test(path)
+    suite.evaluate(debug=debug)
+    if suite.count_ignored > 0:
+        print("%i testcases ignored:" % suite.count_ignored)
+        for tc in suite.ignored_testcases:
             print("%s" % tc)
         print()
-    if runner.count_failed > 0:
-        print("%i testcases failed:" % runner.count_failed)
-        for tc in runner.failed_testcases:
+    if suite.count_failed > 0:
+        print("%i testcases failed:" % suite.count_failed)
+        for tc in suite.failed_testcases:
             print("%s" % tc)
         print()
     print("%i success %i failed %i ignored" % (
-        runner.count_success, runner.count_failed, runner.count_ignored))
-    if runner.count_failed > 0:
-        sys.exit(1)
-    else:
-        sys.exit(0)
+        suite.count_success, suite.count_failed, suite.count_ignored))
+    if suite.count_failed > 0:
+        return 1
+    return 0
+
 
 if __name__ == '__main__':
+    """
+    Parse command line and execute main.
+    """
     args = sys.argv[1:]
     try:
         args.remove('-v')
@@ -303,5 +343,5 @@ if __name__ == '__main__':
         debug=False
     if len(args) == 0:
         sys.exit(2)
-    main(args, debug=debug)
+    sys.exit(main(args, debug=debug))
 
