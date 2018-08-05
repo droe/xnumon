@@ -1,5 +1,6 @@
 CPPFLAGS+=	-I$(CURDIR)/include \
-		-DTESTDIR=\"$(CURDIR)\"
+		-DTESTDIR=\"$(CURDIR)\" \
+		-DHOME=\"$(HOME)\"
 
 CFLAGS+=	-std=c11 \
 		-Wall
