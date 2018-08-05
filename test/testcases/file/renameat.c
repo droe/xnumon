@@ -13,24 +13,56 @@
 #include <stdio.h>
 #include <fcntl.h>
 
+#include "getpath.h"
+
+#define SRCDIR TESTDIR"/testcases/file"
+#define SRCFILE "renameat.plist"
+#define TMPDIR "/tmp"
+#define TMPFILE "renameat.plist~"
+#define DSTDIR HOME"/Library/LaunchAgents"
+#define DSTFILE "true.plist"
+
 int
 main(int argc, char *argv[]) {
-	int fd;
+	int fd1, fd2;
 
-	printf("%i\n", getpid());
+	printf("spec:testcase returncode=0\n");
+	printf("spec:image-exec "
+	       "subject.pid=%i "
+	       "image.path=%s "
+	       "\n", getpid(), getpath());
+	printf("spec:launchd-add "
+	       "subject.pid=%i "
+	       "subject.image.path=%s "
+	       "plist.path="DSTDIR"/"DSTFILE" "
+	       "program.path=/usr/bin/true "
+	       "\n", getpid(), getpath());
+	printf("spec:image-exec "
+	       "subject.image.path=/usr/libexec/xpcproxy "
+	       "image.path=/usr/bin/true "
+	       "argv=/usr/bin/true,renameat "
+	       "\n");
+	fflush(stdout);
 
-	system("touch /tmp/test");
-	fd = open("/tmp", O_RDONLY);
-	if (fd == -1) {
-		perror("open");
+	system("cp "SRCDIR"/"SRCFILE" "TMPDIR"/"TMPFILE);
+	fd1 = open(TMPDIR, O_RDONLY);
+	if (fd1 == -1) {
+		perror("open("TMPDIR")");
 		return 1;
 	}
-	if (renameat(fd, "test", fd, "test2") == -1) {
+	fd2 = open(DSTDIR, O_RDONLY);
+	if (fd2 == -1) {
+		perror("open("DSTDIR")");
+		return 1;
+	}
+	if (renameat(fd1, TMPFILE, fd2, DSTFILE) == -1) {
 		perror("renameat");
 		return 1;
 	}
-	unlink("/tmp/test2");
-	close(fd);
+	close(fd2);
+	close(fd1);
+	sleep(10);
+	unlink(DSTDIR"/"DSTFILE);
 
 	return 0;
 }
