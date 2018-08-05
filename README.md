@@ -141,6 +141,11 @@ certificate from Apple.
 
 ## Debugging
 
+Use `make test` while xnumon is logging to `/var/log/xnumon.log` to execute a
+set of automated test cases, exercising different APIs and automatically
+checking the log file for the expected events.  Submitting a pull request with
+a failing testcase is the best way to report bugs.
+
 Use the metrics in eventcode 1 events to monitor xnumon internals, possibly
 reducing the interval it gets generated in the configuration.
 
