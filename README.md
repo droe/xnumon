@@ -159,7 +159,7 @@ using `xnumonctl unload` and run xnumon with `-o debug=true` on the command
 line.
 
 Pass `DEBUG=1` to make in order to build a debug version of xnumon that
-includes symbols and optionally has additional debugging code.  See make file
+includes symbols, assertions and additional debugging code.  See make file
 for details.
 
 
