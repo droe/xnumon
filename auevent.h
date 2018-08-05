@@ -52,6 +52,7 @@ typedef struct {
 } audit_arg_t;
 
 typedef struct {
+	u_char *        recbuf;                 /* free */
 	int             flags;
 #define AEFLAG_ENOMEM 1                         /* ENOMEM encountered */
 
