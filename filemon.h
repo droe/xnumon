@@ -29,6 +29,10 @@ typedef struct {
 
 typedef struct {
 	logevt_header_t hdr;
+
+	unsigned long flags;
+#define LAFLAG_NOSUBJECT 0x00000001
+
 	/* process which touched the plist file */
 	audit_proc_t subject;
 	image_exec_t *subject_image_exec;

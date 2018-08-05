@@ -784,7 +784,8 @@ logevt_launchd_add(logfmt_t *fmt, FILE *f, void *arg0) {
 
 	fmt->dict_item(f, "subject");
 	logevt_process(fmt, f,
-	               &ldadd->subject,
+	               (ldadd->flags & LAFLAG_NOSUBJECT) ? NULL
+	                                                 : &ldadd->subject,
 	               ldadd->subject_image_exec ?
 	                   &ldadd->subject_image_exec->fork_tv : NULL,
 	               ldadd->subject_image_exec);
