@@ -634,7 +634,7 @@ logevt_process(logfmt_t *fmt, FILE *f,
                struct timespec *fork_tv,
                image_exec_t *ie) {
 	fmt->dict_begin(f);
-	if (ie->flags & EIFLAG_PIDLOOKUP) {
+	if (ie && (ie->flags & EIFLAG_PIDLOOKUP)) {
 		fmt->dict_item(f, "reconstructed");
 		fmt->value_bool(f, true);
 	}
