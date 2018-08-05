@@ -1,6 +1,15 @@
 #!/usr/bin/env python3
 # vim: set list et ts=8 sts=4 sw=4 ft=python:
 
+#-
+# xnumon - monitor macOS for malicious activity
+# https://www.roe.ch/xnumon
+#
+# Copyright (c) 2017-2018, Daniel Roethlisberger <daniel@roe.ch>.
+# All rights reserved.
+#
+# Licensed under the Open Software License version 3.0.
+
 import datetime
 import hashlib
 import json

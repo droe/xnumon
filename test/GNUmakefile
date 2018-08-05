@@ -31,4 +31,7 @@ $(TARGETS): %.test: %.c $(MKFS) $(HDRS) $(DEPS)
 clean:
 	rm -rf $(TARGETS) *.dSYM $(DEPS)
 
-.PHONY: all clean
+copyright: $(SRCS) *.c *.py $(HDRS) $(STESTS)
+	../Mk/bin/copyright.py $^
+
+.PHONY: all clean copyright

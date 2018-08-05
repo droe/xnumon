@@ -108,6 +108,7 @@ sign: $(TARGETS:=.signed)
 
 copyright: $(filter-out $(EXTSRCS),$(wildcard *.c *.h)) kext/*.c kext/*.h
 	Mk/bin/copyright.py $^
+	$(MAKE) -C test $@
 
 fetch: $(EXTSRCS)
 
