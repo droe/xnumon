@@ -20,6 +20,9 @@ main(int argc, char *argv[]) {
 	char buf[1024*16];
 	int fd;
 
+	printf("spec:testcase returncode=0\n");
+	fflush(stdout);
+
 	fd = open(argv[0], O_RDWR);
 	if (fd == -1) {
 		perror("open");

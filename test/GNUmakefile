@@ -1,4 +1,5 @@
-CPPFLAGS+=	-I$(CURDIR)/include
+CPPFLAGS+=	-I$(CURDIR)/include \
+		-DTESTDIR=\"$(CURDIR)\"
 
 CFLAGS+=	-std=c11 \
 		-Wall
@@ -18,6 +19,7 @@ DEPS=		true.dep
 all: $(TARGETS) deps
 
 test: $(TESTS)
+	sudo -v
 	./testrunner.py $(TESTS)
 
 deps: $(DEPS)

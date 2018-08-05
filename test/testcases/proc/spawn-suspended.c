@@ -29,6 +29,9 @@ main(int argc, char *argv[]) {
 	char *ev[] = {NULL};
 	posix_spawnattr_t attr;
 
+	printf("spec:testcase returncode=0\n");
+	fflush(stdout);
+
 	rv = posix_spawnattr_init(&attr);
 	if (rv != 0) {
 		errno = rv;

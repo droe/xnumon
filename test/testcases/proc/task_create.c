@@ -29,10 +29,12 @@ main(int argc, char *argv[]) {
 	mach_msg_type_number_t ledger_count;
 	task_t child_task;
 
-	printf("spec:failure,absent:image-exec "
+	printf("spec:testcase returncode=1\n");
+	printf("spec:absent:image-exec "
 	       "subject.pid=%i "
 	       "subject.image.path=%s "
 	       "\n", getpid(), getpath());
+	fflush(stdout);
 
 	ledger_count = 1;
 	ledger = (ledger_t)0;

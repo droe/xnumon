@@ -24,6 +24,9 @@ int
 main(int argc, char *argv[]) {
 	pid_t pid;
 
+	printf("spec:testcase returncode=0\n");
+	fflush(stdout);
+
 	pid = fork();
 	if (pid == -1) {
 		perror("fork");

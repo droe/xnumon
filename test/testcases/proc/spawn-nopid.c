@@ -23,6 +23,9 @@ main(int argc, char *argv[]) {
 	char *av[] = {ARGV0, NULL};
 	char *ev[] = {NULL};
 
+	printf("spec:testcase returncode=0\n");
+	fflush(stdout);
+
 	rv = posix_spawn(NULL, PATH, NULL, NULL, av, ev);
 	if (rv == -1) {
 		perror("spawn");

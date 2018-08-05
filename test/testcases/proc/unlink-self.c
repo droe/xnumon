@@ -20,6 +20,7 @@ main(int argc, char *argv[]) {
 		return 1;
 	}
 
+	printf("spec:testcase returncode=0\n");
 	printf("spec:image-exec "
 	       "subject.pid=%i "
 	       "image.path=%s/"ARGV0" "

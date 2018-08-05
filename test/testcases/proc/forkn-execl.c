@@ -22,6 +22,9 @@ int
 main(int argc, char *argv[]) {
 	pid_t pid;
 
+	printf("spec:testcase returncode=0\n");
+	fflush(stdout);
+
 	for (int i = 0; i < 10; i++) {
 		printf("%i\n", getpid());
 		pid = fork();

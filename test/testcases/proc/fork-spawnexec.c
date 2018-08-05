@@ -28,6 +28,9 @@ main(int argc, char *argv[]) {
 	char *av[] = {ARGV0, NULL};
 	char *ev[] = {NULL};
 
+	printf("spec:testcase returncode=0\n");
+	fflush(stdout);
+
 	pid = fork();
 	if (pid == -1) {
 		perror("fork");

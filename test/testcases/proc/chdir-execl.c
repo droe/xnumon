@@ -20,6 +20,7 @@ int
 main(int argc, char *argv[]) {
 	char *cwd = realpath(CWD, NULL);
 
+	printf("spec:testcase returncode=0\n");
 	printf("spec:image-exec "
 	       "subject.pid=%i "
 	       "image.path="PATH" "

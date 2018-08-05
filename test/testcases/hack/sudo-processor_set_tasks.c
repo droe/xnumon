@@ -13,9 +13,14 @@
 #include <spawn.h>
 #include <signal.h>
 #include <errno.h>
-
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <mach/mach.h>
+
+#include "getpath.h"
+
+#define PATH TESTDIR"/true.dep"
+#define ARGV0 "true.dep"
 
 /*
  * task_for_pid() and processor_set_tasks() fail on binaries signed by Apple.
@@ -24,7 +29,7 @@
  * http://devstreaming.apple.com/videos/wwdc/2015/706nu20qkag/706/706_security_and_your_apps.pdf
  *
  * Note that processor_set_default() returns only the task port of the current
- * process on macOS 10.14.
+ * process on macOS 10.14+.
  */
 
 mach_error_t
@@ -106,11 +111,12 @@ int
 main(int argc, char *argv[]) {
 	int rv;
 	pid_t pid;
-	char *av[] = {"true", NULL};
+	char *av[] = {ARGV0, NULL};
 	char *ev[] = {NULL};
 	posix_spawnattr_t attr;
 
-	printf("%i\n", getpid());
+	printf("spec:testcase returncode=0\n");
+	fflush(stdout);
 
 	rv = posix_spawnattr_init(&attr);
 	if (rv != 0) {
@@ -122,12 +128,26 @@ main(int argc, char *argv[]) {
 		errno = rv;
 		perror("posix_spawnattr_setflags");
 	}
-	rv = posix_spawn(&pid, "./true.dep", NULL, NULL, av, ev);
+	rv = posix_spawn(&pid, PATH, NULL, NULL, av, ev);
 	if (rv == -1) {
 		perror("spawn");
 		return 1;
 	}
-	printf("%i ./true.dep\n", pid);
+
+	printf("spec:image-exec "
+	       "subject.pid=%i "
+	       "subject.image.path=%s "
+	       "image.path="PATH" "
+	       "argv="ARGV0
+	       "\n",
+	       pid, getpath());
+	printf("spec:process-access "
+	       "subject.pid=%i "
+	       "subject.image.path=%s "
+	       "object.pid=%i "
+	       "object.image.path="PATH" "
+	       "\n",
+	       getpid(), getpath(), pid);
 
 	task_t port;
 	mach_error_t err;
@@ -143,6 +163,8 @@ main(int argc, char *argv[]) {
 	task_resume(port);
 	mach_port_deallocate(mach_task_self(), port);
 
-	return 0;
+	int status;
+	waitpid(pid, &status, 0);
+	return WEXITSTATUS(status);
 }
 

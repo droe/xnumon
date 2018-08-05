@@ -28,6 +28,9 @@ def red(text):
 def green(text):
     return colour(10, text)
 
+def yellow(text):
+    return colour(11, text)
+
 class Logs:
     def __init__(self, begin=None, end=None):
         self._records_by_eventcode = []
@@ -98,7 +101,7 @@ class Logs:
     def find(self, eventcode, conditions, ex, verbose=False, debug=False):
         if len(self._records_by_eventcode) < eventcode + 1:
             if verbose:
-                print("no log records with eventcode=%i", eventcode)
+                print("no log records with eventcode=%i" % eventcode)
             return []
         matching_records = []
         for record in self._records_by_eventcode[eventcode]:
@@ -123,28 +126,30 @@ class Specs:
         def __init__(self, spec):
             parts = spec.strip().split(' ')
             header = parts[0].split(':')
-            eventname = header[-1]
             if 'absent' in header[-2]:
                 self._wanted = 0
             else:
                 self._wanted = 1
-            if 'failure' in header[-2]:
-                self._failure = True
-            else:
-                self._failure = False
-            self._eventcode = self._EVENTMAP[eventname]
+            self._spectype = header[-1]
+            if self._spectype != 'testcase':
+                self._eventcode = self._EVENTMAP[self._spectype]
             self._conditions = [part.split('=') for part in parts[1:]]
             self._spec = spec
 
         def check(self, ex, logs, verbose=False, debug=False):
-            if self._failure and ex.returncode == 0:
-                print("expected returncode != 0 but returncode is 0")
-                return False
-            if not self._failure and ex.returncode != 0:
-                print("expected returncode == 0 but returncode is %i:" %
-                      ex.returncode)
-                print(ex.stderr)
-                return False
+            if self._spectype == 'testcase':
+                for key, value in self._conditions:
+                    if key == 'returncode':
+                        if ex.returncode != int(value):
+                            print("expected returncode %s but have %i:" % (
+                                  value, ex.returncode))
+                            print(ex.stderr or "(no stderr)")
+                            return False
+                    else:
+                        print(yellow("error") + ": unknown condition %s=%s" % (
+                              key, value))
+                        return False
+                return True
             results = logs.find(self._eventcode, self._conditions, ex,
                                 verbose=verbose, debug=debug)
             if verbose:
@@ -160,19 +165,22 @@ class Specs:
     def check(self, ex, logs, verbose=False, debug=False):
         result = True
         for spec in self._specs:
-            print("testing %s" % spec)
+            if verbose:
+                print("testing %s" % spec)
             if not spec.check(ex, logs, verbose=verbose, debug=debug):
                 print("failed  %s" % spec)
                 result = False
             else:
-                if verbose:
-                    print("success  %s" % spec)
+                print("success %s" % spec)
         return result
 
 class TestRunner:
     class Run:
         def __init__(self, argv, timeout=None):
-            with open(argv[0], 'rb') as f:
+            self.path = argv[0]
+            if self.path == 'sudo':
+                self.path = argv[2]
+            with open(self.path, 'rb') as f:
                 buf = f.read()
                 self.sha256 = hashlib.sha256(buf).hexdigest()
                 self.sha1   = hashlib.sha1(buf).hexdigest()
@@ -215,8 +223,11 @@ class TestRunner:
         self.count_success += 1
 
     def add_test(self, path):
-        print("running testcase %s" % path)
-        ex = TestRunner.Run([path], timeout=5)
+        print("running %s" % path)
+        argv = [path]
+        if '/sudo-' in path:
+            argv = ['sudo', '-n'] + argv
+        ex = TestRunner.Run(argv, timeout=5)
         specs = ex.stdout.strip().splitlines()
         specs = [line for line in specs if line.startswith('spec:')]
         if len(specs) > 0:
@@ -235,7 +246,7 @@ class TestRunner:
         print("%i log records within relevant timeframe" % len(logs))
         self.failed_testcases = []
         for path, ex, specs in self._testcases:
-            print("testing %s (%i)" % (path, ex.pid))
+            print("testing %s" % path)
             specs = Specs(specs)
             if specs.check(ex, logs):
                 self._success()
@@ -246,7 +257,8 @@ class TestRunner:
                 self.failed_testcases.append(path)
                 print("re-checking testcase in verbose mode:")
                 specs.check(ex, logs, verbose=True, debug=debug)
-            print("%s %s (%i)" % (keyword, path, ex.pid))
+            print("%s %s" % (keyword, path))
+            print()
 
 def main(paths, debug=False):
     runner = TestRunner()
@@ -257,7 +269,6 @@ def main(paths, debug=False):
         else:
             runner.add_test(path)
     runner.evaluate(debug=debug)
-    print()
     if runner.count_ignored > 0:
         print("%i testcases ignored:" % runner.count_ignored)
         for tc in runner.ignored_testcases:

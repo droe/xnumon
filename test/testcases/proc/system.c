@@ -20,6 +20,9 @@ int
 main(int argc, char *argv[]) {
 	int rv;
 
+	printf("spec:testcase returncode=0\n");
+	fflush(stdout);
+
 	rv = system(PATH);
 	if (rv == -1) {
 		perror("system");
@@ -30,7 +33,6 @@ main(int argc, char *argv[]) {
 	       "subject.image.path=%s "
 	       "image.path=/bin/sh "
 	       "\n", getpath());
-
 	printf("spec:image-exec "
 	       "subject.image.path=/bin/sh "
 	       "image.path="PATH" "

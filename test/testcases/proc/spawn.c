@@ -26,7 +26,8 @@ main(int argc, char *argv[]) {
 	char *av[] = {ARGV0, NULL};
 	char *ev[] = {NULL};
 
-	printf("%i\n", getpid());
+	printf("spec:testcase returncode=0\n");
+	fflush(stdout);
 
 	rv = posix_spawn(&pid, PATH, NULL, NULL, av, ev);
 	if (rv == -1) {

@@ -16,7 +16,8 @@ int
 main(int argc, char *argv[]) {
 	pid_t pid;
 
-	printf("%i\n", getpid());
+	printf("spec:testcase returncode=0\n");
+	fflush(stdout);
 
 	pid = fork();
 	if (pid == -1) {
