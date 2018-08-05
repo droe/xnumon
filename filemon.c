@@ -211,11 +211,11 @@ filemon_launchd_touched(struct timespec *tv, audit_proc_t *subject,
 	              ldadd->plist_stat.ctime.tv_sec,
 	              ldadd->plist_stat.btime.tv_sec);
 	ldadd->subject_image_exec = image_exec_by_pid(subject->pid);
-	if (ldadd->subject_image_exec && ldadd->subject_image_exec->path &&
+	if (ldadd->subject_image_exec && ldadd->subject_image_exec->path && (
 	    str_beginswith(ldadd->subject_image_exec->path,
 	                   "/System/Library/Frameworks/CoreServices.framework"
 	                   "/Versions/A/Frameworks/Metadata.framework"
-	                   "/Versions/A/Support/mdworker")) {
+	                   "/Versions/A/Support/md"))) {
 		/*
 		 * mdworker touches all newly written files.  If
 		 * mdworker is showing up here, it is because of an

@@ -8,7 +8,7 @@
     clonefileat(2), fclonefileat(2), copyfile(2) and fcopyfile(2) for file
     monitoring based events.
 -   Detect a bug in audit(4) where calls to renameat(2) sometimes lead to
-    `AUE_RENAMEAT` records with only one instead of four path tokens
+    `AUE_RENAMEAT` records with only one or two instead of four path tokens
     (radar 42770257).
 -   Detect a bug in audit(4) where calls to link(2) always lead to
     `AUE_LINK` records with only three instead of four path tokens
@@ -16,6 +16,9 @@
 -   Detect a bug in audit(4) where calls to symlink(2) always lead to
     `AUE_SYMLINK` records with only one instead of two path tokens
     (radar 42784847).
+-   Detect a bug in audit(4) where calls to \_\_mac\_execve(2) always lead to
+    `AUE_MAC_EXECVE` recors without exec arg and exec env tokens
+    (radar 42946744).
 -   The installer package now refuses to install on unsupported OS versions.
 -   Initial version of an automated test framework (issue #9).
 
@@ -30,6 +33,7 @@ Event schema changes:
 -   Eventcode 1 added `evtloop.radar42770257`, `evtloop.radar42770257_fatal`,
     `evtloop.radar42783724`, `evtloop.radar42783724_fatal`,
     `evtloop.radar42784847`, `evtloop.radar42784847_fatal`,
+    `evtloop.radar42946744`, `evtloop.radar42946744_fatal`,
     `sockmon.recvd`, `sockmon.procd` and `sockmon.ooms`.
 -   Eventcodes 5, 6 and 7 added.
 

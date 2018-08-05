@@ -51,6 +51,7 @@ static uint64_t radar42783724 = 0;
 static uint64_t radar42783724_fatal = 0;
 static uint64_t radar42784847 = 0;
 static uint64_t radar42784847_fatal = 0;
+static uint64_t radar42946744_fatal = 0;
 static uint64_t missingtoken = 0;
 static uint64_t ooms = 0;
 
@@ -170,6 +171,7 @@ errout:
  * 42770257: audit(4): only one instead of four path tokens for renameat(2)
  * 42783724: audit(4): target path not resolved for link(2)
  * 42784847: audit(4): path not resolved for symlink(2)
+ * 42946744: audit(4): missing argv and arge for __mac_execve(2)
  */
 #define TOKEN_ASSERT(EVENT, TOKEN, COND) \
 	if (!(COND)) { \
@@ -350,6 +352,16 @@ auef_readable(UNUSED int fd, void *udata) {
 		if (!path) {
 			ooms++;
 			break;
+		}
+		if (ev.type == AUE_MAC_EXECVE && (
+		    !ev.execarg || ((cfg->envlevel > 0) && !ev.execenv))) {
+			/*
+			 * On at least 10.11.6, audit records for __mac_execve
+			 * are missing their exec arg and exec env tokens.
+			 *
+			 * Reported to Apple as radar 42946744 on 2018-08-05.
+			 */
+			radar42946744_fatal++;
 		}
 		procmon_exec(&ev.tv,
 		             &ev.subject,
@@ -801,12 +813,14 @@ evtloop_stats(evtloop_stat_t *st) {
 	st->el_radar39623812 = radar39623812;
 	st->el_radar39267328_fatal = radar39267328_fatal;
 	st->el_radar39267328 = radar39267328;
-	st->el_radar42770257 = radar42770257_fatal;
 	st->el_radar42770257_fatal = radar42770257_fatal;
-	st->el_radar42783724 = radar42783724;
+	st->el_radar42770257 = radar42770257_fatal;
 	st->el_radar42783724_fatal = radar42783724_fatal;
-	st->el_radar42784847 = radar42784847;
+	st->el_radar42783724 = radar42783724;
 	st->el_radar42784847_fatal = radar42784847_fatal;
+	st->el_radar42784847 = radar42784847;
+	st->el_radar42946744_fatal = radar42946744_fatal;
+	st->el_radar42946744 = radar42946744_fatal;
 	st->el_missingtoken = missingtoken;
 	st->el_ooms = ooms;
 	aupipe_stats(fileno(auef), &st->ap);
@@ -838,7 +852,8 @@ siginfo_arrived(UNUSED int sig, UNUSED void *udata) {
 	                "r39623812:%"PRIu64"/%"PRIu64"\n        "
 	                "r42770257:%"PRIu64"/%"PRIu64" "
 	                "r42783724:%"PRIu64"/%"PRIu64" "
-	                "r42784847:%"PRIu64"/%"PRIu64"\n",
+	                "r42784847:%"PRIu64"/%"PRIu64" "
+	                "r42946744:%"PRIu64"/%"PRIu64"\n",
 	                st.el_aupclobbers,
 	                st.el_aueunknowns,
 	                st.el_failedsyscalls,
@@ -856,7 +871,9 @@ siginfo_arrived(UNUSED int sig, UNUSED void *udata) {
 	                st.el_radar42783724_fatal,
 	                st.el_radar42783724,
 	                st.el_radar42784847_fatal,
-	                st.el_radar42784847);
+	                st.el_radar42784847,
+	                st.el_radar42946744_fatal,
+	                st.el_radar42946744);
 
 	fprintf(stderr, "procmon "
 	                "actprc:%"PRIu32" "
@@ -1141,6 +1158,7 @@ evtloop_run(config_t *cfg) {
 	radar42783724_fatal = 0;
 	radar42784847 = 0;
 	radar42784847_fatal = 0;
+	radar42946744_fatal = 0;
 	missingtoken = 0;
 	ooms = 0;
 	xnumon_pid = getpid();
