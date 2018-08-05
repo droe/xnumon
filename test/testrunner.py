@@ -141,8 +141,9 @@ class Specs:
                 print("expected returncode != 0 but returncode is 0")
                 return False
             if not self._failure and ex.returncode != 0:
-                print("expected returncode == 0 but returncode is %i" %
+                print("expected returncode == 0 but returncode is %i:" %
                       ex.returncode)
+                print(ex.stderr)
                 return False
             results = logs.find(self._eventcode, self._conditions, ex,
                                 verbose=verbose, debug=debug)
@@ -183,6 +184,8 @@ class TestRunner:
             except subprocess.TimeoutExpired:
                 proc.kill()
                 self.stdout, self.stderr = proc.communicate()
+            self.stdout = self.stdout.decode(errors='ignore').strip()
+            self.stderr = self.stderr.decode(errors='ignore').strip()
             self.pid = proc.pid
             self.returncode = proc.returncode
 
@@ -214,7 +217,7 @@ class TestRunner:
     def add_test(self, path):
         print("running testcase %s" % path)
         ex = TestRunner.Run([path], timeout=5)
-        specs = ex.stdout.decode(errors='ignore').strip().splitlines()
+        specs = ex.stdout.strip().splitlines()
         specs = [line for line in specs if line.startswith('spec:')]
         if len(specs) > 0:
             self._testcases.append((path, ex, specs))
