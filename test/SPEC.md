@@ -11,9 +11,10 @@ Test cases can also be scripts of any language with files ending in `.stest`.
 
 A test case executable specifies how it will be compared against produced
 xnumon logs by printing one or more test specs to standard output.  Test specs
-begin in `spec:`, lines not beginning with `spec:` are ignored by the
+begin in `spec:`.  Lines not beginning with `spec:` are ignored by the
 framework.  Test cases not producing any test specs on standard out are
-ignored by the framework.
+ignored by the framework, but obviously still need to be executed in order to
+find out that there are no specs.
 
 For c test cases, a few defines are available, see `GNUmakefile` for details.
 Also, there are convenience includes under `include`.  Global files used by
@@ -48,22 +49,52 @@ Test cases can further emit log event specs:
 
 These specs tell the test framework to look for a logged event with an
 eventcode matching the type and one or more conditions evaluated against the
-fields of the event.  For example, the following spec will look for
-`eventcode=2` with the given fields.  Fields are compared against exactly what
-is in the logs, so make sure to use fully resolved paths for paths containing
-symlinks, because xnumon logs fully resolved paths.
+fields of the event.
+
+For example, the following spec will look for `eventcode=2` with the given
+fields.  Fields are compared against exactly what is in the logs, so make sure
+to use fully resolved paths for paths containing symlinks, because xnumon logs
+fully resolved paths.  The test will succeed only if there is exactly 1 log
+record that matches all the conditions.
 
 ```
-spec:spec:image-exec subject.pid=16323 image.path=/bin/sh image.ident=com.apple.sh image.origin=system script.path=/Users/jdoe/hello-world.sh
+spec:image-exec subject.pid=16323 image.path=/bin/sh image.ident=com.apple.sh image.origin=system script.path=/Users/jdoe/hello-world.sh
 ```
 
-As a special case, `image.sha256=\*` and other hash fields can be matched
-against the hash of the current test case executable by using the asterisk
-syntax.  Hashes for other files than the test case itself need to be computed
-in the test case and emitted as a lowercase hex string.
+A spec can also have optional comma-separated flags.  The only currently used
+flag is `absent`, which denotes that the test should succeed iff the defined
+log record cannot be found.  This is useful when an operation is expected to
+fail and should not generate a log entry.
+
+```
+spec:absent:image-exec subject.pid=12452 image.path=/bin/sh
+```
+
+As a special case, `image.sha256` and other hash fields can be matched against
+the hash of the current test case executable by using the asterisk syntax.
+Hashes for other files than the test case itself need to be computed in the
+test case and emitted as a lowercase hex string.
+
+```
+spec:image-exec subject.pid=73553 image.sha256=*
+```
+
+
+### Tipps and tricks
 
 Make sure to flush stdout before performing an exec(2) family syscall,
 otherwise the spec may be lost due to buffering.
+
+Make sure to emit the `spec:testcase` as early in the code as possible.  This
+makes sure that all abnormal exits of the test case binary are cought,
+including crashes, assertion failures and exit as part of error handling.
+
+Try to always match for the pid wherever possible.  Because the log records are
+shared between all test cases, matching the `subject.pid` is a good way to make
+sure that a test is not picking up on logs produced by a different test case.
+
+Try to wait for subprocesses to propagate errors in child processes to the main
+test case process and therefore to the test framework.
 
 
 ### Bugs
