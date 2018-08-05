@@ -17,7 +17,10 @@ int
 main(int argc, char *argv[]) {
 	int fd;
 
-	printf("%i\n", getpid());
+	printf("spec:testcase returncode=0\n");
+	fflush(stdout);
+
+	/* XXX rework to install plist and detect installation */
 
 	fd = open("/tmp/implicit_close", O_RDWR|O_CREAT, 0777);
 	if (fd == -1) {
