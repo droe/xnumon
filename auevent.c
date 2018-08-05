@@ -97,7 +97,6 @@ ssize_t
 auevent_fread(audit_event_t *ev, const uint16_t aues[], int flags, FILE *f) {
 	int rv;
 	int reclen;
-	u_char *recbuf;
 	tokenstr_t tok;
 	size_t pathc;
 
@@ -113,7 +112,7 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], int flags, FILE *f) {
 	 * kernel, this should work for us and read exactly one event from
 	 * the file descriptor per call.
 	 */
-	reclen = au_read_rec(f, &recbuf);
+	reclen = au_read_rec(f, &ev->recbuf);
 	if (reclen == -1) {
 		fprintf(stderr, "au_read_rec(): %s (%i)\n",
 		                strerror(errno), errno);
@@ -124,7 +123,7 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], int flags, FILE *f) {
 
 	pathc = 0;
 	for (int recpos = 0; recpos < reclen;) {
-		rv = au_fetch_tok(&tok, recbuf+recpos, reclen-recpos);
+		rv = au_fetch_tok(&tok, ev->recbuf+recpos, reclen-recpos);
 		if (rv == -1) {
 			/* partial record; libbsm's current implementation
 			 * of au_read_rec never reads a partial record.
@@ -471,11 +470,9 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], int flags, FILE *f) {
 		recpos += tok.len;
 	}
 
-	free(recbuf);
 	return (ev->flags & AEFLAG_ENOMEM) ? -1 : 1;
 
 skip_rec:
-	free(recbuf);
 	return 0;
 }
 
@@ -604,6 +601,10 @@ auevent_create(audit_event_t *ev) {
 void
 auevent_destroy(audit_event_t *ev) {
 	/* free raw event memory */
+	if (ev->recbuf) {
+		free(ev->recbuf);
+		ev->recbuf = NULL;
+	}
 	if (ev->execarg) {
 		free(ev->execarg);
 		ev->execarg = NULL;
