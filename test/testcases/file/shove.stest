@@ -1,0 +1,29 @@
+#!/bin/sh
+#-
+# xnumon - monitor macOS for malicious activity
+# https://www.roe.ch/xnumon
+#
+# Copyright (c) 2017-2018, Daniel Roethlisberger <daniel@roe.ch>.
+# All rights reserved.
+#
+# Licensed under the Open Software License version 3.0.
+
+echo "spec:testcase returncode=0"
+echo "spec:image-exec subject.pid=$$ image.path=/bin/sh script.path=`pwd`/$0"
+
+shove='/System/Library/PrivateFrameworks/PackageKit.framework/Versions/A/Resources/shove'
+fn="`basename $0 .stest`.plist"
+plist="`pwd`/`dirname $0`/$fn"
+tmpf=`mktemp`
+dstf="$HOME/Library/LaunchAgents/$fn"
+
+test -e "$plist" || exit 1
+cp "$plist" "$tmpf" || exit 1
+$shove "$tmpf" "$dstf" & pid=$! || exit 1
+
+echo "spec:launchd-add subject.pid=$pid subject.image.path=$shove subject.image.ident=com.apple.shove plist.path=$dstf program.path=/usr/bin/true program.argv=/usr/bin/true,shove"
+
+sleep 1
+rm "$dstf"
+
+exit 0
