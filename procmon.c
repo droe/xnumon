@@ -791,7 +791,7 @@ prepq_lookup(image_exec_t **image, image_exec_t **interp,
 				break;
 			}
 		} else {
-			assert(!interp);
+			assert(!*interp);
 			assert(argv && argv[0] && argv[1]);
 			/* #! can be relative path and we have no attr now.
 			 * Using (pid,basename(path)) is the best we can do
