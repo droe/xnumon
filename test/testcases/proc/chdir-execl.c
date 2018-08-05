@@ -32,7 +32,6 @@ main(int argc, char *argv[]) {
 	chdir(CWD);
 	execl(PATH, ARGV0, (char*)0);
 	perror("exec");
-
-	return 0;
+	return 1;
 }
 
