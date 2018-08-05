@@ -32,9 +32,9 @@ def yellow(text):
     return colour(11, text)
 
 class Logs:
-    def __init__(self, begin=None, end=None):
+    def __init__(self, logfilepath, begin=None, end=None):
         self._records_by_eventcode = []
-        with open('/var/log/xnumon.log', 'r') as f:
+        with open(logfilepath, 'r') as f:
             for line in f:
                 try:
                     obj = json.loads(line)
@@ -238,11 +238,12 @@ class TestRunner:
             self.ignored_testcases.append(path)
 
     def evaluate(self, debug=False):
+        logfile = '/var/log/xnumon.log'
         self._dt_end = haklib.dt.utcnow() + datetime.timedelta(seconds=1)
         print("waiting for logs to be written")
         time.sleep(1)
-        print("reading logs...")
-        logs = Logs(begin=self._dt_begin, end=self._dt_end)
+        print("reading logs from %s..." % logfile)
+        logs = Logs(logfile, begin=self._dt_begin, end=self._dt_end)
         print("%i log records within relevant timeframe" % len(logs))
         self.failed_testcases = []
         for path, ex, specs in self._testcases:
