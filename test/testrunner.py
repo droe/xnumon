@@ -19,8 +19,11 @@ import time
 
 import haklib.dt
 
-def colour(code, text):
-    return '\x1b[38;5;%im%s\x1b[0m' % (code, text)
+def colour(code, text, extra=''):
+    return '\x1b[38;5;%i%sm%s\x1b[0m' % (code, extra, text)
+
+def brightwhite(text):
+    return colour(15, text, extra=';1')
 
 def red(text):
     return colour(9, text)
@@ -94,8 +97,11 @@ class Logs:
                     value = ex.md5
             if not self._compare(have_value, value):
                 if verbose:
-                    print("%s: %r != %r" % (key, have_value, value))
+                    print("%s: %s != %s" % (key, have_value, value))
                 return False
+            else:
+                if verbose:
+                    print("%s: %s == %s" % (key, have_value, value))
         return True
 
     def find(self, eventcode, conditions, ex, verbose=False, debug=False):
@@ -227,7 +233,7 @@ class TestRunner:
         argv = [path]
         if '/sudo-' in path:
             argv = ['sudo', '-n'] + argv
-        ex = TestRunner.Run(argv, timeout=5)
+        ex = TestRunner.Run(argv, timeout=10)
         specs = ex.stdout.strip().splitlines()
         specs = [line for line in specs if line.startswith('spec:')]
         if len(specs) > 0:
@@ -245,9 +251,10 @@ class TestRunner:
         print("reading logs from %s..." % logfile)
         logs = Logs(logfile, begin=self._dt_begin, end=self._dt_end)
         print("%i log records within relevant timeframe" % len(logs))
+        print()
         self.failed_testcases = []
         for path, ex, specs in self._testcases:
-            print("testing %s" % path)
+            print(brightwhite("testing %s" % path))
             specs = Specs(specs)
             if specs.check(ex, logs):
                 self._success()

@@ -34,7 +34,8 @@ main(int argc, char *argv[]) {
 	} else if (pid == 0) {
 		/* child */
 		char *cargv[2] = {ARGV0, 0};
-		__mac_execve(PATH, cargv, NULL, NULL);
+		char *cenv[1] = {0};
+		__mac_execve(PATH, cargv, cenv, NULL);
 		perror("__mac_execve");
 		return 1;
 	}
@@ -44,7 +45,10 @@ main(int argc, char *argv[]) {
 	       "subject.pid=%i "
 	       "subject.image.path=%s "
 	       "image.path="PATH" "
+#if 0
+	       /* XXX fails due to missing argv in AUE_MAC_EXECVE */
 	       "argv="ARGV0  // __mac_execve() seems to not have argv (!)
+#endif
 	       "\n",
 	       pid, getpath());
 	return 0;

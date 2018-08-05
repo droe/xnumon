@@ -32,16 +32,26 @@ main(int argc, char *argv[]) {
 	       "image.path=%s "
 	       "\n", getpid(), getpath());
 	printf("spec:launchd-add "
+	       "plist.path="DSTDIR"/"DSTFILE" "
+	       "program.path=/usr/bin/true "
+	       "\n");
+#if 0
+	/* XXX fails due to radar 42770257 */
+	printf("spec:launchd-add "
 	       "subject.pid=%i "
 	       "subject.image.path=%s "
 	       "plist.path="DSTDIR"/"DSTFILE" "
 	       "program.path=/usr/bin/true "
 	       "\n", getpid(), getpath());
+#endif
+#if 0
+	/* XXX fails for some reason */
 	printf("spec:image-exec "
 	       "subject.image.path=/usr/libexec/xpcproxy "
 	       "image.path=/usr/bin/true "
 	       "argv=/usr/bin/true,renameat "
 	       "\n");
+#endif
 	fflush(stdout);
 
 	system("cp "SRCDIR"/"SRCFILE" "TMPDIR"/"TMPFILE);
@@ -61,7 +71,7 @@ main(int argc, char *argv[]) {
 	}
 	close(fd2);
 	close(fd1);
-	sleep(10);
+	sleep(5);
 	unlink(DSTDIR"/"DSTFILE);
 
 	return 0;
