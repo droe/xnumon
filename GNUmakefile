@@ -130,6 +130,9 @@ tommy%.c:
 clean:
 	rm -rf $(TARGETS) *.signed *.o *.dSYM
 
+test:
+	$(MAKE) -C test $@
+
 kext:
 	$(MAKE) -C kext all
 
@@ -237,7 +240,7 @@ todo:
 
 FORCE:
 
-.PHONY: all sign copyright fetch clean \
+.PHONY: all sign copyright fetch clean test \
         kext kextclean \
         pkg pkgclean \
         realclean maintclean

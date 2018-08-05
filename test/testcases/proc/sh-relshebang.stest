@@ -1,0 +1,3 @@
+#!../../../../../../../../bin/sh
+echo "spec:image-exec subject.pid=$$ image.path=/bin/sh script.path=`pwd`/$0"
+exit 0

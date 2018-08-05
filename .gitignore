@@ -9,9 +9,9 @@ timeops
 mklaunchdplist
 chkcs
 auditdump
-test/sizeof/sizeof
 test/**/*.test
-test/**/true.unsigned
+test/*.dep
+**/__pycache__
 kext/*.kext
 pkg/*.pkg
 pkg/resources/license.html
