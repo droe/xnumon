@@ -1,3 +1,10 @@
+### xnumon 0.1.6.2 2018-08-05
+
+-   Hotfix release fixing a rare data corruption issue in the audit(4) record
+    handling (issue #41).
+
+---
+
 ### xnumon 0.1.6.1 2018-08-01
 
 -   Hotfix release fixing a crash in the kext event handling loop of the
