@@ -367,6 +367,17 @@ auef_readable(UNUSED int fd, void *udata) {
 			 * Reported to Apple as radar 42946744 on 2018-08-05.
 			 */
 			radar42946744_fatal++;
+			DEBUG(cfg->debug,
+			      "radar42946744_fatal",
+			      "path[0]=%s "
+			      "path[1]=%s "
+			      "argv=%i env=%i "
+			      "pid=%i",
+			      ev.path[0],
+			      ev.path[1],
+			      ev.execarg ? 1 : 0,
+			      ev.execenv ? 1 : 0,
+			      ev.subject.pid);
 		}
 		procmon_exec(&ev.tv,
 		             &ev.subject,
