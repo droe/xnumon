@@ -13,6 +13,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <string.h>
+#include <stdio.h>
 #include <errno.h>
 
 char ipaddrtoa_buf[INET6_ADDRSTRLEN];
@@ -59,15 +60,67 @@ ipaddr_is_localhost(ipaddr_t *addr) {
 
 const char *
 protocoltoa(int protocol) {
+	static char buf[16];
 	switch (protocol) {
+	case IPPROTO_IP:
+		return "ip";
+	case IPPROTO_ICMP:
+		return "icmp";
+	case IPPROTO_IGMP:
+		return "igmp";
 	case IPPROTO_TCP:
 		return "tcp";
 	case IPPROTO_UDP:
 		return "udp";
 	case IPPROTO_SCTP:
 		return "sctp";
+	case -1: /* xnumon hack */
+		return "raw";
 	default:
-		return "unknown";
+		snprintf(buf, sizeof(buf), "%i", protocol);
+		return buf;
+	}
+}
+
+const char *
+domaintoa(int domain) {
+	static char buf[16];
+	switch (domain) {
+	case PF_UNSPEC:
+		return "unspec";
+	case PF_UNIX:
+		return "unix";
+	case PF_INET:
+		return "inet";
+	case PF_ROUTE:
+		return "route";
+	case PF_KEY:
+		return "key";
+	case PF_INET6:
+		return "inet6";
+	default:
+		snprintf(buf, sizeof(buf), "%i", domain);
+		return buf;
+	}
+}
+
+const char *
+typetoa(int type) {
+	static char buf[16];
+	switch (type) {
+	case SOCK_DGRAM:
+		return "dgram";
+	case SOCK_STREAM:
+		return "stream";
+	case SOCK_RAW:
+		return "raw";
+	case SOCK_RDM:
+		return "rdm";
+	case SOCK_SEQPACKET:
+		return "seqpacket";
+	default:
+		snprintf(buf, sizeof(buf), "%i", type);
+		return buf;
 	}
 }
 

@@ -464,6 +464,7 @@
   <key>suppress_socket_op_by_subject_ident</key>
   <array>
     <string>com.apple.mDNSResponder</string>
+    <string>com.apple.symptomsd</string>
   </array>
 
   <!-- Suppress socket op events by subject path:
@@ -478,6 +479,7 @@
   <array>
     <!--
     <string>/usr/sbin/mDNSResponder</string>
+    <string>/usr/libexec/symptomsd</string>
     -->
   </array>
 

@@ -430,7 +430,7 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], int flags, FILE *f) {
 			ev->exit_return = tok.tt.exit.ret;
 			break;
 		case AUT_SOCKINET32: /* Darwin */
-			if (tok.tt.sockinet_ex32.family != AF_INET)
+			if (tok.tt.sockinet_ex32.family != BSM_PF_INET)
 				break;
 			ev->sockinet_addr.family = AF_INET;
 			ev->sockinet_addr.ev_addr =
@@ -438,7 +438,7 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], int flags, FILE *f) {
 			ev->sockinet_port = ntohs(tok.tt.sockinet_ex32.port);
 			break;
 		case AUT_SOCKINET128: /* Darwin */
-			if (tok.tt.sockinet_ex32.family != AF_INET6)
+			if (tok.tt.sockinet_ex32.family != BSM_PF_INET6)
 				break;
 			ev->sockinet_addr.family = AF_INET6;
 			ev->sockinet_addr.ev6_addr[0] =
@@ -637,19 +637,20 @@ auevent_destroy(audit_event_t *ev) {
 int
 auevent_sock_domain(int bsmdomain) {
 	switch (bsmdomain) {
-	case BSM_PF_UNSPEC:
-		return PF_UNSPEC;
-	case BSM_PF_LOCAL:
-		return PF_UNIX;
-	case BSM_PF_ROUTE:
-		return PF_ROUTE;
-	case BSM_PF_KEY:
-		return PF_KEY;
-	case BSM_PF_INET:
-		return PF_INET;
-	case BSM_PF_INET6:
-		return PF_INET6;
+	case BSM_PF_UNSPEC:             /*   0 */
+		return PF_UNSPEC;       /*   0 */
+	case BSM_PF_LOCAL:              /*   1 */
+		return PF_UNIX;         /*   1 */
+	case BSM_PF_INET:               /*   2 */
+		return PF_INET;         /*   2 */
+	case BSM_PF_ROUTE:              /*  24 */
+		return PF_ROUTE;        /*  17 */
+	case BSM_PF_KEY:                /*  27 */
+		return PF_KEY;          /*  29 */
+	case BSM_PF_INET6:              /*  26 */
+		return PF_INET6;        /*  30 */
 	/* ... */
+	case BSM_PF_UNKNOWN:            /* 700 */
 	default:
 		return -1;
 	}
@@ -658,17 +659,17 @@ auevent_sock_domain(int bsmdomain) {
 int
 auevent_sock_type(int bsmtype) {
 	switch (bsmtype) {
-	case BSM_SOCK_DGRAM:
-		return SOCK_DGRAM;
-	case BSM_SOCK_STREAM:
-		return SOCK_STREAM;
-	case BSM_SOCK_RAW:
-		return SOCK_RAW;
-	case BSM_SOCK_RDM:
-		return SOCK_RDM;
-	case BSM_SOCK_SEQPACKET:
-		return SOCK_SEQPACKET;
-	case BSM_SOCK_UNKNOWN:
+	case BSM_SOCK_DGRAM:            /*   1 */
+		return SOCK_DGRAM;      /*   2 */
+	case BSM_SOCK_STREAM:           /*   2 */
+		return SOCK_STREAM;     /*   1 */
+	case BSM_SOCK_RAW:              /*   4 */
+		return SOCK_RAW;        /*   3 */
+	case BSM_SOCK_RDM:              /*   5 */
+		return SOCK_RDM;        /*   4 */
+	case BSM_SOCK_SEQPACKET:        /*   6 */
+		return SOCK_SEQPACKET;  /*   5 */
+	case BSM_SOCK_UNKNOWN:          /* 500 */
 	default:
 		return -1;
 	}

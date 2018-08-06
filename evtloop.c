@@ -739,7 +739,7 @@ auef_readable(UNUSED int fd, void *udata) {
 		      "bsmdomain=%i", ev.args[1].value);
 		sockmon_socket(&ev.tv, &ev.subject, ev.return_value,
 		               sock_domain,
-		               auevent_sock_domain(ev.args[2].value),
+		               auevent_sock_type(ev.args[2].value),
 		               ev.args[3].value);
 		break;
 

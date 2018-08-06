@@ -71,7 +71,7 @@ socket_op_work(socket_op_t *so) {
 static void
 log_event_socket_op(struct timespec *tv,
                     audit_proc_t *subject,
-                    int protocol,
+                    int protocol, /* can be 0 (none) or -1 (raw) */
                     ipaddr_t *sock_addr, uint16_t sock_port,
                     ipaddr_t *peer_addr, uint16_t peer_port,
                     uint64_t eventcode) {
@@ -84,7 +84,7 @@ log_event_socket_op(struct timespec *tv,
 	}
 	so->subject_image_exec = image_exec_by_pid(subject->pid);
 	so->subject = *subject;
-	/* can be 0 if unknown */
+	/* can be 0 if unknown or -1 if raw */
 	so->protocol = protocol;
 	/* can be 0 if unknown or irrelevant */
 	if (sock_addr) {
@@ -103,7 +103,7 @@ log_event_socket_op(struct timespec *tv,
 static void
 sockmon_socket_op(struct timespec *tv,
                   audit_proc_t *subject,
-                  int protocol /* can be 0 */,
+                  int protocol /* can be 0 (none) or -1 (raw) */,
                   ipaddr_t *sock_addr /* can be NULL */ , uint16_t sock_port,
                   ipaddr_t *peer_addr /* can be NULL */, uint16_t peer_port,
                   uint64_t eventcode) {
@@ -130,9 +130,16 @@ sockmon_socket(UNUSED struct timespec *tv,
                audit_proc_t *subject,
                int fd, int domain, int type, int protocol) {
 	events_recvd++;
-	if (domain != PF_INET && domain != PF_INET6/*XXX && domain != PF_NDRW*/)
+	if (type == SOCK_RAW) {
+		/* trigger listen event, there will not be a bind()/listen() */
+		sockmon_socket_op(tv, subject, -1 /* raw */, NULL, 0,
+		                  NULL, 0, LOGEVT_SOCKET_LISTEN);
+
 		return;
-	if (protocol == 0) {
+	}
+	if (domain != PF_INET && domain != PF_INET6)
+		return;
+	if (protocol == IPPROTO_IP) {
 		switch(type) {
 		case SOCK_STREAM:
 			protocol = IPPROTO_TCP;

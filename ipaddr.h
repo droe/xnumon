@@ -44,6 +44,8 @@ bool ipaddr_is_localhost(ipaddr_t *) NONNULL(1) WUNRES;
 #define ipaddr_is_empty(PIPADDR) ((PIPADDR)->family == 0)
 
 const char * protocoltoa(int) WUNRES;
+const char * domaintoa(int) WUNRES;
+const char * typetoa(int) WUNRES;
 
 #endif
 
