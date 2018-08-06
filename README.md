@@ -3,9 +3,6 @@ https://www.roe.ch/xnumon
 
 [//]: # (__BUILD_VERSION__)
 
-Releases are considered safe to deploy in production environments, but xnumon
-is still subject to active development with frequent releases.
-
 
 ## Overview
 
@@ -49,6 +46,8 @@ A supported version of OS X or macOS, currently:
 -   macOS 10.12 Sierra
 -   macOS 10.13 High Sierra
 -   macOS 10.14 Mojave
+
+Releases are considered safe to deploy in production environments.
 
 
 ## Documentation
