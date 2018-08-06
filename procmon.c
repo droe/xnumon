@@ -884,7 +884,8 @@ procmon_exec(struct timespec *tv,
 #endif
 
 	if (!image) {
-		DEBUG(config->debug, "prepq_miss",
+		DEBUG(config->debug && config->kextlevel > 0,
+		      "prepq_miss",
 		      "looking for %s[%i]: not found (image)",
 		      imagepath, proc->pid);
 		pqmiss++;
@@ -904,9 +905,14 @@ procmon_exec(struct timespec *tv,
 	assert(image);
 	image_exec_open(image, attr);
 
+	/*
+	 * XXX why are we not using the shebang from the script file here if
+	 * argv is unavailable?
+	 */
 	if (image->flags & EIFLAG_SHEBANG) {
 		if (!interp) {
-			DEBUG(config->debug, "prepq_miss",
+			DEBUG(config->debug && config->kextlevel > 0,
+			      "prepq_miss",
 			      "looking for %s[%i]: not found (interp "
 			      "argv[0]=%s)",
 			      imagepath, proc->pid, argv ? argv[0] : NULL);
