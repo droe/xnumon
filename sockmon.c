@@ -130,15 +130,14 @@ sockmon_socket(UNUSED struct timespec *tv,
                audit_proc_t *subject,
                int fd, int domain, int type, int protocol) {
 	events_recvd++;
+	if (domain != PF_INET && domain != PF_INET6)
+		return;
 	if (type == SOCK_RAW) {
 		/* trigger listen event, there will not be a bind()/listen() */
 		sockmon_socket_op(tv, subject, -1 /* raw */, NULL, 0,
 		                  NULL, 0, LOGEVT_SOCKET_LISTEN);
-
 		return;
 	}
-	if (domain != PF_INET && domain != PF_INET6)
-		return;
 	if (protocol == IPPROTO_IP) {
 		switch(type) {
 		case SOCK_STREAM:
@@ -218,6 +217,8 @@ sockmon_connect(struct timespec *tv,
 	uint16_t port;
 
 	procmon_socket_state(&proto, &addr, &port, subject->pid, fd);
+	if (proto == IPPROTO_UDP)
+		return;
 	sockmon_socket_op(tv, subject, proto, addr, port, peer_addr, peer_port,
 	                  LOGEVT_SOCKET_CONNECT);
 }
