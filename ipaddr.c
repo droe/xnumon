@@ -57,3 +57,17 @@ ipaddr_is_localhost(ipaddr_t *addr) {
 	}
 }
 
+const char *
+protocoltoa(int protocol) {
+	switch (protocol) {
+	case IPPROTO_TCP:
+		return "tcp";
+	case IPPROTO_UDP:
+		return "udp";
+	case IPPROTO_SCTP:
+		return "sctp";
+	default:
+		return "unknown";
+	}
+}
+

@@ -22,9 +22,9 @@ Currently implemented are the following
     another process using either the task_for_pid or ptrace(2) syscalls.
 -   **launchd-add[4]**: a process has added or modified a launch daemon or
     launch agent plist. (EXPERIMENTAL)
--   **socket-bind[5]**: a process has called bind(2) on a socket. (EXPERIMENTAL)
--   **socket-accept[6]**: a process has accepted an incoming TCP connection.
--   **socket-connect[7]**: a process has initiated an outgoing TCP connection.
+-   **socket-listen[5]**: a process has started listening on a socket.
+-   **socket-accept[6]**: a process has accepted an incoming connection.
+-   **socket-connect[7]**: a process has initiated an outgoing connection.
 
 xnumon provides context information such as executable image hashes, code
 signing meta-data, script shebang handling, and the history of previous

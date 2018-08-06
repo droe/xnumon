@@ -17,6 +17,16 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
+#ifndef IPPROTO_TCP
+#define IPPROTO_TCP 6
+#endif
+#ifndef IPPROTO_UDP
+#define IPPROTO_UDP 17
+#endif
+#ifndef IPPROTO_SCTP
+#define IPPROTO_SCTP 132
+#endif
+
 typedef struct ipaddr {
 	sa_family_t family;
 	union {
@@ -31,8 +41,9 @@ typedef struct ipaddr {
 
 const char * ipaddrtoa(ipaddr_t *, const char *) NONNULL(1) WUNRES;
 bool ipaddr_is_localhost(ipaddr_t *) NONNULL(1) WUNRES;
-
 #define ipaddr_is_empty(PIPADDR) ((PIPADDR)->family == 0)
+
+const char * protocoltoa(int) WUNRES;
 
 #endif
 

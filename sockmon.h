@@ -32,21 +32,30 @@ typedef struct {
 	logevt_header_t hdr;
 	audit_proc_t subject;
 	image_exec_t *subject_image_exec;
-	ipaddr_t addr;
-	uint16_t port;
-	bool success;
+	int protocol;
+	ipaddr_t sock_addr;
+	uint16_t sock_port;
+	ipaddr_t peer_addr; /* unused for listen */
+	uint16_t peer_port; /* unused for listen */
 } socket_op_t;
-#define socket_bind_t       socket_op_t
+#define socket_listen_t     socket_op_t
 #define socket_accept_t     socket_op_t
 #define socket_connect_t    socket_op_t
 
-void sockmon_bind(struct timespec *, audit_proc_t *, ipaddr_t *, uint16_t)
-     NONNULL(1,2,3);
-void sockmon_accept(struct timespec *, audit_proc_t *, ipaddr_t *, uint16_t)
-     NONNULL(1,2,3);
-void sockmon_connect(struct timespec *, audit_proc_t *, ipaddr_t *, uint16_t,
-                     bool success)
-     NONNULL(1,2,3);
+void sockmon_socket(struct timespec *, audit_proc_t *, int,
+                    int, int, int)
+     NONNULL(1,2);
+void sockmon_bind(struct timespec *, audit_proc_t *, int,
+                  ipaddr_t *, uint16_t)
+     NONNULL(1,2,4);
+void sockmon_listen(struct timespec *, audit_proc_t *, int)
+     NONNULL(1,2);
+void sockmon_accept(struct timespec *, audit_proc_t *, int,
+                    ipaddr_t *, uint16_t)
+     NONNULL(1,2,4);
+void sockmon_connect(struct timespec *, audit_proc_t *, int,
+                     ipaddr_t *, uint16_t)
+     NONNULL(1,2,4);
 
 void sockmon_init(config_t *) NONNULL(1);
 void sockmon_fini(void);

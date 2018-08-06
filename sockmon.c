@@ -71,20 +71,31 @@ socket_op_work(socket_op_t *so) {
 static void
 log_event_socket_op(struct timespec *tv,
                     audit_proc_t *subject,
-                    ipaddr_t *addr, uint16_t port, bool success,
-                    uint64_t code) {
+                    int protocol,
+                    ipaddr_t *sock_addr, uint16_t sock_port,
+                    ipaddr_t *peer_addr, uint16_t peer_port,
+                    uint64_t eventcode) {
 	socket_op_t *so;
 
-	so = socket_op_new(code);
+	so = socket_op_new(eventcode);
 	if (!so) {
 		atomic64_inc(&ooms);
 		return;
 	}
 	so->subject_image_exec = image_exec_by_pid(subject->pid);
 	so->subject = *subject;
-	so->addr = *addr;
-	so->port = port;
-	so->success = success;
+	/* can be 0 if unknown */
+	so->protocol = protocol;
+	/* can be 0 if unknown or irrelevant */
+	if (sock_addr) {
+		so->sock_addr = *sock_addr;
+		so->sock_port = sock_port;
+	}
+	/* can be 0 if unknown or irrelevant */
+	if (peer_addr) {
+		so->peer_addr = *peer_addr;
+		so->peer_port = peer_port;
+	}
 	so->hdr.tv = *tv;
 	work_submit(so);
 }
@@ -92,26 +103,80 @@ log_event_socket_op(struct timespec *tv,
 static void
 sockmon_socket_op(struct timespec *tv,
                   audit_proc_t *subject,
-                  ipaddr_t *addr, uint16_t port, bool success,
-                  uint64_t code) {
+                  int protocol /* can be 0 */,
+                  ipaddr_t *sock_addr /* can be NULL */ , uint16_t sock_port,
+                  ipaddr_t *peer_addr /* can be NULL */, uint16_t peer_port,
+                  uint64_t eventcode) {
 	events_recvd++;
-	if (config->suppress_socket_op_localhost && ipaddr_is_localhost(addr))
-		return;
+	if (config->suppress_socket_op_localhost) {
+		if (peer_addr) {
+			if (ipaddr_is_localhost(peer_addr))
+				return;
+		} else if (sock_addr) {
+			if (ipaddr_is_localhost(sock_addr))
+				return;
+		}
+	}
 	events_procd++;
-	log_event_socket_op(tv, subject, addr, port, success, code);
+	log_event_socket_op(tv, subject, protocol, sock_addr, sock_port,
+	                    peer_addr, peer_port, eventcode);
+}
+
+/*
+ * Called for socket.
+ */
+void
+sockmon_socket(UNUSED struct timespec *tv,
+               audit_proc_t *subject,
+               int fd, int domain, int type, int protocol) {
+	events_recvd++;
+	if (domain != PF_INET && domain != PF_INET6/*XXX && domain != PF_NDRW*/)
+		return;
+	if (protocol == 0) {
+		if (type == SOCK_STREAM)
+			protocol = IPPROTO_TCP;
+		else if (type == SOCK_DGRAM)
+			protocol = IPPROTO_UDP;
+		else
+			return;
+	}
+	events_procd++;
+	procmon_socket_create(subject->pid, fd, protocol);
 }
 
 /*
  * Called for bind.
- *
- * XXX should remember binds per socket+process and log listen instead of bind
  */
 void
-sockmon_bind(struct timespec *tv,
+sockmon_bind(UNUSED struct timespec *tv,
              audit_proc_t *subject,
-             ipaddr_t *addr, uint16_t port) {
-	sockmon_socket_op(tv, subject, addr, port, true,
-	                  LOGEVT_SOCKET_BIND);
+             int fd, ipaddr_t *sock_addr, uint16_t sock_port) {
+	int proto;
+
+	events_recvd++;
+	events_procd++;
+	procmon_socket_bind(&proto, subject->pid, fd, sock_addr, sock_port);
+	if (proto == IPPROTO_UDP) {
+		/* trigger listen event, there will not be a listen() */
+		sockmon_socket_op(tv, subject, proto, sock_addr, sock_port,
+		                  NULL, 0, LOGEVT_SOCKET_LISTEN);
+	}
+}
+
+/*
+ * Called for listen.
+ */
+void
+sockmon_listen(struct timespec *tv,
+               audit_proc_t *subject,
+               int fd) {
+	int proto;
+	ipaddr_t *addr;
+	uint16_t port;
+
+	procmon_socket_state(&proto, &addr, &port, subject->pid, fd);
+	sockmon_socket_op(tv, subject, proto, addr, port, NULL, 0,
+	                  LOGEVT_SOCKET_LISTEN);
 }
 
 /*
@@ -120,8 +185,13 @@ sockmon_bind(struct timespec *tv,
 void
 sockmon_accept(struct timespec *tv,
                audit_proc_t *subject,
-               ipaddr_t *addr, uint16_t port) {
-	sockmon_socket_op(tv, subject, addr, port, true,
+               int fd, ipaddr_t *peer_addr, uint16_t peer_port) {
+	int proto;
+	ipaddr_t *addr;
+	uint16_t port;
+
+	procmon_socket_state(&proto, &addr, &port, subject->pid, fd);
+	sockmon_socket_op(tv, subject, proto, addr, port, peer_addr, peer_port,
 	                  LOGEVT_SOCKET_ACCEPT);
 }
 
@@ -131,8 +201,13 @@ sockmon_accept(struct timespec *tv,
 void
 sockmon_connect(struct timespec *tv,
                 audit_proc_t *subject,
-                ipaddr_t *addr, uint16_t port, bool success) {
-	sockmon_socket_op(tv, subject, addr, port, success,
+                int fd, ipaddr_t *peer_addr, uint16_t peer_port) {
+	int proto;
+	ipaddr_t *addr;
+	uint16_t port;
+
+	procmon_socket_state(&proto, &addr, &port, subject->pid, fd);
+	sockmon_socket_op(tv, subject, proto, addr, port, peer_addr, peer_port,
 	                  LOGEVT_SOCKET_CONNECT);
 }
 

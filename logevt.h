@@ -48,7 +48,7 @@ typedef struct {
 #define LOGEVT_IMAGE_EXEC       2       /* image_exec_t */
 #define LOGEVT_PROCESS_ACCESS   3       /* process_access_t */
 #define LOGEVT_LAUNCHD_ADD      4       /* launchd_add_t */
-#define LOGEVT_SOCKET_BIND      5       /* socket_bind_t */
+#define LOGEVT_SOCKET_LISTEN    5       /* socket_listen_t */
 #define LOGEVT_SOCKET_ACCEPT    6       /* socket_accept_t */
 #define LOGEVT_SOCKET_CONNECT   7       /* socket_connect_t */
 #define LOGEVT_SIZE             8
@@ -62,7 +62,7 @@ typedef struct {
 #define LOGEVT_WANT(F,E)        ((E) & (F))
 #define LOGEVT_HACKMON          LOGEVT_FLAG(LOGEVT_PROCESS_ACCESS)
 #define LOGEVT_FILEMON          LOGEVT_FLAG(LOGEVT_LAUNCHD_ADD)
-#define LOGEVT_SOCKMON          LOGEVT_FLAG(LOGEVT_SOCKET_BIND)|\
+#define LOGEVT_SOCKMON          LOGEVT_FLAG(LOGEVT_SOCKET_LISTEN)|\
                                 LOGEVT_FLAG(LOGEVT_SOCKET_ACCEPT)|\
                                 LOGEVT_FLAG(LOGEVT_SOCKET_CONNECT)
 
@@ -77,7 +77,7 @@ int logevt_xnumon_stats(logfmt_t *, FILE *, void *) NONNULL(1,2,3) WUNRES;
 int logevt_image_exec(logfmt_t *, FILE *, void *) NONNULL(1,2,3) WUNRES;
 int logevt_process_access(logfmt_t *, FILE *, void *) NONNULL(1,2,3) WUNRES;
 int logevt_launchd_add(logfmt_t *, FILE *, void *) NONNULL(1,2,3) WUNRES;
-int logevt_socket_bind(logfmt_t *, FILE *, void *) NONNULL(1,2,3) WUNRES;
+int logevt_socket_listen(logfmt_t *, FILE *, void *) NONNULL(1,2,3) WUNRES;
 int logevt_socket_accept(logfmt_t *, FILE *, void *) NONNULL(1,2,3) WUNRES;
 int logevt_socket_connect(logfmt_t *, FILE *, void *) NONNULL(1,2,3) WUNRES;
 

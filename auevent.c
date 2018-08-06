@@ -290,6 +290,7 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], int flags, FILE *f) {
 			break;
 		/* syscall arguments */
 		case AUT_ARG32:
+			/* tok.tt.arg32.no is zero-based */
 			assert(!ev->args[tok.tt.arg32.no].present);
 			ev->args[tok.tt.arg32.no].present = true;
 			ev->args[tok.tt.arg32.no].value = tok.tt.arg32.val;
@@ -303,6 +304,7 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], int flags, FILE *f) {
 			                     (size_t)tok.tt.arg32.no + 1);
 			break;
 		case AUT_ARG64:
+			/* tok.tt.arg64.no is zero-based */
 			assert(!ev->args[tok.tt.arg64.no].present);
 			ev->args[tok.tt.arg64.no].present = true;
 			ev->args[tok.tt.arg64.no].value = tok.tt.arg64.val;

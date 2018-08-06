@@ -121,12 +121,12 @@ const uint16_t auclass_xnumon_events_filemon[] = {
 
 /* Socket tracking, TCP only for now. */
 const uint16_t auclass_xnumon_events_sockmon[] = {
+	AUE_SOCKET,
+	AUE_BIND,
+	AUE_LISTEN,
 	AUE_CONNECT,
 	AUE_ACCEPT,
-	AUE_BIND,
 #if 0
-	AUE_SOCKET,
-	AUE_LISTEN,
 	AUE_RECVMSG,
 	AUE_SENDMSG,
 	AUE_RECVFROM,

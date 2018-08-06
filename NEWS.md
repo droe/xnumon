@@ -1,9 +1,7 @@
 ### xnumon develop
 
--   Initial version of socket events: socket-bind[5], socket-accept[6] and
-    socket-connect[7] (issue #14) including associated suppression options.
-    The socket-bind[5] events are considered EXPERIMENTAL and will be replaced
-    by a socket-listen[5] event in a future version.
+-   Socket events: socket-listen[5], socket-accept[6] and socket-connect[7]
+    (issue #14) including associated suppression options.
 -   Also consider link(2), linkat(2), symlink(2), symlinkat(2), clonefile(2),
     clonefileat(2), fclonefileat(2), copyfile(2) and fcopyfile(2) for file
     monitoring based events.

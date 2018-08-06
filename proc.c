@@ -30,6 +30,7 @@ proc_new(void) {
 	if (!proc)
 		return NULL;
 	bzero(proc, sizeof(proc_t));
+	tommy_list_init(&proc->fdlist);
 	procs++;
 	return proc;
 }
@@ -37,6 +38,12 @@ proc_new(void) {
 static void
 proc_free(proc_t *proc) {
 	assert(proc);
+	while (!tommy_list_empty(&proc->fdlist)) {
+		void *ctx;
+		ctx = tommy_list_remove_existing(&proc->fdlist,
+				tommy_list_head(&proc->fdlist));
+		free(ctx);
+	}
 	if (proc->image_exec)
 		image_exec_free(proc->image_exec);
 	if (proc->cwd)
@@ -44,6 +51,18 @@ proc_free(proc_t *proc) {
 	assert(procs > 0);
 	procs--;
 	free(proc);
+}
+
+tommy_node *
+proc_find_fd(proc_t *proc, int fd) {
+	tommy_node *node = tommy_list_head(&proc->fdlist);
+	while (node) {
+		fd_ctx_t *ctx = node->data;
+		if (ctx->fd == fd) /* XXX WHY CRASH HERE??? */
+			return node;
+		node = node->next;
+	}
+	return NULL;
 }
 
 /*

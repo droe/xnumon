@@ -13,7 +13,20 @@
 
 #include "procmon.h" /* image_exec_t */
 
+#include "tommylist.h"
+
 #include <sys/types.h>
+
+typedef struct {
+	tommy_node node;
+
+	int fd;
+
+	/* socket */
+	int proto;
+	ipaddr_t addr;
+	uint16_t port;
+} fd_ctx_t;
 
 typedef struct proc {
 	/* fork meta-data at time of fork */
@@ -28,6 +41,9 @@ typedef struct proc {
 
 	/* hashtable bucket linkage */
 	struct proc *next;
+
+	/* open file descriptors */
+	tommy_list fdlist;
 } proc_t;
 
 extern uint32_t procs;
@@ -38,6 +54,8 @@ proc_t * proctab_create(pid_t);
 proc_t * proctab_find_or_create(pid_t);
 proc_t * proctab_find(pid_t);
 void proctab_remove(pid_t);
+
+tommy_node * proc_find_fd(proc_t *, int) NONNULL(1) WUNRES;
 
 #endif
 

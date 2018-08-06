@@ -16,6 +16,7 @@
 
 #include "procmon.h"
 
+#include "tommylist.h"
 #include "proc.h"
 #include "hashes.h"
 #include "cachehash.h"
@@ -1173,6 +1174,110 @@ procmon_getcwd(pid_t pid) {
 		liveacq++;
 	}
 	return proc->cwd;
+}
+
+/*
+ * Called from sockmon to create socket context on a process.
+ *
+ * Can silently fail.
+ */
+void
+procmon_socket_create(pid_t pid, int fd,
+                      int proto) {
+	fd_ctx_t *ctx;
+	proc_t *proc;
+	tommy_node *node;
+
+	proc = proctab_find(pid);
+	if (!proc)
+		return; // XXX count
+
+	node = proc_find_fd(proc, fd);
+	if (node) {
+		/* reuse existing allocation */
+		ctx = node->data;
+		bzero(((char *)ctx)+sizeof(ctx->node), sizeof(fd_ctx_t)-sizeof(ctx->node));
+	} else {
+		ctx = malloc(sizeof(fd_ctx_t));
+		if (!ctx) {
+			ooms++;
+			return;
+		}
+		bzero(ctx, sizeof(fd_ctx_t));
+	}
+	ctx->fd = fd;
+	ctx->proto = proto;
+
+	/* if not reusing existing allocation, insert into list */
+	if (!node) {
+		tommy_list_insert_head(&proc->fdlist, &ctx->node, ctx);
+	}
+}
+
+/*
+ * Called from sockmon to bind a local socket address to a socket and
+ * return the protocol that we stored from the earlier call to
+ * procmon_socket_create().
+ *
+ * Returns proto = 0 if no state available on this socket.
+ */
+void
+procmon_socket_bind(int *proto,
+                    pid_t pid, int fd,
+                    ipaddr_t *addr, uint16_t port) {
+	proc_t *proc;
+	tommy_node *node;
+	fd_ctx_t *ctx;
+
+	proc = proctab_find(pid);
+	if (!proc)
+		goto errout;
+	node = proc_find_fd(proc, fd);
+	if (!node)
+		goto errout;
+	ctx = node->data;
+	ctx->addr = *addr;
+	ctx->port = port;
+	*proto = ctx->proto;
+	return;
+
+errout:
+	*proto = 0;
+}
+
+/*
+ * Called from sockmon to retrieve socket state stored from previous calls
+ * to procmon_socket_create() and procmon_socket_bind().
+ *
+ * Returns proto = 0, addr = NULL and undefined port if no state is available.
+ * The buffer containing ipaddr_t must be copied by the caller.
+ */
+void
+procmon_socket_state(int *proto, ipaddr_t **addr, uint16_t *port,
+                     pid_t pid, int fd) {
+	proc_t *proc;
+	tommy_node *node;
+	fd_ctx_t *ctx;
+
+	proc = proctab_find(pid);
+	if (!proc)
+		goto errout;
+	node = proc_find_fd(proc, fd);
+	if (!node)
+		goto errout;
+	ctx = node->data;
+	if (ipaddr_is_empty(&ctx->addr)) {
+		*addr = NULL;
+	} else {
+		*addr = &ctx->addr;
+		*port = ctx->port;
+	}
+	*proto = ctx->proto;
+	return;
+
+errout:
+	*addr = NULL;
+	*proto = 0;
 }
 
 int

@@ -37,7 +37,7 @@ logevt_func_t le_logevt[LOGEVT_SIZE] = {
 	logevt_image_exec,
 	logevt_process_access,
 	logevt_launchd_add,
-	logevt_socket_bind,
+	logevt_socket_listen,
 	logevt_socket_accept,
 	logevt_socket_connect
 };

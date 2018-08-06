@@ -799,16 +799,22 @@ logevt_launchd_add(logfmt_t *fmt, FILE *f, void *arg0) {
 }
 
 int
-logevt_socket_bind(logfmt_t *fmt, FILE *f, void *arg0) {
-	socket_bind_t *so = (socket_bind_t *)arg0;
+logevt_socket_listen(logfmt_t *fmt, FILE *f, void *arg0) {
+	socket_listen_t *so = (socket_listen_t *)arg0;
 
 	logevt_header(fmt, f, (logevt_header_t *)arg0);
 
-	fmt->dict_item(f, "addr");
-	fmt->value_string(f, ipaddrtoa(&so->addr, NULL));
+	if (so->protocol) {
+		fmt->dict_item(f, "proto");
+		fmt->value_string(f, protocoltoa(so->protocol));
+	}
 
-	fmt->dict_item(f, "port");
-	fmt->value_uint(f, so->port);
+	if (!ipaddr_is_empty(&so->sock_addr)) {
+		fmt->dict_item(f, "sockaddr");
+		fmt->value_string(f, ipaddrtoa(&so->sock_addr, NULL));
+		fmt->dict_item(f, "sockport");
+		fmt->value_uint(f, so->sock_port);
+	}
 
 	fmt->dict_item(f, "subject");
 	logevt_process(fmt, f,
@@ -827,11 +833,24 @@ logevt_socket_accept(logfmt_t *fmt, FILE *f, void *arg0) {
 
 	logevt_header(fmt, f, (logevt_header_t *)arg0);
 
-	fmt->dict_item(f, "addr");
-	fmt->value_string(f, ipaddrtoa(&so->addr, NULL));
+	if (so->protocol) {
+		fmt->dict_item(f, "proto");
+		fmt->value_string(f, protocoltoa(so->protocol));
+	}
 
-	fmt->dict_item(f, "port");
-	fmt->value_uint(f, so->port);
+	if (!ipaddr_is_empty(&so->sock_addr)) {
+		fmt->dict_item(f, "sockaddr");
+		fmt->value_string(f, ipaddrtoa(&so->sock_addr, NULL));
+		fmt->dict_item(f, "sockport");
+		fmt->value_uint(f, so->sock_port);
+	}
+
+	if (!ipaddr_is_empty(&so->peer_addr)) {
+		fmt->dict_item(f, "peeraddr");
+		fmt->value_string(f, ipaddrtoa(&so->peer_addr, NULL));
+		fmt->dict_item(f, "peerport");
+		fmt->value_uint(f, so->peer_port);
+	}
 
 	fmt->dict_item(f, "subject");
 	logevt_process(fmt, f,
@@ -850,14 +869,24 @@ logevt_socket_connect(logfmt_t *fmt, FILE *f, void *arg0) {
 
 	logevt_header(fmt, f, (logevt_header_t *)arg0);
 
-	fmt->dict_item(f, "addr");
-	fmt->value_string(f, ipaddrtoa(&so->addr, NULL));
+	if (so->protocol) {
+		fmt->dict_item(f, "proto");
+		fmt->value_string(f, protocoltoa(so->protocol));
+	}
 
-	fmt->dict_item(f, "port");
-	fmt->value_uint(f, so->port);
+	if (!ipaddr_is_empty(&so->sock_addr)) {
+		fmt->dict_item(f, "sockaddr");
+		fmt->value_string(f, ipaddrtoa(&so->sock_addr, NULL));
+		fmt->dict_item(f, "sockport");
+		fmt->value_uint(f, so->sock_port);
+	}
 
-	fmt->dict_item(f, "success");
-	fmt->value_bool(f, so->success);
+	if (!ipaddr_is_empty(&so->peer_addr)) {
+		fmt->dict_item(f, "peeraddr");
+		fmt->value_string(f, ipaddrtoa(&so->peer_addr, NULL));
+		fmt->dict_item(f, "peerport");
+		fmt->value_uint(f, so->peer_port);
+	}
 
 	fmt->dict_item(f, "subject");
 	logevt_process(fmt, f,

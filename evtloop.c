@@ -721,20 +721,52 @@ auef_readable(UNUSED int fd, void *udata) {
 	 * Events for socket tracking.
 	 */
 
+	case AUE_SOCKET:
+		if (!LOGEVT_WANT(cfg->events, LOGEVT_SOCKMON))
+			break;
+		TOKEN_ASSERT("socket", "return", ev.return_present);
+		if (ev.return_value > INT_MAX) {
+			failedsyscalls++;
+			break;
+		}
+		TOKEN_ASSERT("socket", "subject", ev.subject_present);
+		TOKEN_ASSERT("socket", "arg[1](domain)", ev.args[1].present);
+		TOKEN_ASSERT("socket", "arg[2](type)", ev.args[2].present);
+		TOKEN_ASSERT("socket", "arg[3](protocol)", ev.args[3].present);
+		sockmon_socket(&ev.tv, &ev.subject, ev.return_value,
+		               ev.args[1].value, ev.args[2].value,
+		               ev.args[3].value);
+		break;
+
 	case AUE_BIND:
-		if (!LOGEVT_WANT(cfg->events, LOGEVT_FLAG(LOGEVT_SOCKET_BIND)))
+		if (!LOGEVT_WANT(cfg->events, LOGEVT_SOCKMON))
 			break;
 		TOKEN_ASSERT("bind", "return", ev.return_present);
-		if (ev.return_value) {
+		if (ev.return_value != 0) {
 			failedsyscalls++;
 			break;
 		}
 		if (!ev.sockinet_present)
-			/* unix socket */
+			/* skip unix socket */
 			break;
 		TOKEN_ASSERT("bind", "subject", ev.subject_present);
-		sockmon_bind(&ev.tv, &ev.subject,
+		TOKEN_ASSERT("bind", "arg[1](fd)", ev.args[1].present);
+		sockmon_bind(&ev.tv, &ev.subject, ev.args[1].value,
 		             &ev.sockinet_addr, ev.sockinet_port);
+		break;
+
+	case AUE_LISTEN:
+		if (!LOGEVT_WANT(cfg->events,
+		                 LOGEVT_FLAG(LOGEVT_SOCKET_LISTEN)))
+			break;
+		TOKEN_ASSERT("listen", "return", ev.return_present);
+		if (ev.return_value != 0) {
+			failedsyscalls++;
+			break;
+		}
+		TOKEN_ASSERT("listen", "subject", ev.subject_present);
+		TOKEN_ASSERT("listen", "arg[1](fd)", ev.args[1].present);
+		sockmon_listen(&ev.tv, &ev.subject, ev.args[1].value);
 		break;
 
 	case AUE_ACCEPT:
@@ -750,7 +782,8 @@ auef_readable(UNUSED int fd, void *udata) {
 			/* unix socket */
 			break;
 		TOKEN_ASSERT("accept", "subject", ev.subject_present);
-		sockmon_accept(&ev.tv, &ev.subject,
+		TOKEN_ASSERT("accept", "arg[1](fd)", ev.args[1].present);
+		sockmon_accept(&ev.tv, &ev.subject, ev.args[1].value,
 		               &ev.sockinet_addr, ev.sockinet_port);
 		break;
 
@@ -758,14 +791,20 @@ auef_readable(UNUSED int fd, void *udata) {
 		if (!LOGEVT_WANT(cfg->events,
 		                 LOGEVT_FLAG(LOGEVT_SOCKET_CONNECT)))
 			break;
+		/* While it would be interesting to see failed connects,
+		 * XNU does not seem to provide audit(4) records for them. */
+		TOKEN_ASSERT("connect", "return", ev.return_present);
+		if (ev.return_value != 0) {
+			failedsyscalls++;
+			break;
+		}
 		if (!ev.sockinet_present)
 			/* unix socket */
 			break;
 		TOKEN_ASSERT("connect", "subject", ev.subject_present);
-		TOKEN_ASSERT("connect", "return", ev.return_present);
-		sockmon_connect(&ev.tv, &ev.subject,
-		                &ev.sockinet_addr, ev.sockinet_port,
-		                ev.return_value);
+		TOKEN_ASSERT("connect", "arg[1](fd)", ev.args[1].present);
+		sockmon_connect(&ev.tv, &ev.subject, ev.args[1].value,
+		                &ev.sockinet_addr, ev.sockinet_port);
 		break;
 
 	/*
@@ -999,7 +1038,7 @@ siginfo_arrived(UNUSED int sig, UNUSED void *udata) {
 	                st.lq.counts[LOGEVT_IMAGE_EXEC],
 	                st.lq.counts[LOGEVT_PROCESS_ACCESS],
 	                st.lq.counts[LOGEVT_LAUNCHD_ADD],
-	                st.lq.counts[LOGEVT_SOCKET_BIND],
+	                st.lq.counts[LOGEVT_SOCKET_LISTEN],
 	                st.lq.counts[LOGEVT_SOCKET_ACCEPT],
 	                st.lq.counts[LOGEVT_SOCKET_CONNECT],
 	                st.lq.errors);
