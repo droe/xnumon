@@ -107,5 +107,8 @@ void auevent_fprint(FILE *, audit_event_t *) NONNULL(1,2);
 
 int auevent_init(void) WUNRES;
 
+int auevent_sock_domain(int) WUNRES;
+int auevent_sock_type(int) WUNRES;
+
 #endif
 

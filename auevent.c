@@ -27,6 +27,8 @@
 
 #include <bsm/libbsm.h>
 #include <bsm/audit_kevents.h>
+#include <bsm/audit_domain.h>
+#include <bsm/audit_socket_type.h>
 
 /*
  * Record token structs in libbsm:
@@ -623,5 +625,52 @@ auevent_destroy(audit_event_t *ev) {
 		}
 	}
 #endif /* DEBUG_AUDITPIPE */
+}
+
+/*
+ * BSM uses domain/PF/AF and socket type constants derived from Solaris, which
+ * unfortunately differ from BSD.  Hence the need to map them back into BSD
+ * constants.  Cannot do this automatically because the constants are emitted
+ * as generic arg tokens.
+ */
+
+int
+auevent_sock_domain(int bsmdomain) {
+	switch (bsmdomain) {
+	case BSM_PF_UNSPEC:
+		return PF_UNSPEC;
+	case BSM_PF_LOCAL:
+		return PF_UNIX;
+	case BSM_PF_ROUTE:
+		return PF_ROUTE;
+	case BSM_PF_KEY:
+		return PF_KEY;
+	case BSM_PF_INET:
+		return PF_INET;
+	case BSM_PF_INET6:
+		return PF_INET6;
+	/* ... */
+	default:
+		return -1;
+	}
+}
+
+int
+auevent_sock_type(int bsmtype) {
+	switch (bsmtype) {
+	case BSM_SOCK_DGRAM:
+		return SOCK_DGRAM;
+	case BSM_SOCK_STREAM:
+		return SOCK_STREAM;
+	case BSM_SOCK_RAW:
+		return SOCK_RAW;
+	case BSM_SOCK_RDM:
+		return SOCK_RDM;
+	case BSM_SOCK_SEQPACKET:
+		return SOCK_SEQPACKET;
+	case BSM_SOCK_UNKNOWN:
+	default:
+		return -1;
+	}
 }
 

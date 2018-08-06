@@ -1196,11 +1196,12 @@ procmon_socket_create(pid_t pid, int fd,
 	if (node) {
 		/* reuse existing allocation */
 		ctx = node->data;
-		bzero(((char *)ctx)+sizeof(ctx->node), sizeof(fd_ctx_t)-sizeof(ctx->node));
+		bzero(((char *)ctx)+sizeof(ctx->node),
+		      sizeof(fd_ctx_t)-sizeof(ctx->node));
 	} else {
 		ctx = malloc(sizeof(fd_ctx_t));
 		if (!ctx) {
-			ooms++;
+			atomic64_inc(&ooms);
 			return;
 		}
 		bzero(ctx, sizeof(fd_ctx_t));
@@ -1236,8 +1237,10 @@ procmon_socket_bind(int *proto,
 	if (!node)
 		goto errout;
 	ctx = node->data;
-	ctx->addr = *addr;
-	ctx->port = port;
+	if (addr) {
+		ctx->addr = *addr;
+		ctx->port = port;
+	}
 	*proto = ctx->proto;
 	return;
 

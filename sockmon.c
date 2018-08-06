@@ -133,12 +133,16 @@ sockmon_socket(UNUSED struct timespec *tv,
 	if (domain != PF_INET && domain != PF_INET6/*XXX && domain != PF_NDRW*/)
 		return;
 	if (protocol == 0) {
-		if (type == SOCK_STREAM)
+		switch(type) {
+		case SOCK_STREAM:
 			protocol = IPPROTO_TCP;
-		else if (type == SOCK_DGRAM)
+			break;
+		case SOCK_DGRAM:
 			protocol = IPPROTO_UDP;
-		else
+			break;
+		default:
 			return;
+		}
 	}
 	events_procd++;
 	procmon_socket_create(subject->pid, fd, protocol);
