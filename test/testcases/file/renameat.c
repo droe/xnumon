@@ -69,7 +69,7 @@ main(int argc, char *argv[]) {
 	}
 	close(fd2);
 	close(fd1);
-	sleep(5);
+	sleep(3);
 	unlink(DSTDIR"/"DSTFILE);
 
 	return 0;

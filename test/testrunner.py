@@ -339,7 +339,8 @@ def main(paths, debug=False):
         print("%i testcases radared:" % len(suite.radared_testcases))
         for tc in suite.radared_testcases:
             print("%s" % tc)
-        print("bugs present: %s" % ' '.join(sorted(list(suite.radared_radars))))
+        print("fatal bugs present: %s" %
+              ' '.join(sorted(list(suite.radared_radars))))
         print()
     if len(suite.ignored_testcases) > 0:
         print("%i testcases ignored:" % len(suite.ignored_testcases))
