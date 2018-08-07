@@ -169,7 +169,7 @@ load: $(KEXTBUNDLE)
 	sudo chown -R root:wheel $<
 	sudo sync
 	sudo kextutil $<
-	sudo chown -R $(USER):$(shell id -gn) $<
+	sudo chown -R '$(USER):$(shell id -gn)' $<
 	sudo dmesg|grep $(KEXTNAME)|tail -1
 
 stat:
