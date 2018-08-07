@@ -1,6 +1,6 @@
 # xnumon test framework
 
-`make test`
+`make test` runs the xnumon end-to-end integration test suite.
 
 
 ### Test case interface
@@ -61,13 +61,32 @@ record that matches all the conditions.
 spec:image-exec subject.pid=16323 image.path=/bin/sh image.ident=com.apple.sh image.origin=system script.path=/Users/jdoe/hello-world.sh
 ```
 
-A spec can also have optional comma-separated flags.  The only currently used
-flag is `absent`, which denotes that the test should succeed iff the defined
-log record cannot be found.  This is useful when an operation is expected to
-fail and should not generate a log entry.
+A spec can also have optional comma-separated flags.  The `absent` flag denotes
+that the test should succeed iff the defined log record cannot be found.  This
+is useful when an operation is expected to fail and should not generate a log
+entry.
 
 ```
 spec:absent:image-exec subject.pid=12452 image.path=/bin/sh
+```
+
+When a spec is marked using a radar flag, then the spec will be expected to
+fail on systems which have the specified radar not fixed yet.  If all the
+failing specs of a testcase are marked with radar, then the testcase is said to
+have radared and is not counted towards failed tests.  This is to allow the
+test suite to be useful in testing code despite having unfixed bugs in audit(4)
+present on the system.
+
+```
+spec:radar11111111:image-exec subject.pid=12349 image.path=/bin/sh
+```
+
+Condition values can be specified as arrays by separating the array values with
+commas.  Values only get split on commas if the condition left-hand-side points
+to a list in the log record.
+
+```
+spec:image-exec subject.pid=12350 image.path=/bin/ps argv=ps,auxwww
 ```
 
 As a special case, `image.sha256` and other hash fields can be matched against
@@ -105,12 +124,6 @@ There is no syntax yet to access array members.
 
 Logs are simply read from `/var/log/xnumon.log`; the framework does not know
 how to start and stop xnumon.
-
-The test runner has no notion of failure due to macOS bugs (radar) and failure
-due to bugs in the code or test cases.  Test cases that fail due to macOS bugs
-should currently be disabled by commenting the respective spec out in order to
-allow the test framework to be used for testing code during development.  This
-could be fixed by introducing a notion of "this spec can fail due to radar XY".
 
 There should be more and better convenience helpers simplifying common tasks
 in test cases and reducing code duplication.
