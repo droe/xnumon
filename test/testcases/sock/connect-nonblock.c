@@ -26,9 +26,6 @@
  * connect(2) from non-blocking socket, triggers radar 43006946
  */
 
-#define PEERADDR "8.8.8.8"
-#define PEERPORT 53
-
 int
 main(int argc, char *argv[]) {
 	printf("spec:testcase returncode=0\n");

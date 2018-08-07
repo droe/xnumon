@@ -12,18 +12,21 @@ echo "spec:testcase returncode=0"
 echo "spec:image-exec subject.pid=$$ image.path=/bin/sh script.path=`pwd`/$0"
 
 shove='/System/Library/PrivateFrameworks/PackageKit.framework/Versions/A/Resources/shove'
-fn="`basename $0 .stest`.plist"
-plist="`pwd`/`dirname $0`/$fn"
+srcf="`pwd`/`dirname $0`/shove.plist"
 tmpf=`mktemp`
-dstf="$HOME/Library/LaunchAgents/$fn"
+dstf="$HOME/Library/LaunchAgents/ch.roe.xnumon.test.shove.plist"
 
-test -e "$plist" || exit 1
-cp "$plist" "$tmpf" || exit 1
-$shove "$tmpf" "$dstf" & pid=$! || exit 1
+test -e "$srcf" || exit 1
+cp "$srcf" "$tmpf" || exit 2
+$shove "$tmpf" "$dstf" & pid=$! || exit 3
+sleep 1
+launchctl load "$dstf" || exit 4
 
 echo "spec:launchd-add subject.pid=$pid subject.image.path=$shove subject.image.ident=com.apple.shove plist.path=$dstf program.path=/usr/bin/true program.argv=/usr/bin/true,shove"
+echo "spec:image-exec subject.image.path=/usr/libexec/xpcproxy image.path=/usr/bin/true argv=/usr/bin/true,shove"
 
 sleep 1
-rm "$dstf"
+launchctl unload "$dstf" || exit 5
+rm -f "$dstf"
 
 exit 0

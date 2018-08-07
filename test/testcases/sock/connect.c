@@ -21,9 +21,6 @@
 
 #include "getpath.h"
 
-#define PEERADDR "8.8.8.8"
-#define PEERPORT 53
-
 int
 main(int argc, char *argv[]) {
 	printf("spec:testcase returncode=0\n");

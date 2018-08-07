@@ -18,9 +18,9 @@
 #define SRCDIR TESTDIR"/testcases/file"
 #define SRCFILE "renameat.plist"
 #define TMPDIR "/tmp"
-#define TMPFILE "renameat.plist~"
+#define TMPFILE "ch.roe.xnumon.test.renameat.plist~"
 #define DSTDIR HOME"/Library/LaunchAgents"
-#define DSTFILE "true.plist"
+#define DSTFILE "ch.roe.xnumon.test.renameat.plist"
 
 int
 main(int argc, char *argv[]) {
@@ -31,26 +31,33 @@ main(int argc, char *argv[]) {
 	       "subject.pid=%i "
 	       "image.path=%s "
 	       "\n", getpid(), getpath());
-	/* radar42770257 workaround results in an event with missing subject
-	 * if by chance another process is reading the file during tests */
-	printf("spec:radar42770257:launchd-add "
+	/* write by any process */
+	printf("spec:launchd-add "
 	       "plist.path="DSTDIR"/"DSTFILE" "
 	       "program.path=/usr/bin/true "
+	       "program.argv=/usr/bin/true,renameat "
 	       "\n");
+	/* misidentification of launchd as the source */
+	printf("spec:absent:launchd-add "
+	       "subject.pid=1 "
+	       "plist.path="DSTDIR"/"DSTFILE" "
+	       "program.path=/usr/bin/true "
+	       "program.argv=/usr/bin/true,renameat "
+	       "\n");
+	/* identification of the true subject */
 	printf("spec:radar42770257:launchd-add "
 	       "subject.pid=%i "
 	       "subject.image.path=%s "
 	       "plist.path="DSTDIR"/"DSTFILE" "
 	       "program.path=/usr/bin/true "
+	       "program.argv=/usr/bin/true,renameat "
 	       "\n", getpid(), getpath());
-#if 0
-	/* XXX fails for some reason */
+	/* launchd starting the agent */
 	printf("spec:image-exec "
 	       "subject.image.path=/usr/libexec/xpcproxy "
 	       "image.path=/usr/bin/true "
 	       "argv=/usr/bin/true,renameat "
 	       "\n");
-#endif
 	fflush(stdout);
 
 	system("cp "SRCDIR"/"SRCFILE" "TMPDIR"/"TMPFILE);
@@ -70,7 +77,9 @@ main(int argc, char *argv[]) {
 	}
 	close(fd2);
 	close(fd1);
-	sleep(3);
+	system("launchctl load \""DSTDIR"/"DSTFILE"\"");
+	sleep(1);
+	system("launchctl unload \""DSTDIR"/"DSTFILE"\"");
 	unlink(DSTDIR"/"DSTFILE);
 
 	return 0;

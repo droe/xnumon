@@ -1,6 +1,11 @@
+PEERADDR?=	8.8.8.8
+PEERPORT?=	53
+
 CPPFLAGS+=	-I$(CURDIR)/include \
 		-DTESTDIR=\"$(CURDIR)\" \
-		-DHOME=\"$(HOME)\"
+		-DHOME=\"$(HOME)\" \
+		-DPEERADDR=\"$(PEERADDR)\" \
+		-DPEERPORT=$(PEERPORT)
 
 CFLAGS+=	-std=c11 \
 		-Wall

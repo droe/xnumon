@@ -3,15 +3,13 @@
 <plist version="1.0">
 	<dict>
 		<key>Label</key>
-		<string>ch.roe.xnumon.test.renameat</string>
+		<string>ch.roe.xnumon.test.shove</string>
 		<key>ProgramArguments</key>
 		<array>
 			<string>/usr/bin/true</string>
 			<string>shove</string>
 		</array>
-		<key>KeepAlive</key>
-		<false/>
-		<key>LaunchOnlyOnce</key>
+		<key>RunAtLoad</key>
 		<true/>
 	</dict>
 </plist>

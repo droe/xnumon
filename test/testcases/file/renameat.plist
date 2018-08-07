@@ -9,9 +9,7 @@
 			<string>/usr/bin/true</string>
 			<string>renameat</string>
 		</array>
-		<key>KeepAlive</key>
-		<false/>
-		<key>LaunchOnlyOnce</key>
+		<key>RunAtLoad</key>
 		<true/>
 	</dict>
 </plist>
