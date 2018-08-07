@@ -151,6 +151,13 @@ class Specs:
                 self._wanted = 0
             else:
                 self._wanted = 1
+            if 'radar' in header[-2]:
+                for flag in header[-2].split(','):
+                    if flag.startswith('radar'):
+                        self._radar = flag
+                        break
+            else:
+                self._radar = None
             self._spectype = header[-1]
             if self._spectype != 'testcase':
                 self._eventcode = self._EVENTMAP[self._spectype]
@@ -175,7 +182,10 @@ class Specs:
                                 verbose=verbose, debug=debug)
             if verbose:
                 print("%i matching records" % len(results))
-            return len(results) == self._wanted
+            verdict = len(results) == self._wanted
+            if not verdict and self._radar:
+                return None
+            return verdict
 
         def __str__(self):
             return self._spec
@@ -185,15 +195,22 @@ class Specs:
 
     def check(self, ex, logs, verbose=False, debug=False):
         result = True
+        radars = []
         for spec in self._specs:
             if verbose:
                 print("testing %s" % spec)
-            if not spec.check(ex, logs, verbose=verbose, debug=debug):
+            verdict = spec.check(ex, logs, verbose=verbose, debug=debug)
+            if not verdict:
                 print("failed  %s" % spec)
-                result = False
+                if verdict == None:
+                    if result:
+                        result = None
+                    radars.append(spec._radar)
+                else:
+                    result = False
             else:
                 print("success %s" % spec)
-        return result
+        return result, radars
 
 
 class TestSuite:
@@ -229,28 +246,25 @@ class TestSuite:
 
     def __init__(self):
         self._dt_begin = haklib.dt.utcnow() - datetime.timedelta(seconds=1)
-        self.count_spec_failed = 0
-        self.count_exec_failed = 0
-        self.count_failed = 0
-        self.count_ignored = 0
-        self.count_success = 0
         self._testcases = []
-        self.ignored_testcases = []
+        self.success_testcases = []
         self.failed_testcases = []
+        self.ignored_testcases = []
+        self.radared_testcases = []
+        self.radared_radars = set()
 
-    def _exec_failed(self):
-        self.count_spec_failed += 1
-        self.count_failed += 1
+    def _success(self, path):
+        self.success_testcases.append(path)
 
-    def _spec_failed(self):
-        self.count_spec_failed += 1
-        self.count_failed += 1
+    def _failed(self, path):
+        self.failed_testcases.append(path)
 
-    def _ignored(self):
-        self.count_ignored += 1
+    def _radared(self, path, radars):
+        self.radared_testcases.append(path)
+        self.radared_radars = self.radared_radars.union(set(radars))
 
-    def _success(self):
-        self.count_success += 1
+    def _ignored(self, path):
+        self.ignored_testcases.append(path)
 
     def add_test(self, path):
         """
@@ -269,8 +283,7 @@ class TestSuite:
             self._testcases.append((path, ex, specs))
         else:
             print("no specs - ignoring %s" % path)
-            self._ignored()
-            self.ignored_testcases.append(path)
+            self._ignored(path)
 
     def evaluate(self, debug=False):
         """
@@ -289,13 +302,16 @@ class TestSuite:
         for path, ex, specs in self._testcases:
             print(brightwhite("testing %s" % path))
             specs = Specs(specs)
-            if specs.check(ex, logs):
-                self._success()
+            verdict, radars = specs.check(ex, logs)
+            if verdict:
+                self._success(path)
                 keyword = green("success")
+            elif verdict == None:
+                self._radared(path, radars)
+                keyword = yellow("radared")
             else:
-                self._spec_failed()
+                self._failed(path)
                 keyword = red("failed")
-                self.failed_testcases.append(path)
                 print("re-checking testcase in verbose mode:")
                 specs.check(ex, logs, verbose=True, debug=debug)
             print("%s %s" % (keyword, path))
@@ -314,19 +330,33 @@ def main(paths, debug=False):
         else:
             suite.add_test(path)
     suite.evaluate(debug=debug)
-    if suite.count_ignored > 0:
-        print("%i testcases ignored:" % suite.count_ignored)
+    #if len(suite.success_testcases) > 0:
+    #    print("%i testcases succeeded:" % len(suite.success_testcases))
+    #    for tc in suite.success_testcases:
+    #        print("%s" % tc)
+    #    print()
+    if len(suite.radared_testcases) > 0:
+        print("%i testcases radared:" % len(suite.radared_testcases))
+        for tc in suite.radared_testcases:
+            print("%s" % tc)
+        print("bugs present: %s" % ' '.join(sorted(list(suite.radared_radars))))
+        print()
+    if len(suite.ignored_testcases) > 0:
+        print("%i testcases ignored:" % len(suite.ignored_testcases))
         for tc in suite.ignored_testcases:
             print("%s" % tc)
         print()
-    if suite.count_failed > 0:
-        print("%i testcases failed:" % suite.count_failed)
+    if len(suite.failed_testcases) > 0:
+        print("%i testcases failed:" % len(suite.failed_testcases))
         for tc in suite.failed_testcases:
             print("%s" % tc)
         print()
-    print("%i success %i failed %i ignored" % (
-        suite.count_success, suite.count_failed, suite.count_ignored))
-    if suite.count_failed > 0:
+    print("%i failed %i ignored %i radared %i success" % (
+        len(suite.failed_testcases),
+        len(suite.ignored_testcases),
+        len(suite.radared_testcases),
+        len(suite.success_testcases)))
+    if len(suite.failed_testcases) > 0:
         return 1
     return 0
 

@@ -31,19 +31,17 @@ main(int argc, char *argv[]) {
 	       "subject.pid=%i "
 	       "image.path=%s "
 	       "\n", getpid(), getpath());
+	/* radar42770257 workaround results in missing subject */
 	printf("spec:launchd-add "
 	       "plist.path="DSTDIR"/"DSTFILE" "
 	       "program.path=/usr/bin/true "
 	       "\n");
-#if 0
-	/* XXX fails due to radar 42770257 */
-	printf("spec:launchd-add "
+	printf("spec:radar42770257:launchd-add "
 	       "subject.pid=%i "
 	       "subject.image.path=%s "
 	       "plist.path="DSTDIR"/"DSTFILE" "
 	       "program.path=/usr/bin/true "
 	       "\n", getpid(), getpath());
-#endif
 #if 0
 	/* XXX fails for some reason */
 	printf("spec:image-exec "

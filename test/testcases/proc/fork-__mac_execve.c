@@ -45,10 +45,13 @@ main(int argc, char *argv[]) {
 	       "subject.pid=%i "
 	       "subject.image.path=%s "
 	       "image.path="PATH" "
-#if 0
-	       /* XXX fails due to missing argv in AUE_MAC_EXECVE */
-	       "argv="ARGV0  // __mac_execve() seems to not have argv (!)
-#endif
+	       "\n",
+	       pid, getpath());
+	printf("spec:radar42946744:image-exec "
+	       "subject.pid=%i "
+	       "subject.image.path=%s "
+	       "image.path="PATH" "
+	       "argv="ARGV0  /* __mac_execve() is missing argv and arge */
 	       "\n",
 	       pid, getpath());
 	return 0;

@@ -127,6 +127,10 @@ const uint16_t auclass_xnumon_events_sockmon[] = {
 	AUE_CONNECT,
 	AUE_ACCEPT,
 #if 0
+	AUE_GETSOCKOPT,
+	AUE_SETSOCKOPT,
+	AUE_GETPEERNAME,
+	AUE_FCNTL,
 	AUE_RECVMSG,
 	AUE_SENDMSG,
 	AUE_RECVFROM,

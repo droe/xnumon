@@ -141,16 +141,13 @@ main(int argc, char *argv[]) {
 	       "argv="ARGV0
 	       "\n",
 	       pid, getpath());
-#if 0
-	/* XXX fails because of undefined AUE radar 40755284 */
-	printf("spec:process-access "
+	printf("spec:radar40755284:process-access "
 	       "subject.pid=%i "
 	       "subject.image.path=%s "
 	       "object.pid=%i "
 	       "object.image.path="PATH" "
 	       "\n",
 	       getpid(), getpath(), pid);
-#endif
 
 	task_t port;
 	mach_error_t err;

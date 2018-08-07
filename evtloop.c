@@ -168,15 +168,20 @@ errout:
  * 38845784: audit(4): spurious return value for execve(2)
  * 39267328: audit(4): target path not resolved for rename(2)
  * 39623812: audit(4): path not resolved for utimes(2)
- * 42770257: audit(4): only one instead of four path tokens for renameat(2)
  * 42783724: audit(4): target path not resolved for link(2)
  * 42784847: audit(4): path not resolved for symlink(2)
+ *
+ * The function contains partial workarounds for the following audit(4) bugs:
+ * 42770257: audit(4): only one/two instead of 4 path tokens for renameat(2)
  *
  * The following bugs in audit(4) are detected, but not worked around:
  * 42946744: audit(4): missing argv and arge for __mac_execve(2)
  *
  * The following bugs in audit(4) cannot be easily detected:
  * 40755284: audit(4): processor_set_tasks() cannot be audited
+ * 43006946: audit(4): no AUE_CONNECT for connect(2) on non-blocking socket
+ *
+ * Presence of bugs without workaround can be detected using the test suite.
  */
 #define TOKEN_ASSERT(EVENT, TOKEN, COND) \
 	if (!(COND)) { \
@@ -784,7 +789,7 @@ auef_readable(UNUSED int fd, void *udata) {
 			break;
 		}
 		if (!ev.sockinet_present)
-			/* unix socket */
+			/* skip unix socket */
 			break;
 		TOKEN_ASSERT("accept", "subject", ev.subject_present);
 		TOKEN_ASSERT("accept", "arg[1](fd)", ev.args[1].present);
