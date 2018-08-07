@@ -31,8 +31,9 @@ main(int argc, char *argv[]) {
 	       "subject.pid=%i "
 	       "image.path=%s "
 	       "\n", getpid(), getpath());
-	/* radar42770257 workaround results in missing subject */
-	printf("spec:launchd-add "
+	/* radar42770257 workaround results in an event with missing subject
+	 * if by chance another process is reading the file during tests */
+	printf("spec:radar42770257:launchd-add "
 	       "plist.path="DSTDIR"/"DSTFILE" "
 	       "program.path=/usr/bin/true "
 	       "\n");
