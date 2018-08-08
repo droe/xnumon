@@ -17,6 +17,8 @@
 -   Detect a bug in audit(4) where calls to \_\_mac\_execve(2) always lead to
     `AUE_MAC_EXECVE` recors without exec arg and exec env tokens
     (radar 42946744).
+-   Work around a bug in audit(4) where ports for IPv6 sockets are in wrong
+    byte order (radar 43063872).
 -   The installer package now refuses to install on unsupported OS versions.
 -   Initial version of an automated test framework (issue #9).
 
