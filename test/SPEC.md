@@ -20,9 +20,11 @@ For c test cases, a few defines are available, see `GNUmakefile` for details.
 Also, there are convenience includes under `include`.  Global files used by
 multiple tests are located in the top-level test directory.
 
-Test cases with a filename beginning in `sudo-` will be executed prepending
+Test cases with a filename containing `.sudo.` will be executed prepending
 `sudo -n`.  This allows to write test cases that need root privileges to
-execute successfully.
+execute successfully.  Test cases with a filename containing `udp6`, `tcp6` or
+`raw6` will be ignored unless IPv6 connectivity can be confirmed by the test
+runner.
 
 
 ### Test specs
