@@ -102,6 +102,7 @@ main(int argc, char *argv[]) {
 	       "subject.image.path=%s "
 	       "object.pid=%i "
 	       "object.image.path="PATH" "
+	       "method=task_for_pid "
 	       "\n",
 	       getpid(), getpath(), pid);
 

@@ -153,17 +153,18 @@ class Specs:
         def __init__(self, spec):
             parts = spec.strip().split(' ')
             header = parts[0].split(':')
-            if 'absent' in header[-2]:
-                self._wanted = 0
-            else:
-                self._wanted = 1
-            if 'radar' in header[-2]:
-                for flag in header[-2].split(','):
+            self._wanted = 1
+            self._radar = None
+            if len(header) > 2:
+                flags = header[-2].split(',')
+                if 'absent' in flags:
+                    self._wanted = 0
+                elif '2' in flags:
+                    self._wanted = 2
+                for flag in flags:
                     if flag.startswith('radar'):
                         self._radar = flag
                         break
-            else:
-                self._radar = None
             self._spectype = header[-1]
             if self._spectype != 'testcase':
                 self._eventcode = self._EVENTMAP[self._spectype]

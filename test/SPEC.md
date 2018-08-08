@@ -66,10 +66,12 @@ spec:image-exec subject.pid=16323 image.path=/bin/sh image.ident=com.apple.sh im
 A spec can also have optional comma-separated flags.  The `absent` flag denotes
 that the test should succeed iff the defined log record cannot be found.  This
 is useful when an operation is expected to fail and should not generate a log
-entry.
+entry.  Similarly, the `2` flag denotes that the test should succeed iff the
+log record can be found twice.
 
 ```
 spec:absent:image-exec subject.pid=12452 image.path=/bin/sh
+spec:2:process-access subject.pid=12452 image.path=/bin/sh method=ptrace
 ```
 
 When a spec is marked using a radar flag, then the spec will be expected to

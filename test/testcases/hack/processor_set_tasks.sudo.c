@@ -146,6 +146,7 @@ main(int argc, char *argv[]) {
 	       "subject.image.path=%s "
 	       "object.pid=%i "
 	       "object.image.path="PATH" "
+	       /* "method=processor_set_tasks " */
 	       "\n",
 	       getpid(), getpath(), pid);
 
