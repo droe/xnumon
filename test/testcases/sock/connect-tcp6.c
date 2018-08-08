@@ -25,21 +25,21 @@ int
 main(int argc, char *argv[]) {
 	printf("spec:testcase returncode=0\n");
 	printf("spec:socket-connect subject.pid=%i subject.image.path=%s "
-	       "peeraddr="PEERADDR" peerport=%i\n",
+	       "peeraddr="PEERADDR6" peerport=%i proto=tcp\n",
 	       getpid(), getpath(), PEERPORT);
 	fflush(stdout);
 
-	int fd = socket(AF_INET, SOCK_STREAM, 0);
+	int fd = socket(AF_INET6, SOCK_STREAM, 0);
 	if (fd == -1) {
 		perror("socket");
 		return 1;
 	}
 
-	struct sockaddr_in sai;
-	bzero(&sai, sizeof(struct sockaddr_in));
-	sai.sin_family = AF_INET;
-	sai.sin_port = htons(PEERPORT);
-	if (inet_pton(AF_INET, PEERADDR, &sai.sin_addr) != 1) {
+	struct sockaddr_in6 sai;
+	bzero(&sai, sizeof(sai));
+	sai.sin6_family = AF_INET6;
+	sai.sin6_port = htons(PEERPORT);
+	if (inet_pton(AF_INET6, PEERADDR6, &sai.sin6_addr) != 1) {
 		perror("inet_pton");
 		return 1;
 	}

@@ -38,6 +38,12 @@ def yellow(text):
     return colour(11, text)
 
 
+def tc(path):
+    if path.startswith('testcases/'):
+        return path[10:]
+    return path
+
+
 class Logs:
     """
     Encapsulates log access and spec evaluation against a set of logs.
@@ -140,7 +146,7 @@ class Specs:
             'image-exec':     2,
             'process-access': 3,
             'launchd-add':    4,
-            'socket-bind':    5,
+            'socket-listen':  5,
             'socket-accept':  6,
             'socket-connect': 7,
         }
@@ -227,11 +233,12 @@ class TestSuite:
             self.path = argv[0]
             if self.path == 'sudo':
                 self.path = argv[2]
-            with open(self.path, 'rb') as f:
-                buf = f.read()
-                self.sha256 = hashlib.sha256(buf).hexdigest()
-                self.sha1   = hashlib.sha1(buf).hexdigest()
-                self.md5    = hashlib.md5(buf).hexdigest()
+            if '/' in self.path:
+                with open(self.path, 'rb') as f:
+                    buf = f.read()
+                    self.sha256 = hashlib.sha256(buf).hexdigest()
+                    self.sha1   = hashlib.sha1(buf).hexdigest()
+                    self.md5    = hashlib.md5(buf).hexdigest()
             proc = subprocess.Popen(argv, stdout=subprocess.PIPE,
                                           stderr=subprocess.PIPE)
             try:
@@ -252,6 +259,12 @@ class TestSuite:
         self.ignored_testcases = []
         self.radared_testcases = []
         self.radared_radars = set()
+        self._ipv6 = self._test_ipv6()
+
+    def _test_ipv6(self):
+        argv = ['nc', '-z', '-6', '2a01:7c8:aab0:1fb::1', '80']
+        ex = TestSuite.Run(argv, timeout=10)
+        return ex.returncode == 0
 
     def _success(self, path):
         self.success_testcases.append(path)
@@ -272,9 +285,15 @@ class TestSuite:
         Results in the test case being executed and the spec collected for
         later evaluation.
         """
-        print("running %s" % path)
+        if not self._ipv6 and ('tcp6' in path or
+                               'udp6' in path or
+                               'raw6' in path):
+            print("no ipv6 - ignoring %s" % tc(path))
+            self._ignored(path)
+            return
+        print("running %s" % tc(path))
         argv = [path]
-        if '/sudo-' in path:
+        if '.sudo.' in path:
             argv = ['sudo', '-n'] + argv
         ex = TestSuite.Run(argv, timeout=10)
         specs = ex.stdout.strip().splitlines()
@@ -282,7 +301,7 @@ class TestSuite:
         if len(specs) > 0:
             self._testcases.append((path, ex, specs))
         else:
-            print("no specs - ignoring %s" % path)
+            print("no specs - ignoring %s" % tc(path))
             self._ignored(path)
 
     def evaluate(self, debug=False):
@@ -300,7 +319,7 @@ class TestSuite:
         print()
         self.failed_testcases = []
         for path, ex, specs in self._testcases:
-            print(brightwhite("testing %s" % path))
+            print(brightwhite("testing %s" % tc(path)))
             specs = Specs(specs)
             verdict, radars = specs.check(ex, logs)
             if verdict:
@@ -314,7 +333,7 @@ class TestSuite:
                 keyword = red("failed")
                 print("re-checking testcase in verbose mode:")
                 specs.check(ex, logs, verbose=True, debug=debug)
-            print("%s %s" % (keyword, path))
+            print("%s %s" % (keyword, tc(path)))
             print()
 
 
@@ -337,20 +356,20 @@ def main(paths, debug=False):
     #    print()
     if len(suite.radared_testcases) > 0:
         print("%i testcases radared:" % len(suite.radared_testcases))
-        for tc in suite.radared_testcases:
-            print("%s" % tc)
+        for path in suite.radared_testcases:
+            print("%s" % tc(path))
         print("fatal bugs present: %s" %
               ' '.join(sorted(list(suite.radared_radars))))
         print()
     if len(suite.ignored_testcases) > 0:
         print("%i testcases ignored:" % len(suite.ignored_testcases))
-        for tc in suite.ignored_testcases:
-            print("%s" % tc)
+        for path in suite.ignored_testcases:
+            print("%s" % tc(path))
         print()
     if len(suite.failed_testcases) > 0:
         print("%i testcases failed:" % len(suite.failed_testcases))
-        for tc in suite.failed_testcases:
-            print("%s" % tc)
+        for path in suite.failed_testcases:
+            print("%s" % tc(path))
         print()
     print("%i failed %i ignored %i radared %i success" % (
         len(suite.failed_testcases),

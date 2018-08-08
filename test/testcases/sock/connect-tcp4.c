@@ -8,10 +8,9 @@
  * Licensed under the Open Software License version 3.0.
  */
 
-#include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 #include <netinet/in.h>
-#include <netinet/tcp.h>
 #include <netdb.h>
 #include <stdio.h>
 #include <string.h>
@@ -26,28 +25,21 @@ int
 main(int argc, char *argv[]) {
 	printf("spec:testcase returncode=0\n");
 	printf("spec:socket-connect subject.pid=%i subject.image.path=%s "
-	       "peeraddr="PEERADDR" peerport=%i\n",
+	       "peeraddr="PEERADDR4" peerport=%i proto=tcp\n",
 	       getpid(), getpath(), PEERPORT);
 	fflush(stdout);
 
-	int fd = 0;
-	fd = socket(AF_INET, SOCK_STREAM, 0);
+	int fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (fd == -1) {
 		perror("socket");
 		return 1;
 	}
 
-	int i = 1;
-	if (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &i, sizeof(i)) == -1) {
-		perror("setsockopt(TCP_NODELAY)");
-		return 1;
-	}
-
 	struct sockaddr_in sai;
-	bzero(&sai, sizeof(struct sockaddr_in));
+	bzero(&sai, sizeof(sai));
 	sai.sin_family = AF_INET;
 	sai.sin_port = htons(PEERPORT);
-	if (inet_pton(AF_INET, PEERADDR, &sai.sin_addr) != 1) {
+	if (inet_pton(AF_INET, PEERADDR4, &sai.sin_addr) != 1) {
 		perror("inet_pton");
 		return 1;
 	}
