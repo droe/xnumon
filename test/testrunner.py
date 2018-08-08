@@ -260,6 +260,7 @@ class TestSuite:
         self.radared_testcases = []
         self.radared_radars = set()
         self._ipv6 = self._test_ipv6()
+        print("Detected IPv6: %s" % self._ipv6)
 
     def _test_ipv6(self):
         argv = ['nc', '-z', '-6', '2a01:7c8:aab0:1fb::1', '80']

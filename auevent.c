@@ -449,7 +449,20 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], int flags, FILE *f) {
 				tok.tt.sockinet_ex32.addr[2];
 			ev->sockinet_addr.ev6_addr[3] =
 				tok.tt.sockinet_ex32.addr[3];
-			ev->sockinet_port = ntohs(tok.tt.sockinet_ex32.port);
+			/* AUT_SOCKINET128 has ports in host byte order.
+			 * Reported to Apple as radar 43063872 on 2018-08-08.
+			 * Need to differentiate here based on record version
+			 * or macOS version once a fix is out. */
+#ifdef RADAR43063872_FIXED
+			if (radar_43063872_present) {
+#endif
+				ev->sockinet_port = tok.tt.sockinet_ex32.port;
+#ifdef RADAR43063872_FIXED
+			} else {
+				ev->sockinet_port =
+					ntohs(tok.tt.sockinet_ex32.port);
+			}
+#endif
 			break;
 		case AUT_SOCKUNIX: /* Darwin */
 			/* ignore for now */

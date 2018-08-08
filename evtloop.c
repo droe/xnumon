@@ -163,21 +163,22 @@ errout:
  * XNU Mach syscalls:
  * https://github.com/apple/darwin-xnu/blob/master/osfmk/mach/syscall_sw.h
  *
- * This function contains workarounds for the following bugs in audit(4):
+ * Mostly complete workarounds for the following bugs in audit(4):
  * 38845422: audit(4): nonsensical path and missing attr for posix_spawn(2)
  * 38845784: audit(4): spurious return value for execve(2)
  * 39267328: audit(4): target path not resolved for rename(2)
  * 39623812: audit(4): path not resolved for utimes(2)
  * 42783724: audit(4): target path not resolved for link(2)
  * 42784847: audit(4): path not resolved for symlink(2)
+ * 43063872: audit(4): port in wrong byte order for ports on IPv6 sockets
  *
- * The function contains partial workarounds for the following audit(4) bugs:
+ * Partial workarounds for the following audit(4) bugs:
  * 42770257: audit(4): only one/two instead of 4 path tokens for renameat(2)
  *
- * The following bugs in audit(4) are detected, but not worked around:
+ * Only detection, no workaround for the following bugs in audit(4):
  * 42946744: audit(4): missing argv and arge for __mac_execve(2)
  *
- * The following bugs in audit(4) cannot be easily detected:
+ * Neither detection nor workaround for the following bugs in audit(4):
  * 40755284: audit(4): processor_set_tasks() cannot be audited
  * 43006946: audit(4): no AUE_CONNECT for connect(2) on non-blocking socket
  *

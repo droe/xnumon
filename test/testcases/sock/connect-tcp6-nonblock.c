@@ -31,7 +31,7 @@ main(int argc, char *argv[]) {
 	printf("spec:testcase returncode=0\n");
 	printf("spec:radar43006946:socket-connect "
 	       "subject.pid=%i subject.image.path=%s "
-	       "peeraddr="PEERADDR4" peerport=%i proto=tcp\n",
+	       "peeraddr="PEERADDR6" peerport=%i proto=tcp\n",
 	       getpid(), getpath(), PEERPORT);
 	fflush(stdout);
 
@@ -55,7 +55,7 @@ main(int argc, char *argv[]) {
 	bzero(&sai, sizeof(sai));
 	sai.sin6_family = AF_INET6;
 	sai.sin6_port = htons(PEERPORT);
-	if (inet_pton(AF_INET6, PEERADDR4, &sai.sin6_addr) != 1) {
+	if (inet_pton(AF_INET6, PEERADDR6, &sai.sin6_addr) != 1) {
 		perror("inet_pton");
 		return 1;
 	}

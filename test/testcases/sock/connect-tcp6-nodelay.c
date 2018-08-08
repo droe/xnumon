@@ -47,7 +47,7 @@ main(int argc, char *argv[]) {
 	bzero(&sai, sizeof(sai));
 	sai.sin6_family = AF_INET6;
 	sai.sin6_port = htons(PEERPORT);
-	if (inet_pton(AF_INET6, PEERADDR4, &sai.sin6_addr) != 1) {
+	if (inet_pton(AF_INET6, PEERADDR6, &sai.sin6_addr) != 1) {
 		perror("inet_pton");
 		return 1;
 	}
