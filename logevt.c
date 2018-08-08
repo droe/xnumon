@@ -41,7 +41,7 @@
 #include <pwd.h>
 #include <grp.h>
 
-config_t *config;
+static config_t *config;
 
 void
 logevt_init(config_t *cfg) {

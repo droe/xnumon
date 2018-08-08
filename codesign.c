@@ -24,7 +24,7 @@
 #define kPOSIXErrorESRCH 100003
 #endif
 
-config_t *config;
+static config_t *config;
 
 typedef struct {
 	int origin;
