@@ -3,11 +3,11 @@
 <plist version="1.0">
 	<dict>
 		<key>Label</key>
-		<string>ch.roe.xnumon.test.link</string>
+		<string>ch.roe.xnumon.test.symlink</string>
 		<key>ProgramArguments</key>
 		<array>
 			<string>/usr/bin/true</string>
-			<string>link</string>
+			<string>symlink</string>
 		</array>
 		<key>RunAtLoad</key>
 		<true/>
