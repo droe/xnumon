@@ -205,10 +205,10 @@ class Specs:
         radars = []
         for spec in self._specs:
             if verbose:
-                print("testing %s" % spec)
+                print("%s %s" % (brightwhite("testing"), spec))
             verdict = spec.check(ex, logs, verbose=verbose, debug=debug)
             if not verdict:
-                print("failed  %s" % spec)
+                print("%s  %s" % (red("failed"), spec))
                 if verdict == None:
                     if result:
                         result = None
@@ -216,7 +216,7 @@ class Specs:
                 else:
                     result = False
             else:
-                print("success %s" % spec)
+                print("%s %s" % (green("success"), spec))
         return result, radars
 
 
