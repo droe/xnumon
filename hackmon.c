@@ -82,8 +82,8 @@ log_event_process_access(struct timespec *tv,
 		atomic64_inc(&ooms);
 		return;
 	}
-	pa->subject_image_exec = image_exec_by_pid(subject->pid);
-	pa->object_image_exec = image_exec_by_pid(object->pid);
+	pa->subject_image_exec = image_exec_by_pid(subject->pid, tv);
+	pa->object_image_exec = image_exec_by_pid(object->pid, tv);
 	pa->subject = *subject;
 	pa->object = *object;
 	pa->method = method;

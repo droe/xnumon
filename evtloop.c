@@ -214,6 +214,10 @@ auef_readable(UNUSED int fd, void *udata) {
 	auevent_fprint(stderr, &ev);
 #endif
 
+	/* avoid reacting on our own close invocations */
+	if (ev.subject.pid == xnumon_pid)
+		goto out;
+
 	switch (ev.type) {
 
 	/*
@@ -399,7 +403,7 @@ auef_readable(UNUSED int fd, void *udata) {
 		TOKEN_ASSERT("exit", "subject", ev.subject_present);
 		/* exit never fails; audit event not triggered if process got
 		 * terminated in other ways than calling exit() */
-		procmon_exit(ev.subject.pid);
+		procmon_exit(&ev.tv, ev.subject.pid);
 		break;
 
 	case AUE_WAIT4:
@@ -409,7 +413,7 @@ auef_readable(UNUSED int fd, void *udata) {
 			break;
 		}
 		/* cannot distinguish terminated and stopped processes */
-		procmon_wait4(ev.return_value);
+		procmon_wait4(&ev.tv, ev.return_value);
 		break;
 
 	case AUE_CHDIR:
@@ -428,7 +432,7 @@ auef_readable(UNUSED int fd, void *udata) {
 			ooms++;
 			break;
 		}
-		procmon_chdir(ev.subject.pid, path);
+		procmon_chdir(&ev.tv, ev.subject.pid, path);
 		break;
 
 	/*
@@ -476,22 +480,70 @@ auef_readable(UNUSED int fd, void *udata) {
 	 * Events for tracking file modifications.
 	 */
 
-	case AUE_CLOSE:
+	case AUE_OPEN_W:
+	case AUE_OPEN_WC:
+	case AUE_OPEN_WT:
+	case AUE_OPEN_WTC:
+	case AUE_OPEN_RW:
+	case AUE_OPEN_RWC:
+	case AUE_OPEN_RWT:
+	case AUE_OPEN_RWTC:
+	case AUE_OPEN_EXTENDED_W:
+	case AUE_OPEN_EXTENDED_WC:
+	case AUE_OPEN_EXTENDED_WT:
+	case AUE_OPEN_EXTENDED_WTC:
+	case AUE_OPEN_EXTENDED_RW:
+	case AUE_OPEN_EXTENDED_RWC:
+	case AUE_OPEN_EXTENDED_RWT:
+	case AUE_OPEN_EXTENDED_RWTC:
+	case AUE_OPENAT_W:
+	case AUE_OPENAT_WC:
+	case AUE_OPENAT_WT:
+	case AUE_OPENAT_WTC:
+	case AUE_OPENAT_RW:
+	case AUE_OPENAT_RWC:
+	case AUE_OPENAT_RWT:
+	case AUE_OPENAT_RWTC:
+	case AUE_OPENBYID_W:
+	case AUE_OPENBYID_WT:
+	case AUE_OPENBYID_RW:
+	case AUE_OPENBYID_RWT:
 		if (!LOGEVT_WANT(cfg->events, LOGEVT_FILEMON))
+			break;
+		TOKEN_ASSERT("open(w)", "return", ev.return_present);
+		if (ev.return_value > INT_MAX) {
+			failedsyscalls++;
+			break;
+		}
+		TOKEN_ASSERT("open(w)", "subject", ev.subject_present);
+#if 0
+		TOKEN_ASSERT("open(w)", "arg[2](flags)", ev.args[2].present);
+		TOKEN_ASSERT("open(w)", "arg[3](mode)", ev.args[3].present);
+#endif
+		TOKEN_ASSERT("open(2)", "path[0]", ev.path[0]);
+		/* sometimes one, sometimes two path tokens, unsure if bug */
+		path = (char *)(ev.path[1] ? ev.path[1] : ev.path[0]);
+		assert(path);
+		procmon_file_open(&ev.subject, ev.return_value, path);
+		break;
+
+	case AUE_CLOSE:
+		if (!LOGEVT_WANT(cfg->events, LOGEVT_FILEMON|LOGEVT_SOCKMON))
 			break;
 		TOKEN_ASSERT("close", "return", ev.return_present);
 		if (ev.return_value) {
 			failedsyscalls++;
 			break;
 		}
+		TOKEN_ASSERT("close", "subject", ev.subject_present);
+		TOKEN_ASSERT("close", "arg[2](fd)", ev.args[2].present);
+		procmon_fd_close(ev.subject.pid, ev.args[2].value);
+		if (!LOGEVT_WANT(cfg->events, LOGEVT_FILEMON))
+			break;
 		if (!ev.path[0]) {
 			/* closed file descriptor does not point to vnode */
 			break;
 		}
-		TOKEN_ASSERT("close", "subject", ev.subject_present);
-		/* avoid reacting on our own close invocations */
-		if (ev.subject.pid == xnumon_pid)
-			break;
 		path = (char *)(ev.path[1] ? ev.path[1] : ev.path[0]);
 		assert(path);
 		path = strdup(path);
@@ -531,7 +583,7 @@ auef_readable(UNUSED int fd, void *udata) {
 					ooms++;
 			} else {
 				radar39623812++;
-				cwd = procmon_getcwd(ev.subject.pid);
+				cwd = procmon_getcwd(ev.subject.pid, &ev.tv);
 				if (!cwd && (errno == ENOMEM))
 					ooms++;
 				path = sys_realpath(ev.path[0], cwd);
@@ -610,7 +662,7 @@ auef_readable(UNUSED int fd, void *udata) {
 				if (cfg->debug)
 					auevent_fprint(stderr, &ev);
 			}
-			cwd = procmon_getcwd(ev.subject.pid);
+			cwd = procmon_getcwd(ev.subject.pid, &ev.tv);
 			if (!cwd && (errno == ENOMEM))
 				ooms++;
 			path = sys_realpath(ev.path[2], cwd);
@@ -690,7 +742,7 @@ auef_readable(UNUSED int fd, void *udata) {
 		} else if (ev.path[0] && !ev.path[1]) {
 			/* only an unresolved target path token */
 			radar42784847++;
-			cwd = procmon_getcwd(ev.subject.pid);
+			cwd = procmon_getcwd(ev.subject.pid, &ev.tv);
 			if (!cwd && (errno == ENOMEM))
 				ooms++;
 			path = sys_realpath(ev.path[0], cwd);
@@ -836,6 +888,7 @@ auef_readable(UNUSED int fd, void *udata) {
 		break;
 	}
 
+out:
 	auevent_destroy(&ev); /* free all allocated members not NULLed above */
 	return 0;
 }

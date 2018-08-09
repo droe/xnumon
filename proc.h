@@ -21,11 +21,22 @@ typedef struct {
 	tommy_node node;
 
 	int fd;
+	int flags;
+#define FDFLAG_SOCKET   1
+#define FDFLAG_FILE     2
+#define FDFLAG_CLOEXEC  4 /* unused */
 
-	/* socket */
-	int proto;
-	ipaddr_t addr;
-	uint16_t port;
+	union {
+		struct {
+			int proto;
+			ipaddr_t addr;
+			uint16_t port;
+		} so;
+		struct {
+			audit_proc_t subject;
+			char *path;
+		} fi;
+	};
 } fd_ctx_t;
 
 typedef struct proc {
@@ -42,8 +53,16 @@ typedef struct proc {
 	/* hashtable bucket linkage */
 	struct proc *next;
 
-	/* open file descriptors */
-	tommy_list fdlist;
+	/*
+	 * Open file descriptors smaller than default RLIMIT_NOFILE stored in
+	 * pointer array in addition to a list to allow O(1) access time but
+	 * still quick iteration on exit with only few descriptors.  This
+	 * yields good access complexity except for large network servers with
+	 * thousands of open sockets. FIXME look into alternatives
+	 */
+	fd_ctx_t *fdlovect[256];
+	tommy_list fdlolist;
+	tommy_list fdhilist;
 } proc_t;
 
 extern uint32_t procs;
@@ -53,9 +72,12 @@ void proctab_fini(void);
 proc_t * proctab_create(pid_t);
 proc_t * proctab_find_or_create(pid_t);
 proc_t * proctab_find(pid_t);
-void proctab_remove(pid_t);
+void proctab_remove(pid_t, struct timespec *);
 
-tommy_node * proc_find_fd(proc_t *, int) NONNULL(1) WUNRES;
+fd_ctx_t * proc_getfd(proc_t *, int) NONNULL(1) WUNRES;
+fd_ctx_t * proc_closefd(proc_t *, int) NONNULL(1) WUNRES;
+void proc_setfd(proc_t *, fd_ctx_t *) NONNULL(1,2);
+void proc_freefd(fd_ctx_t *) NONNULL(1);
 
 #endif
 

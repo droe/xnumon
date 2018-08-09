@@ -3,8 +3,8 @@
 -   Socket events: socket-listen[5], socket-accept[6] and socket-connect[7]
     (issue #14) including associated suppression options.
 -   Also consider link(2), linkat(2), symlink(2), symlinkat(2), clonefile(2),
-    clonefileat(2), fclonefileat(2), copyfile(2) and fcopyfile(2) for file
-    monitoring based events.
+    clonefileat(2), fclonefileat(2), copyfile(2), fcopyfile(2) and implicit
+    close on exit for file monitoring events.
 -   Detect a bug in audit(4) where calls to renameat(2) sometimes lead to
     `AUE_RENAMEAT` records with only one or two instead of four path tokens
     (radar 42770257).

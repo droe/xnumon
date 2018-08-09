@@ -210,7 +210,7 @@ filemon_launchd_touched(struct timespec *tv, audit_proc_t *subject,
 	              ldadd->plist_stat.mtime.tv_sec,
 	              ldadd->plist_stat.ctime.tv_sec,
 	              ldadd->plist_stat.btime.tv_sec);
-	ldadd->subject_image_exec = image_exec_by_pid(subject->pid);
+	ldadd->subject_image_exec = image_exec_by_pid(subject->pid, tv);
 	if (ldadd->subject_image_exec && (
 	        (ldadd->subject_image_exec->pid == 1) ||
 	        (ldadd->subject_image_exec->path &&

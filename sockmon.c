@@ -82,7 +82,7 @@ log_event_socket_op(struct timespec *tv,
 		atomic64_inc(&ooms);
 		return;
 	}
-	so->subject_image_exec = image_exec_by_pid(subject->pid);
+	so->subject_image_exec = image_exec_by_pid(subject->pid, tv);
 	so->subject = *subject;
 	/* can be 0 if unknown or -1 if raw */
 	so->protocol = protocol;
@@ -158,7 +158,7 @@ sockmon_socket(UNUSED struct timespec *tv,
  * Called for bind.
  */
 void
-sockmon_bind(UNUSED struct timespec *tv,
+sockmon_bind(struct timespec *tv,
              audit_proc_t *subject,
              int fd, ipaddr_t *sock_addr, uint16_t sock_port) {
 	int proto;

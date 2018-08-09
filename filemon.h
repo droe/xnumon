@@ -45,7 +45,7 @@ typedef struct {
 	char **program_argv;
 } launchd_add_t;
 
-void filemon_touched(struct timespec *tv, audit_proc_t *, char *)
+void filemon_touched(struct timespec *, audit_proc_t *, char *)
      NONNULL(1,2,3);
 
 int filemon_init(config_t *) WUNRES NONNULL(1);

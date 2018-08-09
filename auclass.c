@@ -63,7 +63,6 @@ const uint16_t auclass_xnumon_events_hackmon[] = {
  * there should be better ways to achieve the same.
  */
 const uint16_t auclass_xnumon_events_filemon[] = {
-#if 0
 	AUE_OPEN_W,   /* open, open_nocancel, guarded_open_np */
 	AUE_OPEN_WC,
 	AUE_OPEN_WT,
@@ -92,6 +91,7 @@ const uint16_t auclass_xnumon_events_filemon[] = {
 	AUE_OPENBYID_WT,
 	AUE_OPENBYID_RW,
 	AUE_OPENBYID_RWT,
+#if 0
 	AUE_DUP,        /* dup */
 	AUE_DUP2,       /* dup2 */
 	AUE_MMAP,       /* mmap */

@@ -23,6 +23,7 @@
 #include "cachecsig.h"
 #include "time.h"
 #include "work.h"
+#include "filemon.h"
 #include "atomic.h"
 
 #include <stdbool.h>
@@ -541,7 +542,7 @@ image_exec_from_pid(pid_t pid) {
  * However, caller needs to count and report miss if this fails.
  */
 static proc_t *
-procmon_proc_from_pid(pid_t pid, bool log_event) {
+procmon_proc_from_pid(pid_t pid, bool log_event, struct timespec *tv) {
 	proc_t *proc;
 	pid_t ppid;
 
@@ -553,7 +554,7 @@ procmon_proc_from_pid(pid_t pid, bool log_event) {
 
 	if (sys_pidbsdinfo(&proc->fork_tv, &ppid, pid) == -1) {
 		/* process not alive anymore */
-		proctab_remove(pid);
+		proctab_remove(pid, tv);
 		return NULL;
 	}
 
@@ -565,7 +566,7 @@ procmon_proc_from_pid(pid_t pid, bool log_event) {
 		if (errno == ENOMEM)
 			atomic64_inc(&ooms);
 		/* process not alive anymore unless ENOMEM */
-		proctab_remove(pid);
+		proctab_remove(pid, tv);
 		return NULL;
 	}
 
@@ -575,7 +576,7 @@ procmon_proc_from_pid(pid_t pid, bool log_event) {
 	proc->image_exec = image_exec_from_pid(pid);
 	if (!proc->image_exec) {
 		/* process not alive anymore unless ENOMEM */
-		proctab_remove(pid);
+		proctab_remove(pid, tv);
 		return NULL;
 	}
 	image_exec_open(proc->image_exec, NULL);
@@ -585,10 +586,10 @@ procmon_proc_from_pid(pid_t pid, bool log_event) {
 	if ((ppid >= 0) && (ppid != pid)) {
 		proc_t *pproc = proctab_find(ppid);
 		if (!pproc) {
-			pproc = procmon_proc_from_pid(ppid, log_event);
+			pproc = procmon_proc_from_pid(ppid, log_event, tv);
 			if (!pproc) {
 				if (errno == ENOMEM) {
-					proctab_remove(pid);
+					proctab_remove(pid, tv);
 					return NULL;
 				}
 				/* parent not alive anymore */
@@ -625,12 +626,12 @@ procmon_proc_from_pid(pid_t pid, bool log_event) {
  * Caller does error counting and reporting.
  */
 image_exec_t *
-image_exec_by_pid(pid_t pid) {
+image_exec_by_pid(pid_t pid, struct timespec *tv) {
 	proc_t *proc;
 
 	proc = proctab_find(pid);
 	if (!proc) {
-		proc = procmon_proc_from_pid(pid, true);
+		proc = procmon_proc_from_pid(pid, true, tv);
 		if (!proc) {
 			if (errno != ENOMEM) {
 				miss_bypid++;
@@ -661,7 +662,7 @@ procmon_fork(struct timespec *tv,
 
 	parent = proctab_find(subject->pid);
 	if (!parent) {
-		parent = procmon_proc_from_pid(subject->pid, true);
+		parent = procmon_proc_from_pid(subject->pid, true, tv);
 		if (!parent) {
 			if (errno != ENOMEM) {
 				miss_forksubj++;
@@ -675,7 +676,7 @@ procmon_fork(struct timespec *tv,
 	}
 	assert(parent);
 
-	proctab_remove(childpid);
+	proctab_remove(childpid, tv);
 	child = proctab_create(childpid);
 	if (!child) {
 		atomic64_inc(&ooms);
@@ -686,7 +687,7 @@ procmon_fork(struct timespec *tv,
 	assert(parent->cwd);
 	child->cwd = strdup(parent->cwd);
 	if (!child->cwd) {
-		proctab_remove(childpid);
+		proctab_remove(childpid, tv);
 		atomic64_inc(&ooms);
 		return;
 	}
@@ -848,7 +849,7 @@ procmon_exec(struct timespec *tv,
 
 	proc = proctab_find(subject->pid);
 	if (!proc) {
-		proc = procmon_proc_from_pid(subject->pid, true);
+		proc = procmon_proc_from_pid(subject->pid, true, tv);
 		if (!proc) {
 			if (errno != ENOMEM) {
 				miss_execsubj++;
@@ -1028,13 +1029,13 @@ procmon_exec(struct timespec *tv,
  * gone and lookups of current process state would be useless here.
  */
 void
-procmon_exit(pid_t pid) {
+procmon_exit(struct timespec *tv, pid_t pid) {
 #ifdef DEBUG_EXIT
 	DEBUG(config->debug, "procmon_exit",
 	      "pid=%i", pid);
 #endif
 
-	proctab_remove(pid);
+	proctab_remove(pid, tv);
 }
 
 /*
@@ -1046,7 +1047,7 @@ procmon_exit(pid_t pid) {
  * This code requires root privileges.
  */
 void
-procmon_wait4(pid_t pid) {
+procmon_wait4(struct timespec *tv, pid_t pid) {
 	int rv;
 
 #ifdef DEBUG_EXIT
@@ -1059,7 +1060,7 @@ procmon_wait4(pid_t pid) {
 
 	rv = kill(pid, 0);
 	if ((rv == -1) && (errno == ESRCH))
-		procmon_exit(pid);
+		procmon_exit(tv, pid);
 }
 
 /*
@@ -1070,7 +1071,7 @@ procmon_wait4(pid_t pid) {
  * after calling this function.
  */
 void
-procmon_chdir(pid_t pid, char *path) {
+procmon_chdir(struct timespec *tv, pid_t pid, char *path) {
 	proc_t *proc;
 
 #ifdef DEBUG_CHDIR
@@ -1080,7 +1081,7 @@ procmon_chdir(pid_t pid, char *path) {
 
 	proc = proctab_find(pid);
 	if (!proc) {
-		proc = procmon_proc_from_pid(pid, true);
+		proc = procmon_proc_from_pid(pid, true, tv);
 		if (!proc) {
 			if (errno != ENOMEM) {
 				miss_chdirsubj++;
@@ -1150,19 +1151,20 @@ procmon_preloadpid(pid_t pid) {
 	if (proc)
 		/* pid was already loaded as an ancestor of a previous call */
 		return;
-	(void)procmon_proc_from_pid(pid, !config->suppress_image_exec_at_start);
+	(void)procmon_proc_from_pid(pid, !config->suppress_image_exec_at_start,
+	                            NULL);
 }
 
 /*
  * Return the stored current working directory for a process by pid.
  */
 const char *
-procmon_getcwd(pid_t pid) {
+procmon_getcwd(pid_t pid, struct timespec *tv) {
 	proc_t *proc;
 
 	proc = proctab_find(pid);
 	if (!proc) {
-		proc = procmon_proc_from_pid(pid, true);
+		proc = procmon_proc_from_pid(pid, true, tv);
 		if (!proc) {
 			if (errno != ENOMEM) {
 				miss_getcwd++;
@@ -1186,18 +1188,17 @@ procmon_socket_create(pid_t pid, int fd,
                       int proto) {
 	fd_ctx_t *ctx;
 	proc_t *proc;
-	tommy_node *node;
 
 	proc = proctab_find(pid);
 	if (!proc)
 		return; // XXX count
 
-	node = proc_find_fd(proc, fd);
-	if (node) {
+	ctx = proc_getfd(proc, fd);
+	if (ctx) {
 		/* reuse existing allocation */
-		ctx = node->data;
 		bzero(((char *)ctx)+sizeof(ctx->node),
 		      sizeof(fd_ctx_t)-sizeof(ctx->node));
+		ctx->fd = fd;
 	} else {
 		ctx = malloc(sizeof(fd_ctx_t));
 		if (!ctx) {
@@ -1205,14 +1206,11 @@ procmon_socket_create(pid_t pid, int fd,
 			return;
 		}
 		bzero(ctx, sizeof(fd_ctx_t));
+		ctx->fd = fd;
+		proc_setfd(proc, ctx);
 	}
-	ctx->fd = fd;
-	ctx->proto = proto;
-
-	/* if not reusing existing allocation, insert into list */
-	if (!node) {
-		tommy_list_insert_head(&proc->fdlist, &ctx->node, ctx);
-	}
+	ctx->flags = FDFLAG_SOCKET;
+	ctx->so.proto = proto;
 }
 
 /*
@@ -1227,21 +1225,17 @@ procmon_socket_bind(int *proto,
                     pid_t pid, int fd,
                     ipaddr_t *addr, uint16_t port) {
 	proc_t *proc;
-	tommy_node *node;
 	fd_ctx_t *ctx;
 
 	proc = proctab_find(pid);
 	if (!proc)
 		goto errout;
-	node = proc_find_fd(proc, fd);
-	if (!node)
+	ctx = proc_getfd(proc, fd);
+	if (!ctx || !(ctx->flags & FDFLAG_SOCKET))
 		goto errout;
-	ctx = node->data;
-	if (addr) {
-		ctx->addr = *addr;
-		ctx->port = port;
-	}
-	*proto = ctx->proto;
+	ctx->so.addr = *addr;
+	ctx->so.port = port;
+	*proto = ctx->so.proto;
 	return;
 
 errout:
@@ -1259,28 +1253,72 @@ void
 procmon_socket_state(int *proto, ipaddr_t **addr, uint16_t *port,
                      pid_t pid, int fd) {
 	proc_t *proc;
-	tommy_node *node;
 	fd_ctx_t *ctx;
 
 	proc = proctab_find(pid);
 	if (!proc)
 		goto errout;
-	node = proc_find_fd(proc, fd);
-	if (!node)
+	ctx = proc_getfd(proc, fd);
+	if (!ctx || !(ctx->flags & FDFLAG_SOCKET))
 		goto errout;
-	ctx = node->data;
-	if (ipaddr_is_empty(&ctx->addr)) {
+	if (ipaddr_is_empty(&ctx->so.addr)) {
 		*addr = NULL;
 	} else {
-		*addr = &ctx->addr;
-		*port = ctx->port;
+		*addr = &ctx->so.addr;
+		*port = ctx->so.port;
 	}
-	*proto = ctx->proto;
+	*proto = ctx->so.proto;
 	return;
 
 errout:
 	*addr = NULL;
 	*proto = 0;
+}
+
+void
+procmon_file_open(audit_proc_t *subject, int fd, char *path) {
+	proc_t *proc;
+	fd_ctx_t *ctx;
+
+	proc = proctab_find(subject->pid);
+	if (!proc) /* XXX create from pid?! */
+		return;
+
+	ctx = proc_getfd(proc, fd);
+	if (ctx) {
+		/* reuse existing allocation */
+		bzero(((char *)ctx)+sizeof(ctx->node),
+		      sizeof(fd_ctx_t)-sizeof(ctx->node));
+		ctx->fd = fd;
+	} else {
+		ctx = malloc(sizeof(fd_ctx_t));
+		if (!ctx) {
+			atomic64_inc(&ooms);
+			return;
+		}
+		bzero(ctx, sizeof(fd_ctx_t));
+		ctx->fd = fd;
+		proc_setfd(proc, ctx);
+	}
+	ctx->flags = FDFLAG_FILE;
+	ctx->fi.subject = *subject;
+	ctx->fi.path = strdup(path);
+	if (!ctx->fi.path) {
+		atomic64_inc(&ooms);
+	}
+}
+
+void
+procmon_fd_close(pid_t pid, int fd) {
+	proc_t *proc;
+
+	proc = proctab_find(pid);
+	if (!proc)
+		return;
+	fd_ctx_t *ctx = proc_closefd(proc, fd);
+	if (ctx) {
+		proc_freefd(ctx);
+	}
 }
 
 int

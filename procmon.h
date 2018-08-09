@@ -49,9 +49,9 @@ void procmon_spawn(struct timespec *, audit_proc_t *, pid_t,
                    char *, audit_attr_t *, char **, char **) NONNULL(1,2);
 void procmon_exec(struct timespec *, audit_proc_t *,
                   char *, audit_attr_t *, char **, char **) NONNULL(1,2,3);
-void procmon_exit(pid_t);
-void procmon_wait4(pid_t);
-void procmon_chdir(pid_t, char *) NONNULL(2);
+void procmon_exit(struct timespec *, pid_t) NONNULL(1);
+void procmon_wait4(struct timespec *, pid_t) NONNULL(1);
+void procmon_chdir(struct timespec *tv, pid_t, char *) NONNULL(1,3);
 
 void procmon_kern_preexec(struct timespec *, pid_t, const char *) NONNULL(1,3);
 
@@ -61,11 +61,15 @@ int procmon_init(config_t *) WUNRES NONNULL(1);
 void procmon_fini(void);
 void procmon_stats(procmon_stat_t *) NONNULL(1);
 uint32_t procmon_images(void) WUNRES;
-const char * procmon_getcwd(pid_t) WUNRES;
+const char * procmon_getcwd(pid_t, struct timespec *tv) WUNRES;
 
 void procmon_socket_create(pid_t, int, int);
-void procmon_socket_bind(int *, pid_t, int, ipaddr_t *, uint16_t);
-void procmon_socket_state(int *, ipaddr_t **, uint16_t *, pid_t, int);
+void procmon_socket_bind(int *, pid_t, int, ipaddr_t *, uint16_t)
+     NONNULL(1,4);
+void procmon_socket_state(int *, ipaddr_t **, uint16_t *, pid_t, int)
+     NONNULL(1,2);
+void procmon_file_open(audit_proc_t *, int, char *) NONNULL(1,3);
+void procmon_fd_close(pid_t, int);
 
 /*
  * image_exec_t is both the data structure containing a snapshot of an
@@ -125,7 +129,7 @@ typedef struct image_exec {
 	pthread_mutex_t refsmutex;
 } image_exec_t;
 
-image_exec_t * image_exec_by_pid(pid_t) MALLOC;
+image_exec_t * image_exec_by_pid(pid_t, struct timespec *tv) MALLOC NONNULL(2);
 void image_exec_free(image_exec_t *) NONNULL(1);
 bool image_exec_match_suppressions(image_exec_t *, strset_t *, strset_t *)
      NONNULL(1,2,3) WUNRES;
