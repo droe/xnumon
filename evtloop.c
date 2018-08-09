@@ -791,12 +791,8 @@ auef_readable(UNUSED int fd, void *udata) {
 		TOKEN_ASSERT("socket", "arg[1](domain)", ev.args[1].present);
 		TOKEN_ASSERT("socket", "arg[2](type)", ev.args[2].present);
 		TOKEN_ASSERT("socket", "arg[3](protocol)", ev.args[3].present);
-		int sock_domain = auevent_sock_domain(ev.args[1].value);
-		DEBUG(cfg->debug && sock_domain == -1,
-		      "unknown_domain",
-		      "bsmdomain=%i", ev.args[1].value);
 		sockmon_socket(&ev.tv, &ev.subject, ev.return_value,
-		               sock_domain,
+		               auevent_sock_domain(ev.args[1].value),
 		               auevent_sock_type(ev.args[2].value),
 		               ev.args[3].value);
 		break;
