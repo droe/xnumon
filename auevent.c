@@ -14,6 +14,7 @@
 #include "minmax.h"
 #include "sys.h"
 #include "aev.h"
+#include "logutl.h"
 
 #include <stdint.h>
 #include <inttypes.h>
@@ -498,9 +499,9 @@ auevent_fprint(FILE *f, audit_event_t *ev) {
 	struct au_event_ent *aue_ent;
 
 	assert(ev);
+	logutl_fwrite_timespec(f, &ev->tv);
 	aue_ent = getauevnum(ev->type);
-	fprintf(f, "%s [%i:%i] @%li.%09li", aue_ent->ae_name, ev->type, ev->mod,
-	        ev->tv.tv_sec, ev->tv.tv_nsec);
+	fprintf(f, " %s [%i:%i]", aue_ent->ae_name, ev->type, ev->mod);
 	if (ev->subject_present) {
 		fprintf(f,
 		        " subject_pid=%i"
