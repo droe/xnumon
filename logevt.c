@@ -631,7 +631,6 @@ logevt_process_image_exec_ancestors(logfmt_t *fmt, FILE *f, image_exec_t *ie) {
 static void
 logevt_process(logfmt_t *fmt, FILE *f,
                audit_proc_t *process,
-               struct timespec *fork_tv,
                image_exec_t *ie) {
 	fmt->dict_begin(f);
 	if (ie && (ie->flags & EIFLAG_PIDLOOKUP)) {
@@ -663,11 +662,11 @@ logevt_process(logfmt_t *fmt, FILE *f,
 			fmt->value_string(f, ipaddrtoa(&process->addr, NULL));
 		}
 	}
-	if (fork_tv && fork_tv->tv_sec > 0) {
-		fmt->dict_item(f, "fork_time");
-		fmt->value_timespec(f, fork_tv);
-	}
 	if (ie) {
+		if (ie->fork_tv.tv_sec > 0) {
+			fmt->dict_item(f, "fork_time");
+			fmt->value_timespec(f, &ie->fork_tv);
+		}
 		fmt->dict_item(f, "image");
 		logevt_process_image_exec(fmt, f, ie);
 		if (config->ancestors > 0) {
@@ -725,7 +724,6 @@ logevt_image_exec(logfmt_t *fmt, FILE *f, void *arg0) {
 	fmt->dict_item(f, "subject");
 	logevt_process(fmt, f,
 	               (ie->flags & EIFLAG_PIDLOOKUP) ? NULL : &ie->subject,
-	               &ie->fork_tv,
 	               ie->prev);
 
 	logevt_footer(fmt, f);
@@ -744,15 +742,11 @@ logevt_process_access(logfmt_t *fmt, FILE *f, void *arg0) {
 	fmt->dict_item(f, "object");
 	logevt_process(fmt, f,
 	               &pa->object,
-	               pa->object_image_exec ?
-	                   &pa->object_image_exec->fork_tv : NULL,
 	               pa->object_image_exec);
 
 	fmt->dict_item(f, "subject");
 	logevt_process(fmt, f,
 	               &pa->subject,
-	               pa->subject_image_exec ?
-	                   &pa->subject_image_exec->fork_tv : NULL,
 	               pa->subject_image_exec);
 
 	logevt_footer(fmt, f);
@@ -786,13 +780,12 @@ logevt_launchd_add(logfmt_t *fmt, FILE *f, void *arg0) {
 	}
 	fmt->dict_end(f); /* program */
 
-	fmt->dict_item(f, "subject");
-	logevt_process(fmt, f,
-	               (ldadd->flags & LAFLAG_NOSUBJECT) ? NULL
-	                                                 : &ldadd->subject,
-	               ldadd->subject_image_exec ?
-	                   &ldadd->subject_image_exec->fork_tv : NULL,
-	               ldadd->subject_image_exec);
+	if (!(ldadd->flags & LAFLAG_NOSUBJECT)) {
+		fmt->dict_item(f, "subject");
+		logevt_process(fmt, f,
+		               &ldadd->subject,
+		               ldadd->subject_image_exec);
+	}
 
 	logevt_footer(fmt, f);
 	return 0;
@@ -819,8 +812,6 @@ logevt_socket_listen(logfmt_t *fmt, FILE *f, void *arg0) {
 	fmt->dict_item(f, "subject");
 	logevt_process(fmt, f,
 	               &so->subject,
-	               so->subject_image_exec ?
-	                   &so->subject_image_exec->fork_tv : NULL,
 	               so->subject_image_exec);
 
 	logevt_footer(fmt, f);
@@ -855,8 +846,6 @@ logevt_socket_accept(logfmt_t *fmt, FILE *f, void *arg0) {
 	fmt->dict_item(f, "subject");
 	logevt_process(fmt, f,
 	               &so->subject,
-	               so->subject_image_exec ?
-	                   &so->subject_image_exec->fork_tv : NULL,
 	               so->subject_image_exec);
 
 	logevt_footer(fmt, f);
@@ -891,8 +880,6 @@ logevt_socket_connect(logfmt_t *fmt, FILE *f, void *arg0) {
 	fmt->dict_item(f, "subject");
 	logevt_process(fmt, f,
 	               &so->subject,
-	               so->subject_image_exec ?
-	                   &so->subject_image_exec->fork_tv : NULL,
 	               so->subject_image_exec);
 
 	logevt_footer(fmt, f);
