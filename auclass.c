@@ -106,7 +106,7 @@ const uint16_t auclass_xnumon_events_filemon[] = {
 	AUE_SYMLINKAT,  /* symlinkat */
 	AUE_UTIMES,     /* utimes */
 	AUE_FUTIMES,    /* futimes */
-	AUE_COPYFILE,   /* copyfile, fcopyfile */
+	AUE_COPYFILE,   /* copyfile(2) not copyfile(3) */
 	AUE_CLONEFILEAT, /* clonefileat */
 	AUE_FCLONEFILEAT, /* fclonefileat */
 	/*

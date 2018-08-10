@@ -623,9 +623,7 @@ auef_readable(UNUSED int fd, void *udata) {
 	case AUE_LINKAT:
 	case AUE_CLONEFILEAT:
 	case AUE_FCLONEFILEAT:
-	case AUE_COPYFILE:
-		/* FIXME handle copyfile separately in order to be able to
-		 * handle all the corner cases like recursive copying */
+	case AUE_COPYFILE: /* copyfile(2) not copyfile(3) */
 		if (!LOGEVT_WANT(cfg->events, LOGEVT_FILEMON))
 			break;
 		TOKEN_ASSERT("rename|link|clonefile|copyfile",
@@ -708,7 +706,8 @@ auef_readable(UNUSED int fd, void *udata) {
 			} else {
 				missingtoken++;
 				DEBUG(cfg->debug, "missingtoken",
-				      "event=rename|link token=path");
+				      "event=rename|link|clonefile|copyfile "
+				      "token=path");
 			}
 			if (cfg->debug)
 				auevent_fprint(stderr, &ev);
