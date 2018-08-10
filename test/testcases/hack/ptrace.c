@@ -57,7 +57,7 @@ main(int argc, char *argv[]) {
 	       "argv="ARGV0
 	       "\n",
 	       pid, getpath());
-	printf("spec:2:process-access "
+	printf("spec:process-access "
 	       "subject.pid=%i "
 	       "subject.image.path=%s "
 	       "object.pid=%i "
@@ -67,16 +67,16 @@ main(int argc, char *argv[]) {
 	       getpid(), getpath(), pid);
 
 	if (ptrace(PT_ATTACHEXC, pid, NULL, 0) == -1) {
-		perror("ptrace");
+		perror("ptrace(PT_ATTACHEXC)");
 		kill(pid, SIGCONT);
 		return 1;
 	}
-
-	ptrace(PT_DETACH, pid, NULL, 0);
+	sleep(1);
+	/* we're supposed to implement complicated Mach exception handling
+	 * in order to detach properly from the ptraced process; skip that
+	 * and simply kill it the hard way, not waiting for an exit status */
 	kill(pid, SIGCONT);
-
-	int status;
-	waitpid(pid, &status, 0);
-	return WEXITSTATUS(status);
+	kill(pid, SIGKILL);
+	return 0;
 }
 
