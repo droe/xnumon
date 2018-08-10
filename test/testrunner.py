@@ -15,6 +15,7 @@
 import datetime
 import hashlib
 import json
+import os
 import subprocess
 import sys
 import time
@@ -43,15 +44,28 @@ def tc(path):
         return path[10:]
     return path
 
+def tclog(path):
+    path = "trace." + os.path.basename(path)
+    if path.endswith(".stest"):
+        return path[:-6]
+    if path.endswith(".test"):
+        return path[:-5]
+    return path
+
 
 class Logs:
     """
     Encapsulates log access and spec evaluation against a set of logs.
     """
     def __init__(self, logfilepath, begin=None, end=None):
+        self._all_records = []
         self._records_by_eventcode = []
+        n = 0
         with open(logfilepath, 'r') as f:
             for line in f:
+                line = line.strip()
+                if line == '':
+                    continue
                 try:
                     obj = json.loads(line)
                 except:
@@ -68,8 +82,11 @@ class Logs:
                 ec = int(obj['eventcode'])
                 while len(self._records_by_eventcode) < ec + 1:
                     self._records_by_eventcode.append([])
-                obj['_raw'] = line.rstrip()
+                obj['_raw'] = line
+                obj['_n'] = n
+                self._all_records.append(obj)
                 self._records_by_eventcode[ec].append(obj)
+                n += 1
 
     def __len__(self):
         count = 0
@@ -77,14 +94,18 @@ class Logs:
             count += len(l)
         return count
 
-    def _compare(self, a, b):
-        if isinstance(a, int):
-            b = int(b)
-        elif isinstance(a, (list, tuple)):
-            b = b.split(',')
-        if a != b:
-            return False
-        return True
+    def dump(self, path):
+        with open(path, 'w') as f:
+            for record in self._all_records:
+                f.write(record['_raw'])
+                f.write('\n')
+
+    def _render(self, value):
+        if isinstance(value, int):
+            return "%i" % value
+        elif isinstance(value, (list, tuple)):
+            return ','.join(value)
+        return value
 
     def _value_for_key(self, record, key):
         node = record
@@ -94,13 +115,14 @@ class Logs:
             node = node[subkey]
         return node
 
-    def _test_conditions(self, record, conditions, ex, verbose=False):
-        for key, value in conditions:
+    def _test_conditions(self, record, conds, ex, verbose=False):
+        trace = []
+        for key, value in conds:
             have_value = self._value_for_key(record, key)
             if not have_value:
-                if verbose:
-                    print("record does not have key %s" % key)
-                return False
+                trace.append("%i: %s missing" % (record['_n'], key))
+                return False, trace
+            have_value = self._render(have_value)
             if value == '*':
                 if key.endswith('.sha256'):
                     value = ex.sha256
@@ -108,27 +130,28 @@ class Logs:
                     value = ex.sha1
                 elif key.endswith('.md5'):
                     value = ex.md5
-            if not self._compare(have_value, value):
-                if verbose:
-                    print("%s: %s != %s" % (key, have_value, value))
-                return False
+            if have_value != value:
+                trace.append("%i: %s want %s != have %s" % (record['_n'], key,
+                                                            value, have_value))
+                return False, trace
             else:
-                if verbose:
-                    print("%s: %s == %s" % (key, have_value, value))
-        return True
+                trace.append("%i: %s want %s == %s" % (record['_n'], key,
+                                                       value, have_value))
+        return True, trace
 
-    def find(self, eventcode, conditions, ex, verbose=False, debug=False):
+    def find(self, eventcode, conds, ex):
+        trace = []
         if len(self._records_by_eventcode) < eventcode + 1:
-            if verbose:
-                print("no log records with eventcode=%i" % eventcode)
-            return []
+            trace.append("no log records with eventcode=%i" % eventcode)
+            return [], trace
         matching_records = []
         for record in self._records_by_eventcode[eventcode]:
-            if debug:
-                print(repr(record['_raw']))
-            if self._test_conditions(record, conditions, ex, verbose=verbose):
+            verdict, condtrace = self._test_conditions(record, conds, ex)
+            trace.extend(condtrace)
+            if verdict:
+                trace.append("%i: matched" % record['_n'])
                 matching_records.append(record)
-        return matching_records
+        return matching_records, trace
 
 
 class Specs:
@@ -154,7 +177,7 @@ class Specs:
             parts = spec.strip().split(' ')
             header = parts[0].split(':')
             self._wanted = 1
-            self._radar = None
+            self.radar = None
             if len(header) > 2:
                 flags = header[-2].split(',')
                 if 'absent' in flags:
@@ -163,36 +186,49 @@ class Specs:
                     self._wanted = 2
                 for flag in flags:
                     if flag.startswith('radar'):
-                        self._radar = flag
+                        self.radar = flag
                         break
             self._spectype = header[-1]
             if self._spectype != 'testcase':
                 self._eventcode = self._EVENTMAP[self._spectype]
             self._conditions = [part.split('=') for part in parts[1:]]
             self._spec = spec
+            self._trace = []
 
-        def check(self, ex, logs, verbose=False, debug=False):
+        def check(self, ex, logs):
+            self._trace.append("%s" % self._spec)
             if self._spectype == 'testcase':
                 for key, value in self._conditions:
                     if key == 'returncode':
                         if ex.returncode != int(value):
-                            print("expected returncode %s but have %i:" % (
-                                  value, ex.returncode))
-                            print(ex.stderr or "(no stderr)")
+                            msg = "expected returncode %s but have %i:" % (
+                                                       value, ex.returncode)
+                            msg += (ex.stderr or "(no stderr)")
+                            self._trace.append(msg)
+                            print(msg)
                             return False
                     else:
-                        print(yellow("error") + ": unknown condition %s=%s" % (
-                              key, value))
+                        msg = yellow("error") + ": unknown condition %s=%s" % (
+                                                                    key, value)
+                        self._trace.append(msg)
+                        print(msg)
                         return False
                 return True
-            results = logs.find(self._eventcode, self._conditions, ex,
-                                verbose=verbose, debug=debug)
-            if verbose:
-                print("%i matching records" % len(results))
+            results, trace = logs.find(self._eventcode, self._conditions, ex)
+            self._trace.extend(trace)
+            self._trace.append("%i matching records" % len(results))
             verdict = len(results) == self._wanted
-            if not verdict and self._radar:
+            if not verdict and self.radar:
+                self._trace.append("radared")
                 return None
+            if verdict:
+                self._trace.append("success")
+            else:
+                self._trace.append("failed")
             return verdict
+
+        def trace(self):
+            return '\n'.join(self._trace + [''])
 
         def __str__(self):
             return self._spec
@@ -200,24 +236,31 @@ class Specs:
     def __init__(self, specs):
         self._specs = [self.Spec(spec) for spec in specs]
 
-    def check(self, ex, logs, verbose=False, debug=False):
+    def check(self, ex, logs):
         result = True
-        radars = []
+        radared_radars = []
+        success_radars = []
         for spec in self._specs:
-            if verbose:
-                print("%s %s" % (brightwhite("testing"), spec))
-            verdict = spec.check(ex, logs, verbose=verbose, debug=debug)
+            verdict = spec.check(ex, logs)
             if not verdict:
                 print("%s  %s" % (red("failed"), spec))
                 if verdict == None:
                     if result:
                         result = None
-                    radars.append(spec._radar)
+                    radared_radars.append(spec.radar)
                 else:
                     result = False
             else:
                 print("%s %s" % (green("success"), spec))
-        return result, radars
+                if spec.radar:
+                    success_radars.append(spec.radar)
+        return result, radared_radars, success_radars
+
+    def dump(self, tclogfile):
+        with open(tclogfile, 'w') as f:
+            for spec in self._specs:
+                f.write(spec.trace())
+                f.write('\n')
 
 
 class TestSuite:
@@ -260,6 +303,7 @@ class TestSuite:
         self.ignored_testcases = []
         self.radared_testcases = []
         self.radared_radars = set()
+        self.success_radars = set()
         self._ipv6 = self._test_ipv6()
         if self._ipv6:
             print("IPv6 connectivity working")
@@ -277,9 +321,8 @@ class TestSuite:
     def _failed(self, path):
         self.failed_testcases.append(path)
 
-    def _radared(self, path, radars):
+    def _radared(self, path):
         self.radared_testcases.append(path)
-        self.radared_radars = self.radared_radars.union(set(radars))
 
     def _ignored(self, path):
         self.ignored_testcases.append(path)
@@ -310,7 +353,7 @@ class TestSuite:
             print("no specs - ignoring %s" % tc(path))
             self._ignored(path)
 
-    def evaluate(self, debug=False):
+    def evaluate(self):
         """
         Evaluate the added tests and their specs against the logs from the
         relevant time window.
@@ -323,27 +366,36 @@ class TestSuite:
         logs = Logs(logfile, begin=self._dt_begin, end=self._dt_end)
         print("%i log records within relevant timeframe" % len(logs))
         print()
+        outfiles = []
         self.failed_testcases = []
         for path, ex, specs in self._testcases:
             print(brightwhite("testing %s" % tc(path)))
             specs = Specs(specs)
-            verdict, radars = specs.check(ex, logs)
+            verdict, radared_radars, success_radars = specs.check(ex, logs)
+            self.radared_radars = self.radared_radars.union(set(radared_radars))
+            self.success_radars = self.success_radars.union(set(success_radars))
             if verdict:
                 self._success(path)
                 keyword = green("success")
             elif verdict == None:
-                self._radared(path, radars)
+                self._radared(path)
                 keyword = yellow("radared")
             else:
                 self._failed(path)
                 keyword = red("failed")
-                print("re-checking testcase in verbose mode:")
-                specs.check(ex, logs, verbose=True, debug=debug)
+                tclogfile = tclog(path)
+                specs.dump(tclogfile)
+                outfiles.append(tclogfile)
             print("%s %s" % (keyword, tc(path)))
             print()
+        if len(self.failed_testcases) > 0:
+            logfile = 'logs.json'
+            logs.dump(logfile)
+            outfiles.append(logfile)
+        return outfiles
 
 
-def main(paths, debug=False):
+def main(paths):
     """
     Add the requested test cases, evaluate the specs and print the results.
     """
@@ -354,18 +406,26 @@ def main(paths, debug=False):
                 suite.add_test(line)
         else:
             suite.add_test(path)
-    suite.evaluate(debug=debug)
-    #if len(suite.success_testcases) > 0:
-    #    print("%i testcases succeeded:" % len(suite.success_testcases))
-    #    for tc in suite.success_testcases:
-    #        print("%s" % tc)
-    #    print()
+    outfiles = suite.evaluate()
+    if len(suite.success_testcases) > 0:
+        print("%i testcases succeeded" % len(suite.success_testcases))
+        #for path in suite.success_testcases:
+        #    print("%s" % tc(path))
+        print()
+    if len(suite.success_radars) > 0:
+        print("%i radars absent:" % len(suite.success_radars))
+        for radar in sorted(list(suite.success_radars)):
+            print("%s" % radar)
+        print()
     if len(suite.radared_testcases) > 0:
         print("%i testcases radared:" % len(suite.radared_testcases))
         for path in suite.radared_testcases:
             print("%s" % tc(path))
-        print("fatal bugs present: %s" %
-              ' '.join(sorted(list(suite.radared_radars))))
+        print()
+    if len(suite.radared_radars) > 0:
+        print("%i radars present:" % len(suite.radared_radars))
+        for radar in sorted(list(suite.radared_radars)):
+            print("%s" % radar)
         print()
     if len(suite.ignored_testcases) > 0:
         print("%i testcases ignored:" % len(suite.ignored_testcases))
@@ -377,6 +437,8 @@ def main(paths, debug=False):
         for path in suite.failed_testcases:
             print("%s" % tc(path))
         print()
+    if len(outfiles) > 0:
+        print("written: " + ' '.join(outfiles))
     print("%i failed %i ignored %i radared %i success" % (
         len(suite.failed_testcases),
         len(suite.ignored_testcases),
@@ -391,13 +453,8 @@ if __name__ == '__main__':
     """
     Parse command line and execute main.
     """
-    args = sys.argv[1:]
-    try:
-        args.remove('-v')
-        debug=True
-    except:
-        debug=False
-    if len(args) == 0:
+    paths = sys.argv[1:]
+    if len(paths) == 0:
         sys.exit(2)
-    sys.exit(main(args, debug=debug))
+    sys.exit(main(paths))
 

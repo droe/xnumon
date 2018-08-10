@@ -11,6 +11,8 @@ chkcs
 auditdump
 test/**/*.test
 test/*.dep
+test/logs.json
+test/trace.*
 **/__pycache__
 kext/*.kext
 pkg/*.pkg

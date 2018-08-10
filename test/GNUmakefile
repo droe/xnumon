@@ -39,7 +39,7 @@ $(TARGETS): %.test: %.c $(MKFS) $(HDRS) $(DEPS)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -o $@ $< $(LIBS)
 
 clean:
-	rm -rf $(TARGETS) *.dSYM $(DEPS)
+	rm -rf $(TARGETS) *.dSYM $(DEPS) trace.* logs.json
 
 copyright: $(SRCS) *.c *.py $(HDRS) $(STESTS)
 	../Mk/bin/copyright.py $^
