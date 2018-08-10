@@ -5,8 +5,8 @@
 -   Also consider link(2), linkat(2), symlink(2), symlinkat(2), clonefile(2),
     clonefileat(2), fclonefileat(2), copyfile(2), fcopyfile(2) and implicit
     close on exit for file monitoring events.
--   Detect a bug in audit(4) where calls to renameat(2) sometimes lead to
-    `AUE_RENAMEAT` records with only one or two instead of four path tokens
+-   Detect a bug in audit(4) where calls to renameat(2) lead to
+    `AUE_RENAMEAT` records with missing destination path path tokens
     (radar 42770257).
 -   Detect a bug in audit(4) where calls to link(2) always lead to
     `AUE_LINK` records with only three instead of four path tokens
@@ -17,6 +17,9 @@
 -   Detect a bug in audit(4) where calls to \_\_mac\_execve(2) always lead to
     `AUE_MAC_EXECVE` recors without exec arg and exec env tokens
     (radar 42946744).
+-   Detect a bug in audit(4) where calls to linkat(2) lead to
+    `AUE_LINKAT` records with missing destination path path tokens
+    (radar 43151662).
 -   Work around a bug in audit(4) where ports for IPv6 sockets are in wrong
     byte order (radar 43063872).
 -   The installer package now refuses to install on unsupported OS versions.
@@ -34,6 +37,7 @@ Event schema changes:
     `evtloop.radar42783724`, `evtloop.radar42783724_fatal`,
     `evtloop.radar42784847`, `evtloop.radar42784847_fatal`,
     `evtloop.radar42946744`, `evtloop.radar42946744_fatal`,
+    `evtloop.radar43151662`, `evtloop.radar43151662_fatal`,
     `sockmon.recvd`, `sockmon.procd` and `sockmon.ooms`.
 -   Eventcodes 5, 6 and 7 added.
 

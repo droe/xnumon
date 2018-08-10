@@ -46,7 +46,7 @@ main(int argc, char *argv[]) {
 	       "program.argv=/usr/bin/true,"TESTNAME" "
 	       "\n");
 	/* identification of the true subject */
-	printf("spec:launchd-add "
+	printf("spec:radar43151662:launchd-add "
 	       "subject.pid=%i "
 	       "subject.image.path=%s "
 	       "plist.path="DSTDIR"/"DSTFILE" "

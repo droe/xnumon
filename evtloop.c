@@ -41,17 +41,18 @@ static uint64_t aueunknowns = 0;
 static uint64_t failedsyscalls = 0;
 static uint64_t radar38845422 = 0;
 static uint64_t radar38845422_fatal = 0;
-static uint64_t radar38845784 = 0;
+static uint64_t radar38845784 = 0;              /* never fatal */
 static uint64_t radar39267328 = 0;
 static uint64_t radar39267328_fatal = 0;
 static uint64_t radar39623812 = 0;
 static uint64_t radar39623812_fatal = 0;
-static uint64_t radar42770257_fatal = 0;
+static uint64_t radar42770257_fatal = 0;        /* always fatal */
 static uint64_t radar42783724 = 0;
 static uint64_t radar42783724_fatal = 0;
 static uint64_t radar42784847 = 0;
 static uint64_t radar42784847_fatal = 0;
 static uint64_t radar42946744_fatal = 0;
+static uint64_t radar43151662_fatal = 0;        /* always fatal */
 static uint64_t missingtoken = 0;
 static uint64_t ooms = 0;
 
@@ -173,7 +174,8 @@ errout:
  * 43063872: audit(4): port in wrong byte order for ports on IPv6 sockets
  *
  * Partial workarounds for the following audit(4) bugs:
- * 42770257: audit(4): only one/two instead of 4 path tokens for renameat(2)
+ * 42770257: audit(4): missing destination path tokens for renameat(2)
+ * 43151662: audit(4): missing destination path tokens for linkat(2)
  *
  * Only detection, no workaround for the following bugs in audit(4):
  * 42946744: audit(4): missing argv and arge for __mac_execve(2)
@@ -692,22 +694,30 @@ auef_readable(UNUSED int fd, void *udata) {
 		} else {
 			/* less than three path tokens */
 			path = NULL;
-			if (ev.type == AUE_RENAMEAT) {
-				/*
-				 * AUE_RENAMEAT records sometimes have only one
-				 * or two path tokens instead of four.
-				 *
-				 * Reported to Apple as radar 42770257 on
-				 * 2018-07-31.
-				 */
+			/*
+			 * AUE_RENAMEAT and AUE_LINKAT records sometimes have
+			 * only one or two path tokens instead of four.
+			 *
+			 * Reported to Apple as radar 42770257 and 43151662 on
+			 * 2018-07-31 and 2018-08-10 respectively.
+			 */
+			switch (ev.type) {
+			case AUE_RENAMEAT:
 				radar42770257_fatal++;
 				DEBUG(cfg->debug, "radar42770257_fatal",
 				      "event=renameat token=path");
-			} else {
+				break;
+			case AUE_LINKAT:
+				radar43151662_fatal++;
+				DEBUG(cfg->debug, "radar43151662_fatal",
+				      "event=linkat token=path");
+				break;
+			default:
 				missingtoken++;
 				DEBUG(cfg->debug, "missingtoken",
 				      "event=rename|link|clonefile|copyfile "
 				      "token=path");
+				break;
 			}
 			if (cfg->debug)
 				auevent_fprint(stderr, &ev);
@@ -935,6 +945,8 @@ evtloop_stats(evtloop_stat_t *st) {
 	st->el_radar42784847 = radar42784847;
 	st->el_radar42946744_fatal = radar42946744_fatal;
 	st->el_radar42946744 = radar42946744_fatal;
+	st->el_radar43151662_fatal = radar43151662_fatal;
+	st->el_radar43151662 = radar43151662_fatal;
 	st->el_missingtoken = missingtoken;
 	st->el_ooms = ooms;
 	aupipe_stats(fileno(auef), &st->ap);
@@ -967,7 +979,8 @@ siginfo_arrived(UNUSED int sig, UNUSED void *udata) {
 	                "r42770257:%"PRIu64"/%"PRIu64" "
 	                "r42783724:%"PRIu64"/%"PRIu64" "
 	                "r42784847:%"PRIu64"/%"PRIu64" "
-	                "r42946744:%"PRIu64"/%"PRIu64"\n",
+	                "r42946744:%"PRIu64"/%"PRIu64" "
+	                "r43151662:%"PRIu64"/%"PRIu64"\n",
 	                st.el_aupclobbers,
 	                st.el_aueunknowns,
 	                st.el_failedsyscalls,
@@ -987,7 +1000,9 @@ siginfo_arrived(UNUSED int sig, UNUSED void *udata) {
 	                st.el_radar42784847_fatal,
 	                st.el_radar42784847,
 	                st.el_radar42946744_fatal,
-	                st.el_radar42946744);
+	                st.el_radar42946744,
+	                st.el_radar43151662_fatal,
+	                st.el_radar43151662);
 
 	fprintf(stderr, "procmon "
 	                "actprc:%"PRIu32" "
@@ -1273,6 +1288,7 @@ evtloop_run(config_t *cfg) {
 	radar42784847 = 0;
 	radar42784847_fatal = 0;
 	radar42946744_fatal = 0;
+	radar43151662_fatal = 0;
 	missingtoken = 0;
 	ooms = 0;
 	xnumon_pid = getpid();
