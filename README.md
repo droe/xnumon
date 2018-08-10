@@ -14,20 +14,28 @@ provides on Windows.
 Currently implemented are the following
 [log events](https://github.com/droe/xnumon/wiki/Event-Schemata):
 
--   **xnumon-ops[0]** and **xnumon-stats[1]** for in-band monitoring of agent
-    status and activity metrics.
+-   **xnumon-ops[0]** and **xnumon-stats[1]**;: for in-band monitoring
+    of agent status and activity metrics.&nbsp;<sup>&ast;</sup>
 -   **image-exec[2]**: a process has replaced its executable image as a result
-    of calling one of the execve(2) or posix_spawn(2) family syscalls.
+    of calling execve(2) or posix_spawn(2).&nbsp;<sup>&ast;</sup>
 -   **process-access[3]**: a process has accessed and possibly manipulated
-    another process using either the task_for_pid or ptrace(2) syscalls.
+    another process using either task_for_pid or
+    ptrace(2).&nbsp;<sup>&Dagger;</sup>
 -   **launchd-add[4]**: a process has added or modified a launch daemon or
-    launch agent plist. (EXPERIMENTAL)
--   **socket-listen[5]**: a process has started listening on a socket.
-    (EXPERIMENTAL)
--   **socket-accept[6]**: a process has accepted an incoming connection.
-    (EXPERIMENTAL)
--   **socket-connect[7]**: a process has initiated an outgoing connection.
-    (EXPERIMENTAL)
+    launch agent plist.&nbps;<sup>&sect;</sup>
+-   **socket-listen[5]**: a process has started listening on a
+    socket.&nbsp;<sup>&ast;</sup>
+-   **socket-accept[6]**: a process has accepted an incoming
+    connection.&nbsp;<sup>&sect;</sup>
+-   **socket-connect[7]**: a process has initiated an outgoing
+    connection.&nbsp;<sup>&dagger;</sup>
+
+&ast; _stable_  
+&dagger; _stable, but limited in scope due to Apple bugs in audit(4) not fixed
+in any supported version of macOS_  
+&Dagger; _stable, but limited in scope due to Apple bugs in audit(4) fixed in
+some but not all supported versions of macOS_  
+&sect; _experimental_
 
 xnumon provides context information such as executable image hashes, code
 signing meta-data, script shebang handling, and the history of previous
