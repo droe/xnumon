@@ -192,7 +192,7 @@ sys_realpath(const char *restrict path, const char *restrict cwd) {
 	if (!path)
 		return NULL;
 	if (path[0] == '/')
-		return strdup(path);
+		return realpath(path, NULL);
 	if (!cwd)
 		return NULL;
 	rv = asprintf(&rp, "%s/%s", cwd, path);

@@ -158,16 +158,21 @@ errout:
 
 /*
  * Attempt to resolve a relative path token based on the current working
- * directory of the process.
+ * directory of the process (if use_cwd is true).  If use_cwd is false, fail if
+ * unrpath is a relative path.
  *
  * Caller must free *path, but not *cwd.
  */
 static void NONNULL(1,2,3,5)
 path_resolve(char **path, const char **cwd, const char *unrpath,
-               pid_t pid, struct timespec *tv) {
-	*cwd = procmon_getcwd(pid, tv);
-	if (!*cwd && (errno == ENOMEM))
-		ooms++;
+               pid_t pid, struct timespec *tv, bool use_cwd) {
+	if (use_cwd) {
+		*cwd = procmon_getcwd(pid, tv);
+		if (!*cwd && (errno == ENOMEM))
+			ooms++;
+	} else {
+		*cwd = NULL;
+	}
 	*path = sys_realpath(unrpath, *cwd);
 	if (!*path && (errno == ENOMEM))
 		ooms++;
@@ -604,7 +609,7 @@ auef_readable(UNUSED int fd, void *udata) {
 			} else {
 				radar39623812++;
 				path_resolve(&path, &cwd, ev.path[0],
-				             ev.subject.pid, &ev.tv);
+				             ev.subject.pid, &ev.tv, true);
 				if (!path && (errno != ENOMEM)) {
 					radar39623812_fatal++;
 					DEBUG(cfg->debug, "radar39623812_fatal",
@@ -678,14 +683,8 @@ rename_et_al:
 					auevent_fprint(stderr, &ev);
 				break;
 			}
-			if (flag) {
-				path_resolve(&path, &cwd, ev.path[2],
-				             ev.subject.pid, &ev.tv);
-			} else {
-				path = NULL;
-				cwd = NULL;
-				errno = ENOTSUP;
-			}
+			path_resolve(&path, &cwd, ev.path[2],
+			             ev.subject.pid, &ev.tv, flag);
 			if (!path && (errno != ENOMEM)) {
 				switch (ev.type) {
 				case AUE_RENAME:
@@ -768,7 +767,8 @@ rename_et_al:
 			/* only an unresolved target path token */
 			radar42784847++;
 			path_resolve(&path, &cwd, ev.path[0],
-			             ev.subject.pid, &ev.tv);
+			             ev.subject.pid, &ev.tv,
+			             (ev.type == AUE_SYMLINK));
 			if (!path && (errno != ENOMEM)) {
 				radar42784847_fatal++;
 				DEBUG(cfg->debug,
