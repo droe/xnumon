@@ -1157,6 +1157,7 @@ procmon_preloadpid(pid_t pid) {
 
 /*
  * Return the stored current working directory for a process by pid.
+ * Caller must not free the string.
  */
 const char *
 procmon_getcwd(pid_t pid, struct timespec *tv) {

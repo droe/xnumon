@@ -8,6 +8,13 @@
  * Licensed under the Open Software License version 3.0.
  */
 
+/*
+ * Because the destination file is outside of the paths that we are monitoring,
+ * the missed AUE_SYMLINKAT due to unresolved paths will not be compensated
+ * later, because the resolved paths in AUE_CLOSE point to outside of the
+ * monitored paths.  Currently xnumon cannot handle that yet.
+ */
+
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -31,7 +38,7 @@ main(int argc, char *argv[]) {
 	       "image.path=%s "
 	       "\n", getpid(), getpath());
 	/* write by any process */
-	printf("spec:launchd-add "
+	printf("spec:radar42784847:launchd-add "
 	       "plist.path="DSTDIR"/"DSTFILE" "
 	       "program.path=/usr/bin/true "
 	       "program.argv=/usr/bin/true,%i "
@@ -44,7 +51,7 @@ main(int argc, char *argv[]) {
 	       "program.argv=/usr/bin/true,%i "
 	       "\n", getpid());
 	/* identification of the true subject */
-	printf("spec:radarSYMLINKAT:launchd-add "
+	printf("spec:radar42784847:launchd-add "
 	       "subject.pid=%i "
 	       "subject.image.path=%s "
 	       "plist.path="DSTDIR"/"DSTFILE" "
@@ -70,8 +77,9 @@ main(int argc, char *argv[]) {
 		return 1;
 	}
 	close(fd);
+	sleep(1);
 	system("launchctl unload \""DSTDIR"/"DSTFILE"\"");
-	system("launchctl load \""DSTDIR"/"DSTFILE"\"");
+	system("launchctl load -F \""DSTDIR"/"DSTFILE"\"");
 	sleep(1);
 	system("launchctl unload \""DSTDIR"/"DSTFILE"\"");
 	unlink(DSTDIR"/"DSTFILE);

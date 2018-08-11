@@ -11,9 +11,9 @@
 -   Detect a bug in audit(4) where calls to link(2) always lead to
     `AUE_LINK` records with only three instead of four path tokens
     (radar 42783724).
--   Detect a bug in audit(4) where calls to symlink(2) always lead to
-    `AUE_SYMLINK` records with only one instead of two path tokens
-    (radar 42784847).
+-   Detect a bug in audit(4) where calls to symlink(2) or symlinkat(2) with a
+    relative path always lead to `AUE_SYMLINK`/`AUE_SYMLINKAT` records with
+    only one instead of two path tokens (radar 42784847).
 -   Detect a bug in audit(4) where calls to \_\_mac\_execve(2) always lead to
     `AUE_MAC_EXECVE` recors without exec arg and exec env tokens
     (radar 42946744).

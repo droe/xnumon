@@ -157,6 +157,23 @@ errout:
 }
 
 /*
+ * Attempt to resolve a relative path token based on the current working
+ * directory of the process.
+ *
+ * Caller must free *path, but not *cwd.
+ */
+static void NONNULL(1,2,3,5)
+path_resolve(char **path, const char **cwd, const char *unrpath,
+               pid_t pid, struct timespec *tv) {
+	*cwd = procmon_getcwd(pid, tv);
+	if (!*cwd && (errno == ENOMEM))
+		ooms++;
+	*path = sys_realpath(unrpath, *cwd);
+	if (!*path && (errno == ENOMEM))
+		ooms++;
+}
+
+/*
  * Called when the auditpipe file descriptor is readable.
  *
  * XNU BSD syscalls:
@@ -170,10 +187,10 @@ errout:
  * 39267328: audit(4): target path not resolved for rename(2)
  * 39623812: audit(4): path not resolved for utimes(2)
  * 42783724: audit(4): target path not resolved for link(2)
- * 42784847: audit(4): path not resolved for symlink(2)
  * 43063872: audit(4): port in wrong byte order for ports on IPv6 sockets
  *
  * Partial workarounds for the following audit(4) bugs:
+ * 42784847: audit(4): path not resolved for symlink(2) and symlinkat(2)
  * 42770257: audit(4): missing destination path tokens for renameat(2)
  * 43151662: audit(4): missing destination path tokens for linkat(2)
  *
@@ -201,6 +218,7 @@ auef_readable(UNUSED int fd, void *udata) {
 	audit_event_t ev;
 	const char *cwd;
 	char *path;
+	bool flag;
 	int rv;
 
 	auevent_create(&ev);
@@ -585,24 +603,14 @@ auef_readable(UNUSED int fd, void *udata) {
 					ooms++;
 			} else {
 				radar39623812++;
-				cwd = procmon_getcwd(ev.subject.pid, &ev.tv);
-				if (!cwd && (errno == ENOMEM))
-					ooms++;
-				path = sys_realpath(ev.path[0], cwd);
-				if (!path) {
-					if (errno == ENOMEM)
-						ooms++;
-					else {
-						radar39623812_fatal++;
-						DEBUG(cfg->debug,
-						      "radar39623812_fatal",
-						      "path[0]=%s "
-						      "pid=%i "
-						      "procmon_getcwd(pid)=>%s",
-						      ev.path[0],
-						      ev.subject.pid,
-						      cwd);
-					}
+				path_resolve(&path, &cwd, ev.path[0],
+				             ev.subject.pid, &ev.tv);
+				if (!path && (errno != ENOMEM)) {
+					radar39623812_fatal++;
+					DEBUG(cfg->debug, "radar39623812_fatal",
+					      "path[0]=%s pid=%i "
+					      "cwd(pid)=>%s",
+					      ev.path[0], ev.subject.pid, cwd);
 				}
 			}
 		} else {
@@ -619,13 +627,17 @@ auef_readable(UNUSED int fd, void *udata) {
 		filemon_touched(&ev.tv, &ev.subject, path);
 		break;
 
-	case AUE_RENAME:
 	case AUE_RENAMEAT:
-	case AUE_LINK:
 	case AUE_LINKAT:
 	case AUE_CLONEFILEAT:
 	case AUE_FCLONEFILEAT:
+		flag = false;   /* dont resolve relative to cwd on path bugs */
+		goto rename_et_al;
+	case AUE_RENAME:
+	case AUE_LINK:
 	case AUE_COPYFILE: /* copyfile(2) not copyfile(3) */
+		flag = true;    /* resolve relative to cwd on path bugs */
+rename_et_al:
 		if (!LOGEVT_WANT(cfg->events, LOGEVT_FILEMON))
 			break;
 		TOKEN_ASSERT("rename|link|clonefile|copyfile",
@@ -650,46 +662,50 @@ auef_readable(UNUSED int fd, void *udata) {
 				ooms++;
 		} else if (ev.path[2] && !ev.path[3]) {
 			/* three path tokens, assume third unresolved dpath */
-			if (ev.type == AUE_RENAME) {
+			switch (ev.type) {
+			case AUE_RENAME:
 				radar39267328++;
-			} else if (ev.type == AUE_LINK) {
+				break;
+			case AUE_LINK:
 				radar42783724++;
-			} else {
+				break;
+			default:
 				missingtoken++;
 				DEBUG(cfg->debug, "missingtoken",
 				      "event=rename|link|clonefile|copyfile "
 				      "token=path");
 				if (cfg->debug)
 					auevent_fprint(stderr, &ev);
+				break;
 			}
-			cwd = procmon_getcwd(ev.subject.pid, &ev.tv);
-			if (!cwd && (errno == ENOMEM))
-				ooms++;
-			path = sys_realpath(ev.path[2], cwd);
-			if (!path) {
-				if (errno == ENOMEM)
-					ooms++;
-				else if (ev.type == AUE_RENAME) {
+			if (flag) {
+				path_resolve(&path, &cwd, ev.path[2],
+				             ev.subject.pid, &ev.tv);
+			} else {
+				path = NULL;
+				cwd = NULL;
+				errno = ENOTSUP;
+			}
+			if (!path && (errno != ENOMEM)) {
+				switch (ev.type) {
+				case AUE_RENAME:
 					radar39267328_fatal++;
 					DEBUG(cfg->debug,
 					      "radar39267328_fatal",
-					      "path[2]=%s "
-					      "pid=%i "
-					      "procmon_getcwd(pid)=>%s",
-					      ev.path[2],
-					      ev.subject.pid,
-					      cwd);
-				} else if (ev.type == AUE_LINK) {
+					      "path[2]=%s pid=%i "
+					      "getcwd(pid)=>%s",
+					      ev.path[2], ev.subject.pid, cwd);
+					break;
+				case AUE_LINK:
 					radar42783724_fatal++;
 					DEBUG(cfg->debug,
 					      "radar42783724_fatal",
-					      "path[2]=%s "
-					      "pid=%i "
-					      "procmon_getcwd(pid)=>%s",
-					      ev.path[2],
-					      ev.subject.pid,
-					      cwd);
+					      "path[2]=%s pid=%i "
+					      "getcwd(pid)=>%s",
+					      ev.path[2], ev.subject.pid, cwd);
+					break;
 				}
+				/* others already got a "missingtoken" above */
 			}
 		} else {
 			/* less than three path tokens */
@@ -717,10 +733,10 @@ auef_readable(UNUSED int fd, void *udata) {
 				DEBUG(cfg->debug, "missingtoken",
 				      "event=rename|link|clonefile|copyfile "
 				      "token=path");
+				if (cfg->debug)
+					auevent_fprint(stderr, &ev);
 				break;
 			}
-			if (cfg->debug)
-				auevent_fprint(stderr, &ev);
 		}
 		if (!path)
 			/* counted above */
@@ -739,8 +755,8 @@ auef_readable(UNUSED int fd, void *udata) {
 		}
 		TOKEN_ASSERT("symlink", "subject", ev.subject_present);
 		/*
-		 * On at least 10.11.6, AUE_SYMLINK records include only an
-		 * unresolved target path.
+		 * On at least 10.11.6, AUE_SYMLINK and AUE_SYMLINKAT records
+		 * include only an unresolved target path.
 		 *
 		 * Reported to Apple as radar 42784847 on 2018-07-31.
 		 */
@@ -751,24 +767,15 @@ auef_readable(UNUSED int fd, void *udata) {
 		} else if (ev.path[0] && !ev.path[1]) {
 			/* only an unresolved target path token */
 			radar42784847++;
-			cwd = procmon_getcwd(ev.subject.pid, &ev.tv);
-			if (!cwd && (errno == ENOMEM))
-				ooms++;
-			path = sys_realpath(ev.path[0], cwd);
-			if (!path) {
-				if (errno == ENOMEM)
-					ooms++;
-				else {
-					radar42784847_fatal++;
-					DEBUG(cfg->debug,
-					      "radar42784847_fatal",
-					      "path[0]=%s "
-					      "pid=%i "
-					      "procmon_getcwd(pid)=>%s",
-					      ev.path[0],
-					      ev.subject.pid,
-					      cwd);
-				}
+			path_resolve(&path, &cwd, ev.path[0],
+			             ev.subject.pid, &ev.tv);
+			if (!path && (errno != ENOMEM)) {
+				radar42784847_fatal++;
+				DEBUG(cfg->debug,
+				      "radar42784847_fatal",
+				      "path[0]=%s pid=%i "
+				      "getcwd(pid)=>%s",
+				      ev.path[0], ev.subject.pid, cwd);
 			}
 		} else {
 			path = NULL;

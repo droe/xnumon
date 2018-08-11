@@ -30,23 +30,23 @@ Currently implemented are the following
 -   **socket-connect[7]**: a process has initiated an outgoing
     connection.&nbsp;<sup>&dagger;</sup>
 
-&ast; _stable_  
-&dagger; _stable, but limited in scope due to Apple bugs in audit(4) not fixed
-in any supported version of macOS_  
-&Dagger; _stable, but limited in scope due to Apple bugs in audit(4) fixed in
-some but not all supported versions of macOS_  
-&sect; _experimental_
+<sup>&ast;</sup>    _stable_  
+<sup>&dagger;</sup> _stable, but limited in scope due to Apple bugs in audit(4)
+not fixed in any supported version of macOS_  
+<sup>&Dagger;</sup> _stable, but limited in scope due to Apple bugs in audit(4)
+fixed in some but not all supported versions of macOS_  
+<sup>&sect;</sup>   _experimental_
 
 xnumon provides context information such as executable image hashes, code
-signing meta-data, script shebang handling, and the history of previous
+signature meta-data, script shebang handling, and the history of previous
 executable images that led to the current process state.  It does so by
 tracking fork and other syscalls instead of relying only on the ppid, which
 can change over the lifetime of a process.
 
 xnumon is configurable.  It supports different log formats and hash algorithms.
 In order to reduce log volume close to the source, xnumon implements a number
-of suppression mechanisms and allows some tuning regarding the logged
-information per event.
+of suppression mechanisms and allows tuning the level of information per event.
+The log subsystem was designed to be easy to extend with custom log drivers.
 
 
 ## Requirements
@@ -58,7 +58,7 @@ A supported version of OS X or macOS, currently:
 -   macOS 10.13 High Sierra
 -   macOS 10.14 Mojave
 
-Releases are considered safe to deploy in production environments.
+Releases of xnumon are considered safe to deploy in production environments.
 
 
 ## Documentation

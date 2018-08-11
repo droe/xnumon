@@ -64,7 +64,7 @@ main(int argc, char *argv[]) {
 	}
 	sleep(1);
 	system("launchctl unload \""DSTDIR"/"DSTFILE"\"");
-	system("launchctl load \""DSTDIR"/"DSTFILE"\"");
+	system("launchctl load -F \""DSTDIR"/"DSTFILE"\"");
 	sleep(1);
 	system("launchctl unload \""DSTDIR"/"DSTFILE"\"");
 	unlink(DSTDIR"/"DSTFILE);
