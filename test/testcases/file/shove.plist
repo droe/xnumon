@@ -3,13 +3,27 @@
 <plist version="1.0">
 	<dict>
 		<key>Label</key>
-		<string>ch.roe.xnumon.test.shove</string>
+		<string>ch.roe.xnumon.test.92321</string>
 		<key>ProgramArguments</key>
 		<array>
 			<string>/usr/bin/true</string>
-			<string>shove</string>
+			<string>92321</string>
 		</array>
 		<key>RunAtLoad</key>
 		<true/>
 	</dict>
-</plist>
+</plist>EOF
+test -e "/Users/daniel/d/xnumon/xnumon/test/testcases/file/shove.plist" || exit 1
+cp "/Users/daniel/d/xnumon/xnumon/test/testcases/file/shove.plist" "/var/folders/29/55nk2xns2tb7528grwcqr6040000gn/T/tmp.ggbqpSD0" || exit 2
+/System/Library/PrivateFrameworks/PackageKit.framework/Versions/A/Resources/shove "/var/folders/29/55nk2xns2tb7528grwcqr6040000gn/T/tmp.ggbqpSD0" "/Users/daniel/Library/LaunchAgents/ch.roe.xnumon.test.shove.plist" & pid= || exit 3
+sleep 1
+launchctl load "/Users/daniel/Library/LaunchAgents/ch.roe.xnumon.test.shove.plist" || exit 4
+
+echo "spec:launchd-add subject.pid= subject.image.path=/System/Library/PrivateFrameworks/PackageKit.framework/Versions/A/Resources/shove subject.image.ident=com.apple.shove plist.path=/Users/daniel/Library/LaunchAgents/ch.roe.xnumon.test.shove.plist program.path=/usr/bin/true program.argv=/usr/bin/true,92321"
+echo "spec:image-exec subject.image.path=/usr/libexec/xpcproxy image.path=/usr/bin/true argv=/usr/bin/true,92321"
+
+sleep 1
+launchctl unload "/Users/daniel/Library/LaunchAgents/ch.roe.xnumon.test.shove.plist" || exit 5
+rm -f "/Users/daniel/Library/LaunchAgents/ch.roe.xnumon.test.shove.plist"
+
+exit 0

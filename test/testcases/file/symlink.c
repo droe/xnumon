@@ -18,8 +18,6 @@
 #define TESTNAME "symlink"
 #define SRCDIR TESTDIR"/testcases/file"
 #define SRCFILE TESTNAME".plist"
-#define TMPDIR "/tmp"
-#define TMPFILE "ch.roe.xnumon.test."TESTNAME".plist~"
 #define DSTDIR HOME"/Library/LaunchAgents"
 #define DSTFILE "ch.roe.xnumon.test."TESTNAME".plist"
 
@@ -34,41 +32,42 @@ main(int argc, char *argv[]) {
 	printf("spec:launchd-add "
 	       "plist.path="DSTDIR"/"DSTFILE" "
 	       "program.path=/usr/bin/true "
-	       "program.argv=/usr/bin/true,"TESTNAME" "
-	       "\n");
+	       "program.argv=/usr/bin/true,%i "
+	       "\n", getpid());
 	/* misidentification of launchd as the source */
 	printf("spec:absent:launchd-add "
 	       "subject.pid=1 "
 	       "plist.path="DSTDIR"/"DSTFILE" "
 	       "program.path=/usr/bin/true "
-	       "program.argv=/usr/bin/true,"TESTNAME" "
-	       "\n");
+	       "program.argv=/usr/bin/true,%i "
+	       "\n", getpid());
 	/* identification of the true subject */
 	printf("spec:launchd-add "
 	       "subject.pid=%i "
 	       "subject.image.path=%s "
 	       "plist.path="DSTDIR"/"DSTFILE" "
 	       "program.path=/usr/bin/true "
-	       "program.argv=/usr/bin/true,"TESTNAME" "
-	       "\n", getpid(), getpath());
+	       "program.argv=/usr/bin/true,%i "
+	       "\n", getpid(), getpath(), getpid());
 	/* launchd starting the agent */
 	printf("spec:image-exec "
 	       "subject.image.path=/usr/libexec/xpcproxy "
 	       "image.path=/usr/bin/true "
-	       "argv=/usr/bin/true,"TESTNAME" "
-	       "\n");
+	       "argv=/usr/bin/true,%i "
+	       "\n", getpid());
 	fflush(stdout);
 
-	system("cp "SRCDIR"/"SRCFILE" "TMPDIR"/"TMPFILE);
-	if (symlink(TMPDIR"/"TMPFILE, DSTDIR"/"DSTFILE) == -1) {
+	getplist();
+	if (symlink(SRCDIR"/"SRCFILE, DSTDIR"/"DSTFILE) == -1) {
 		perror("symlink");
 		return 1;
 	}
+	sleep(1);
+	system("launchctl unload \""DSTDIR"/"DSTFILE"\"");
 	system("launchctl load \""DSTDIR"/"DSTFILE"\"");
 	sleep(1);
 	system("launchctl unload \""DSTDIR"/"DSTFILE"\"");
 	unlink(DSTDIR"/"DSTFILE);
-	unlink(TMPDIR"/"TMPFILE);
 
 	return 0;
 }

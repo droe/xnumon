@@ -10,6 +10,7 @@ mklaunchdplist
 chkcs
 auditdump
 test/**/*.test
+test/**/*.plist
 test/*.dep
 test/logs.json
 test/trace.*

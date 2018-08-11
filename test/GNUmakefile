@@ -40,6 +40,7 @@ $(TARGETS): %.test: %.c $(MKFS) $(HDRS) $(DEPS)
 
 clean:
 	rm -rf $(TARGETS) *.dSYM $(DEPS) trace.* logs.json
+	find . -name '*.plist' -delete
 
 copyright: $(SRCS) *.c *.py $(HDRS) $(STESTS)
 	../Mk/bin/copyright.py $^

@@ -38,31 +38,32 @@ main(int argc, char *argv[]) {
 	printf("spec:launchd-add "
 	       "plist.path="DSTDIR"/"DSTFILE" "
 	       "program.path=/usr/bin/true "
-	       "program.argv=/usr/bin/true,"TESTNAME" "
-	       "\n");
+	       "program.argv=/usr/bin/true,%i "
+	       "\n", getpid());
 	/* misidentification of launchd as the source */
 	printf("spec:absent:launchd-add "
 	       "subject.pid=1 "
 	       "plist.path="DSTDIR"/"DSTFILE" "
 	       "program.path=/usr/bin/true "
-	       "program.argv=/usr/bin/true,"TESTNAME" "
-	       "\n");
+	       "program.argv=/usr/bin/true,%i "
+	       "\n", getpid());
 	/* identification of the true subject */
 	printf("spec:launchd-add "
 	       "subject.pid=%i "
 	       "subject.image.path=%s "
 	       "plist.path="DSTDIR"/"DSTFILE" "
 	       "program.path=/usr/bin/true "
-	       "program.argv=/usr/bin/true,"TESTNAME" "
-	       "\n", getpid(), getpath());
+	       "program.argv=/usr/bin/true,%i "
+	       "\n", getpid(), getpath(), getpid());
 	/* launchd starting the agent */
 	printf("spec:image-exec "
 	       "subject.image.path=/usr/libexec/xpcproxy "
 	       "image.path=/usr/bin/true "
-	       "argv=/usr/bin/true,"TESTNAME" "
-	       "\n");
+	       "argv=/usr/bin/true,%i "
+	       "\n", getpid());
 	fflush(stdout);
 
+	getplist();
 	if (copyfile(SRCDIR"/"SRCFILE, DSTDIR"/"DSTFILE, NULL,
 	             COPYFILE_ALL) < 0) {
 		perror("copyfile");

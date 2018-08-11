@@ -16,14 +16,30 @@ srcf="`pwd`/`dirname $0`/shove.plist"
 tmpf=`mktemp`
 dstf="$HOME/Library/LaunchAgents/ch.roe.xnumon.test.shove.plist"
 
+cat >"$srcf" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC -//Apple Computer//DTD PLIST 1.0//EN http://www.apple.com/DTDs/PropertyList-1.0.dtd>
+<plist version="1.0">
+	<dict>
+		<key>Label</key>
+		<string>ch.roe.xnumon.test.$$</string>
+		<key>ProgramArguments</key>
+		<array>
+			<string>/usr/bin/true</string>
+			<string>$$</string>
+		</array>
+		<key>RunAtLoad</key>
+		<true/>
+	</dict>
+</plist>EOF
 test -e "$srcf" || exit 1
 cp "$srcf" "$tmpf" || exit 2
 $shove "$tmpf" "$dstf" & pid=$! || exit 3
 sleep 1
 launchctl load "$dstf" || exit 4
 
-echo "spec:launchd-add subject.pid=$pid subject.image.path=$shove subject.image.ident=com.apple.shove plist.path=$dstf program.path=/usr/bin/true program.argv=/usr/bin/true,shove"
-echo "spec:image-exec subject.image.path=/usr/libexec/xpcproxy image.path=/usr/bin/true argv=/usr/bin/true,shove"
+echo "spec:launchd-add subject.pid=$pid subject.image.path=$shove subject.image.ident=com.apple.shove plist.path=$dstf program.path=/usr/bin/true program.argv=/usr/bin/true,$$"
+echo "spec:image-exec subject.image.path=/usr/libexec/xpcproxy image.path=/usr/bin/true argv=/usr/bin/true,$$"
 
 sleep 1
 launchctl unload "$dstf" || exit 5
