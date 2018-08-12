@@ -201,7 +201,7 @@ class Specs:
                 for key, value in self._conditions:
                     if key == 'returncode':
                         if ex.returncode != int(value):
-                            msg = "expected returncode %s but have %i:" % (
+                            msg = "expected returncode %s but have %i:\n" % (
                                                        value, ex.returncode)
                             msg += (ex.stderr or "(no stderr)")
                             self._trace.append(msg)
@@ -287,13 +287,14 @@ class TestSuite:
                                           stderr=subprocess.PIPE)
             try:
                 self.stdout, self.stderr = proc.communicate(timeout=timeout)
+                self.returncode = proc.returncode
             except subprocess.TimeoutExpired:
                 proc.kill()
                 self.stdout, self.stderr = proc.communicate()
+                self.returncode = 666
             self.stdout = self.stdout.decode(errors='ignore').strip()
             self.stderr = self.stderr.decode(errors='ignore').strip()
             self.pid = proc.pid
-            self.returncode = proc.returncode
 
     def __init__(self):
         self._dt_begin = haklib.dt.utcnow() - datetime.timedelta(seconds=1)
