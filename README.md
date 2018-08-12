@@ -20,21 +20,21 @@ Currently implemented are the following
     of calling execve(2) or posix_spawn(2).&nbsp;<sup>&ast;</sup>
 -   **process-access[3]**: a process has accessed and possibly manipulated
     another process using either task_for_pid or
-    ptrace(2).&nbsp;<sup>&Dagger;</sup>
+    ptrace(2).&nbsp;<sup>&dagger;</sup>
 -   **launchd-add[4]**: a process has added or modified a launch daemon or
     launch agent plist.&nbps;<sup>&sect;</sup>
 -   **socket-listen[5]**: a process has started listening on a
     socket.&nbsp;<sup>&ast;</sup>
 -   **socket-accept[6]**: a process has accepted an incoming
-    connection.&nbsp;<sup>&sect;</sup>
+    connection.&nbsp;<sup>&ast;</sup>
 -   **socket-connect[7]**: a process has initiated an outgoing
-    connection.&nbsp;<sup>&dagger;</sup>
+    connection.&nbsp;<sup>&Dagger;</sup>
 
 <sup>&ast;</sup>    _stable_  
 <sup>&dagger;</sup> _stable, but limited in scope due to Apple bugs in audit(4)
-not fixed in any supported version of macOS_  
-<sup>&Dagger;</sup> _stable, but limited in scope due to Apple bugs in audit(4)
 fixed in some but not all supported versions of macOS_  
+<sup>&Dagger;</sup> _stable, but limited in scope due to Apple bugs in audit(4)
+not fixed in any supported version of macOS_  
 <sup>&sect;</sup>   _experimental_
 
 xnumon provides context information such as executable image hashes, code

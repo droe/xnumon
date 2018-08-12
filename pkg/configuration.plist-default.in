@@ -69,32 +69,32 @@
        0 * xnumon-ops       agent start and stop, with active configuration
        1 * xnumon-stats     agent metrics for in-band health monitoring
        2 * image-exec       a process executed an executable image
-       3 ‡ process-access   a process has accessed another process using
-                            task_for_pid or ptrace
+       3 † process-access   a process has accessed another process using
+                            task_for_pid or ptrace; does not cover
+                            processor_set_tasks() due to an omission in
+                            audit(4), but processor_set_tasks() has been
+                            disabled in macOS 10.14 Mojave
        4 § launchd-add      a process has added or modified a Launch Agent or
                             Launch Daemon plist
                             EXPERIMENTAL, does not cover all methods to install
                             a file, and requires a significant number of
                             file-related audit(4) events to be enabled (see
                             issue #26)
-       5 † socket-listen    a process has started listening on a socket; for
+       5 * socket-listen    a process has started listening on a socket; for
                             connection oriented protocols such as TCP this
                             means it has called listen(2), for datagram
                             oriented sockets bind(2), for raw sockets socket(2)
-                            EXPERIMENTAL
-       6 § socket-accept    a process has accepted an incoming connection on
+       6 * socket-accept    a process has accepted an incoming connection on
                             a connection-oriented socket
-                            EXPERIMENTAL
-       7 † socket-connect   a process has initiated an outgoing connection on
-                            a connection-oriented socket
-                            EXPERIMENTAL, only covers blocking sockets due to
-                            bug in audit(4) filed as radar 43006946
-         * stable
-         † stable, but limited in scope due to Apple bugs in audit(4) not fixed
-           in any supported version of macOS
-         ‡ stable, but limited in scope due to Apple bugs in audit(4) fixed in
-           some but not all supported versions of macOS
-         § experimental
+       7 ‡ socket-connect   a process has initiated an outgoing connection on
+                            a connection-oriented socket; only covers blocking
+                            sockets due to bug in audit(4)
+       * stable
+       † stable, but limited in scope due to Apple bugs in audit(4) fixed in
+         some but not all supported versions of macOS
+       ‡ stable, but limited in scope due to Apple bugs in audit(4) not fixed
+         in any supported version of macOS
+       § experimental
        The agent will only monitor the audit events that are needed to produce
        the selected events.
        If unset, defaults to:   0,1,2,3,4,5,6,7
