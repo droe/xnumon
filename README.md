@@ -22,7 +22,7 @@ Currently implemented are the following
     another process using either task_for_pid or
     ptrace(2).&nbsp;<sup>&dagger;</sup>
 -   **launchd-add[4]**: a process has added or modified a launch daemon or
-    launch agent plist.&nbps;<sup>&sect;</sup>
+    launch agent plist.&nbsp;<sup>&sect;</sup>
 -   **socket-listen[5]**: a process has started listening on a
     socket.&nbsp;<sup>&ast;</sup>
 -   **socket-accept[6]**: a process has accepted an incoming
