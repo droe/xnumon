@@ -122,8 +122,6 @@ test case process and therefore to the test framework.
 
 ### Bugs
 
-Output of the test runner is a bit messy and could be improved.
-
 There is no syntax yet to access array members.
 
 Logs are simply read from `/var/log/xnumon.log`; the framework does not know
