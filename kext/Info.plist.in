@@ -22,6 +22,8 @@
 	</array>
 	<key>CFBundleSignature</key>
 	<string>????</string>
+	<key>NSHumanReadableCopyright</key>
+	<string>Copyright (c) 2017-2018 Daniel Roethlisberger. All rights reserved.</string>
 __LIBS__
 </dict>
 </plist>
