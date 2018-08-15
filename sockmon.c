@@ -126,7 +126,7 @@ sockmon_socket_op(struct timespec *tv,
  * Called for socket.
  */
 void
-sockmon_socket(UNUSED struct timespec *tv,
+sockmon_socket(struct timespec *tv,
                audit_proc_t *subject,
                int fd, int domain, int type, int protocol) {
 	events_recvd++;
@@ -151,7 +151,7 @@ sockmon_socket(UNUSED struct timespec *tv,
 		}
 	}
 	events_procd++;
-	procmon_socket_create(subject->pid, fd, protocol);
+	procmon_socket_create(subject->pid, fd, protocol, tv);
 }
 
 /*

@@ -1186,17 +1186,20 @@ procmon_getcwd(pid_t pid, struct timespec *tv) {
  */
 void
 procmon_socket_create(pid_t pid, int fd,
-                      int proto) {
+                      int proto,
+                      struct timespec *tv) {
 	fd_ctx_t *ctx;
 	proc_t *proc;
 
 	proc = proctab_find(pid);
 	if (!proc)
-		return; // XXX count
+		/* XXX try to create from pid, count miss */
+		return;
 
 	ctx = proc_getfd(proc, fd);
 	if (ctx) {
 		/* reuse existing allocation */
+		proc_triggerfd(ctx, tv);
 		bzero(((char *)ctx)+sizeof(ctx->node),
 		      sizeof(fd_ctx_t)-sizeof(ctx->node));
 		ctx->fd = fd;
@@ -1277,17 +1280,20 @@ errout:
 }
 
 void
-procmon_file_open(audit_proc_t *subject, int fd, char *path) {
+procmon_file_open(audit_proc_t *subject, int fd, char *path,
+                  struct timespec *tv) {
 	proc_t *proc;
 	fd_ctx_t *ctx;
 
 	proc = proctab_find(subject->pid);
-	if (!proc) /* XXX create from pid?! */
+	if (!proc)
+		/* XXX try to create from pid, count miss */
 		return;
 
 	ctx = proc_getfd(proc, fd);
 	if (ctx) {
 		/* reuse existing allocation */
+		proc_triggerfd(ctx, tv);
 		bzero(((char *)ctx)+sizeof(ctx->node),
 		      sizeof(fd_ctx_t)-sizeof(ctx->node));
 		ctx->fd = fd;

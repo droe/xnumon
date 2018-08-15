@@ -549,7 +549,7 @@ auef_readable(UNUSED int fd, void *udata) {
 		/* sometimes one, sometimes two path tokens, unsure if bug */
 		path = (char *)(ev.path[1] ? ev.path[1] : ev.path[0]);
 		assert(path);
-		procmon_file_open(&ev.subject, ev.return_value, path);
+		procmon_file_open(&ev.subject, ev.return_value, path, &ev.tv);
 		break;
 
 	case AUE_CLOSE:

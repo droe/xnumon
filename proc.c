@@ -79,6 +79,12 @@ proc_closefd(proc_t *proc, int fd) {
 }
 
 void
+proc_triggerfd(fd_ctx_t *ctx, struct timespec *tv) {
+	if ((ctx->flags & FDFLAG_FILE) && ctx->fi.path)
+		filemon_touched(tv, &ctx->fi.subject, ctx->fi.path);
+}
+
+void
 proc_freefd(fd_ctx_t *ctx) {
 	free(ctx);
 }
@@ -114,16 +120,16 @@ proc_free(proc_t *proc, struct timespec *tv) {
 	while (!tommy_list_empty(&proc->fdlolist)) {
 		ctx = tommy_list_remove_existing(&proc->fdlolist,
 				tommy_list_head(&proc->fdlolist));
-		if (tv && (ctx->flags & FDFLAG_FILE) && ctx->fi.path)
-			filemon_touched(tv, &ctx->fi.subject, ctx->fi.path);
-		free(ctx);
+		if (tv)
+			proc_triggerfd(ctx, tv);
+		proc_freefd(ctx);
 	}
 	while (!tommy_list_empty(&proc->fdhilist)) {
 		ctx = tommy_list_remove_existing(&proc->fdhilist,
 				tommy_list_head(&proc->fdhilist));
-		if (tv && (ctx->flags & FDFLAG_FILE) && ctx->fi.path)
-			filemon_touched(tv, &ctx->fi.subject, ctx->fi.path);
-		free(ctx);
+		if (tv)
+			proc_triggerfd(ctx, tv);
+		proc_freefd(ctx);
 	}
 	if (proc->image_exec)
 		image_exec_free(proc->image_exec);

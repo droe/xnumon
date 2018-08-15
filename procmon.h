@@ -63,12 +63,13 @@ void procmon_stats(procmon_stat_t *) NONNULL(1);
 uint32_t procmon_images(void) WUNRES;
 const char * procmon_getcwd(pid_t, struct timespec *tv) WUNRES;
 
-void procmon_socket_create(pid_t, int, int);
+void procmon_socket_create(pid_t, int, int, struct timespec *) NONNULL(4);
 void procmon_socket_bind(int *, pid_t, int, ipaddr_t *, uint16_t)
      NONNULL(1,4);
 void procmon_socket_state(int *, ipaddr_t **, uint16_t *, pid_t, int)
      NONNULL(1,2);
-void procmon_file_open(audit_proc_t *, int, char *) NONNULL(1,3);
+void procmon_file_open(audit_proc_t *, int, char *, struct timespec *)
+     NONNULL(1,3,4);
 void procmon_fd_close(pid_t, int);
 
 /*

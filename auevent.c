@@ -75,6 +75,10 @@ auevent_init(void) {
 		(DST_ADDR).ev6_addr[3] = (SRC_TID).addr[3]; \
 	}
 
+/*
+ * While this functionality is still present, it is not currently being used
+ * by xnumon, so the linear search is not an issue.
+ */
 static bool
 auevent_type_in_typelist(const uint16_t type, const uint16_t typelist[]) {
 	int i = 0;

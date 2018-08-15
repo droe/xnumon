@@ -77,6 +77,7 @@ void proctab_remove(pid_t, struct timespec *);
 fd_ctx_t * proc_getfd(proc_t *, int) NONNULL(1) WUNRES;
 fd_ctx_t * proc_closefd(proc_t *, int) NONNULL(1) WUNRES;
 void proc_setfd(proc_t *, fd_ctx_t *) NONNULL(1,2);
+void proc_triggerfd(fd_ctx_t *ctx, struct timespec *tv) NONNULL(1,2);
 void proc_freefd(fd_ctx_t *) NONNULL(1);
 
 #endif
