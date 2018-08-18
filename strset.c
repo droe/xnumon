@@ -76,6 +76,9 @@ strset_contains(strset_t *this, const char *str) {
 	return node != NULL;
 }
 
+/*
+ * Alterantive version of strset_contains() that supports scopes.
+ */
 bool
 strset_contains3(strset_t *this, const char *str, const char *scope) {
 	/* TODO May be further optimized by keeping track of whether strset
