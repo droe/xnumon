@@ -26,8 +26,8 @@ static uint64_t events_recvd;   /* number of events received */
 static uint64_t events_procd;   /* number of events processed */
 static atomic64_t ooms;         /* counts events impaired due to OOM */
 
-strset_t *suppress_socket_op_by_subject_ident;
-strset_t *suppress_socket_op_by_subject_path;
+setstr_t *suppress_socket_op_by_subject_ident;
+setstr_t *suppress_socket_op_by_subject_path;
 
 static void socket_op_free(socket_op_t *);
 static int socket_op_work(socket_op_t *);

@@ -8,7 +8,7 @@
  * Licensed under the Open Software License version 3.0.
  */
 
-#include "strset.h"
+#include "setstr.h"
 
 #include "tommy_ext.h"
 
@@ -16,14 +16,14 @@
 #include <string.h>
 #include <stdio.h>
 
-typedef struct strset_node {
+typedef struct setstr_node {
 	tommy_hashtable_node h_node;
 	char *str;
-} strset_node_t;
+} setstr_node_t;
 
 static int
 compfunc(const void *str, const void *obj) {
-	const strset_node_t *node = obj;
+	const setstr_node_t *node = obj;
 	return strcmp(node->str, str);
 }
 
@@ -32,20 +32,20 @@ compfunc(const void *str, const void *obj) {
  * Guarantees to deep free strings even on errors.
  */
 int
-strset_init(strset_t *this, size_t buckets, char **strings) {
+setstr_init(setstr_t *this, size_t buckets, char **strings) {
 	this->bucket_max = bucket_max_for_buckets(buckets);
 	this->size = buckets;
 	tommy_hashtable_init(&this->hashtable, this->bucket_max);
 
 	for (size_t i = 0; i < buckets; i++) {
-		strset_node_t *node;
+		setstr_node_t *node;
 		tommy_hash_t h;
 
-		if (strset_contains(this, strings[i])) {
+		if (setstr_contains(this, strings[i])) {
 			free(strings[i]);
 			continue;
 		}
-		node = malloc(sizeof(strset_node_t));
+		node = malloc(sizeof(setstr_node_t));
 		if (!node)
 			goto errout;
 		node->str = strings[i];
@@ -68,8 +68,8 @@ errout:
 }
 
 bool
-strset_contains(strset_t *this, const char *str) {
-	strset_node_t *node;
+setstr_contains(setstr_t *this, const char *str) {
+	setstr_node_t *node;
 
 	node = tommy_hashtable_search(&this->hashtable, compfunc, str,
 	                              tommy_strhash_u32(0, str));
@@ -77,38 +77,38 @@ strset_contains(strset_t *this, const char *str) {
 }
 
 /*
- * Alterantive version of strset_contains() that supports scopes.
+ * Alterantive version of setstr_contains() that supports scopes.
  */
 bool
-strset_contains3(strset_t *this, const char *str, const char *scope) {
-	/* TODO May be further optimized by keeping track of whether strset
-	 * contains no scoped entries, or strset contains only scoped entries,
+setstr_contains3(setstr_t *this, const char *str, const char *scope) {
+	/* TODO May be further optimized by keeping track of whether setstr
+	 * contains no scoped entries, or setstr contains only scoped entries,
 	 * and skipping the respective lookup accordingly */
 	if (scope) {
 		const size_t sz = strlen(str) + strlen(scope) + 2;
 		char key[sz];
 		snprintf(key, sz, "%s@%s", str, scope);
-		if (strset_contains(this, key))
+		if (setstr_contains(this, key))
 			return true;
 	}
-	return strset_contains(this, str);
+	return setstr_contains(this, str);
 }
 
 size_t
-strset_size(strset_t *this) {
+setstr_size(setstr_t *this) {
 	return this->size;
 }
 
 /*
- * Safe to be called on a bzero'ed strset_t that was never initialized with
- * strset_init().
+ * Safe to be called on a bzero'ed setstr_t that was never initialized with
+ * setstr_init().
  */
 void
-strset_destroy(strset_t *this) {
+setstr_destroy(setstr_t *this) {
 	if (this->bucket_max == 0)
 		return;
 	tommy_hashtable_foreach(&this->hashtable, free);
 	tommy_hashtable_done(&this->hashtable);
-	bzero(this, sizeof(strset_t));
+	bzero(this, sizeof(setstr_t));
 }
 

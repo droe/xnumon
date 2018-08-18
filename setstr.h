@@ -8,8 +8,8 @@
  * Licensed under the Open Software License version 3.0.
  */
 
-#ifndef STRSET_H
-#define STRSET_H
+#ifndef SETSTR_H
+#define SETSTR_H
 
 #include "attrib.h"
 
@@ -18,18 +18,18 @@
 #include <stddef.h>
 #include <stdbool.h>
 
-typedef struct strset {
+typedef struct setstr {
 	tommy_hashtable hashtable;
 	tommy_count_t bucket_max;
 	size_t size;
-} strset_t;
+} setstr_t;
 
-int strset_init(strset_t *, size_t, char **) NONNULL(1) WUNRES;
-bool strset_contains(strset_t *, const char *) NONNULL(1,2) WUNRES;
-bool strset_contains3(strset_t *, const char *, const char *)
+int setstr_init(setstr_t *, size_t, char **) NONNULL(1) WUNRES;
+bool setstr_contains(setstr_t *, const char *) NONNULL(1,2) WUNRES;
+bool setstr_contains3(setstr_t *, const char *, const char *)
      NONNULL(1,2) WUNRES;
-size_t strset_size(strset_t *) NONNULL(1);
-void strset_destroy(strset_t *) NONNULL(1);
+size_t setstr_size(setstr_t *) NONNULL(1);
+void setstr_destroy(setstr_t *) NONNULL(1);
 
 #endif
 

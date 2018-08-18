@@ -60,10 +60,10 @@ static uint64_t miss_chdirsubj;
 static uint64_t miss_getcwd;
 static atomic64_t ooms;         /* counts events impaired due to OOM */
 
-strset_t *suppress_image_exec_by_ident;
-strset_t *suppress_image_exec_by_path;
-strset_t *suppress_image_exec_by_ancestor_ident;
-strset_t *suppress_image_exec_by_ancestor_path;
+setstr_t *suppress_image_exec_by_ident;
+setstr_t *suppress_image_exec_by_path;
+setstr_t *suppress_image_exec_by_ancestor_ident;
+setstr_t *suppress_image_exec_by_ancestor_path;
 
 static int image_exec_work(image_exec_t *);
 
@@ -438,18 +438,18 @@ image_exec_acquire(image_exec_t *image, bool kern) {
  */
 bool
 image_exec_match_suppressions(image_exec_t *ie,
-                              strset_t *by_ident, strset_t *by_path) {
+                              setstr_t *by_ident, setstr_t *by_path) {
 	if (ie->codesign && codesign_is_good(ie->codesign)) {
-		if (strset_contains3(by_ident, ie->codesign->ident,
+		if (setstr_contains3(by_ident, ie->codesign->ident,
 		                               ie->codesign->teamid))
 			return true;
 	}
 	if (ie->path) {
-		if (strset_contains(by_path, ie->path))
+		if (setstr_contains(by_path, ie->path))
 			return true;
 	}
 	if (ie->script && ie->script->path) {
-		if (strset_contains(by_path, ie->script->path))
+		if (setstr_contains(by_path, ie->script->path))
 			return true;
 	}
 	return false;

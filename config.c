@@ -339,24 +339,24 @@ config_bool_from_plist(config_t *cfg, const char *optname,
 }
 
 static int
-config_strset_from_plist(strset_t *set,
+config_setstr_from_plist(setstr_t *set,
                          CFPropertyListRef plist, CFStringRef key) {
 	CFArrayRef arr;
 	CFIndex arrsz;
 	char **v;
 
 	if (!plist)
-		return strset_init(set, 0, NULL);
+		return setstr_init(set, 0, NULL);
 	arr = CFDictionaryGetValue((CFDictionaryRef)plist, key);
 	if (!arr || !cf_is_array(arr))
-		return strset_init(set, 0, NULL);
+		return setstr_init(set, 0, NULL);
 	arrsz = CFArrayGetCount(arr);
 	if (arrsz == 0)
-		return strset_init(set, 0, NULL);
+		return setstr_init(set, 0, NULL);
 	v = cf_cstrv(arr);
 	if (!v)
 		return -1;
-	return strset_init(set, arrsz, v);
+	return setstr_init(set, arrsz, v);
 }
 
 #define CONFIG_STR_FROM_PLIST(RV, CFG, PLIST, KEY) \
@@ -369,8 +369,8 @@ config_strset_from_plist(strset_t *set,
 		fprintf(stderr, "Failed to load '" KEY "'\n"); \
 		goto errout; \
 	}
-#define CONFIG_STRSET_FROM_PLIST(RV, CFG, PLIST, KEY) \
-	if ((rv = config_strset_from_plist(&CFG->KEY, PLIST, \
+#define CONFIG_setstr_FROM_PLIST(RV, CFG, PLIST, KEY) \
+	if ((rv = config_setstr_from_plist(&CFG->KEY, PLIST, \
 	                                   CFSTR(#KEY))) == -1) { \
 		fprintf(stderr, "Failed to load '" #KEY "'\n"); \
 		goto errout; \
@@ -458,23 +458,23 @@ config_new(const char *cfgpath) {
 	CONFIG_BOOL_FROM_PLIST(rv, cfg, plist, "suppress_image_exec_at_start");
 	CONFIG_BOOL_FROM_PLIST(rv, cfg, plist, "suppress_socket_op_localhost");
 
-	/* The strset initializations must be called even if we were to allow
+	/* The setstr initializations must be called even if we were to allow
 	 * xnumon to run without a config file; they handle plist==NULL. */
-	CONFIG_STRSET_FROM_PLIST(rv, cfg, plist,
+	CONFIG_setstr_FROM_PLIST(rv, cfg, plist,
 	                         suppress_image_exec_by_ident);
-	CONFIG_STRSET_FROM_PLIST(rv, cfg, plist,
+	CONFIG_setstr_FROM_PLIST(rv, cfg, plist,
 	                         suppress_image_exec_by_path);
-	CONFIG_STRSET_FROM_PLIST(rv, cfg, plist,
+	CONFIG_setstr_FROM_PLIST(rv, cfg, plist,
 	                         suppress_image_exec_by_ancestor_ident);
-	CONFIG_STRSET_FROM_PLIST(rv, cfg, plist,
+	CONFIG_setstr_FROM_PLIST(rv, cfg, plist,
 	                         suppress_image_exec_by_ancestor_path);
-	CONFIG_STRSET_FROM_PLIST(rv, cfg, plist,
+	CONFIG_setstr_FROM_PLIST(rv, cfg, plist,
 	                         suppress_process_access_by_subject_ident);
-	CONFIG_STRSET_FROM_PLIST(rv, cfg, plist,
+	CONFIG_setstr_FROM_PLIST(rv, cfg, plist,
 	                         suppress_process_access_by_subject_path);
-	CONFIG_STRSET_FROM_PLIST(rv, cfg, plist,
+	CONFIG_setstr_FROM_PLIST(rv, cfg, plist,
 	                         suppress_socket_op_by_subject_ident);
-	CONFIG_STRSET_FROM_PLIST(rv, cfg, plist,
+	CONFIG_setstr_FROM_PLIST(rv, cfg, plist,
 	                         suppress_socket_op_by_subject_path);
 
 	if (plist)
@@ -492,14 +492,14 @@ void
 config_free(config_t *cfg) {
 	assert(cfg);
 
-	strset_destroy(&cfg->suppress_image_exec_by_ident);
-	strset_destroy(&cfg->suppress_image_exec_by_path);
-	strset_destroy(&cfg->suppress_image_exec_by_ancestor_ident);
-	strset_destroy(&cfg->suppress_image_exec_by_ancestor_path);
-	strset_destroy(&cfg->suppress_process_access_by_subject_ident);
-	strset_destroy(&cfg->suppress_process_access_by_subject_path);
-	strset_destroy(&cfg->suppress_socket_op_by_subject_ident);
-	strset_destroy(&cfg->suppress_socket_op_by_subject_path);
+	setstr_destroy(&cfg->suppress_image_exec_by_ident);
+	setstr_destroy(&cfg->suppress_image_exec_by_path);
+	setstr_destroy(&cfg->suppress_image_exec_by_ancestor_ident);
+	setstr_destroy(&cfg->suppress_image_exec_by_ancestor_path);
+	setstr_destroy(&cfg->suppress_process_access_by_subject_ident);
+	setstr_destroy(&cfg->suppress_process_access_by_subject_path);
+	setstr_destroy(&cfg->suppress_socket_op_by_subject_ident);
+	setstr_destroy(&cfg->suppress_socket_op_by_subject_path);
 	if (cfg->path)
 		free(cfg->path);
 	if (cfg->id)

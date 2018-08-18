@@ -26,8 +26,8 @@ static uint64_t events_recvd;       /* number of events received */
 static uint64_t events_procd;       /* number of events processed */
 static atomic64_t ooms;             /* counts events impaired due to OOM */
 
-strset_t *suppress_process_access_by_subject_ident;
-strset_t *suppress_process_access_by_subject_path;
+setstr_t *suppress_process_access_by_subject_ident;
+setstr_t *suppress_process_access_by_subject_path;
 
 static void process_access_free(process_access_t *);
 static int process_access_work(process_access_t *);

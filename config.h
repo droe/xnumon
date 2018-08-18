@@ -12,7 +12,7 @@
 #define CONFIG_H
 
 #include "hashes.h"
-#include "strset.h"
+#include "setstr.h"
 #include "attrib.h"
 
 #include <stddef.h>
@@ -58,15 +58,15 @@ typedef struct {
 	char *logfile;
 
 	bool suppress_image_exec_at_start;
-	strset_t suppress_image_exec_by_ident;
-	strset_t suppress_image_exec_by_path;
-	strset_t suppress_image_exec_by_ancestor_ident;
-	strset_t suppress_image_exec_by_ancestor_path;
-	strset_t suppress_process_access_by_subject_ident;
-	strset_t suppress_process_access_by_subject_path;
+	setstr_t suppress_image_exec_by_ident;
+	setstr_t suppress_image_exec_by_path;
+	setstr_t suppress_image_exec_by_ancestor_ident;
+	setstr_t suppress_image_exec_by_ancestor_path;
+	setstr_t suppress_process_access_by_subject_ident;
+	setstr_t suppress_process_access_by_subject_path;
 	bool suppress_socket_op_localhost;
-	strset_t suppress_socket_op_by_subject_ident;
-	strset_t suppress_socket_op_by_subject_path;
+	setstr_t suppress_socket_op_by_subject_ident;
+	setstr_t suppress_socket_op_by_subject_path;
 } config_t;
 
 config_t * config_new(const char *) MALLOC;

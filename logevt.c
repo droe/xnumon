@@ -197,29 +197,29 @@ logevt_xnumon_ops(logfmt_t *fmt, FILE *f, void *arg0) {
 	fmt->dict_item(f, "suppress_image_exec_at_start");
 	fmt->value_bool(f, config->suppress_image_exec_at_start);
 	fmt->dict_item(f, "suppress_image_exec_by_ident");
-	fmt->value_uint(f, strset_size(&config->suppress_image_exec_by_ident));
+	fmt->value_uint(f, setstr_size(&config->suppress_image_exec_by_ident));
 	fmt->dict_item(f, "suppress_image_exec_by_path");
-	fmt->value_uint(f, strset_size(&config->suppress_image_exec_by_path));
+	fmt->value_uint(f, setstr_size(&config->suppress_image_exec_by_path));
 	fmt->dict_item(f, "suppress_image_exec_by_ancestor_ident");
 	fmt->value_uint(f,
-		strset_size(&config->suppress_image_exec_by_ancestor_ident));
+		setstr_size(&config->suppress_image_exec_by_ancestor_ident));
 	fmt->dict_item(f, "suppress_image_exec_by_ancestor_path");
 	fmt->value_uint(f,
-		strset_size(&config->suppress_image_exec_by_ancestor_path));
+		setstr_size(&config->suppress_image_exec_by_ancestor_path));
 	fmt->dict_item(f, "suppress_process_access_by_subject_ident");
 	fmt->value_uint(f,
-		strset_size(&config->suppress_process_access_by_subject_ident));
+		setstr_size(&config->suppress_process_access_by_subject_ident));
 	fmt->dict_item(f, "suppress_process_access_by_subject_path");
 	fmt->value_uint(f,
-		strset_size(&config->suppress_process_access_by_subject_path));
+		setstr_size(&config->suppress_process_access_by_subject_path));
 	fmt->dict_item(f, "suppress_socket_op_localhost");
 	fmt->value_bool(f, config->suppress_socket_op_localhost);
 	fmt->dict_item(f, "suppress_socket_op_by_subject_ident");
 	fmt->value_uint(f,
-		strset_size(&config->suppress_socket_op_by_subject_ident));
+		setstr_size(&config->suppress_socket_op_by_subject_ident));
 	fmt->dict_item(f, "suppress_socket_op_by_subject_path");
 	fmt->value_uint(f,
-		strset_size(&config->suppress_socket_op_by_subject_path));
+		setstr_size(&config->suppress_socket_op_by_subject_path));
 	fmt->dict_end(f); /* config */
 
 	fmt->dict_item(f, "system");
