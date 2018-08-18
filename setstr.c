@@ -8,6 +8,10 @@
  * Licensed under the Open Software License version 3.0.
  */
 
+/*
+ * setstr - static set of strings
+ */
+
 #include "setstr.h"
 
 #include "tommy_ext.h"
