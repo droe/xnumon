@@ -146,6 +146,9 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], int flags, FILE *f) {
 		 * with tty device /dev/null and tty addr 0.0.0.0.
 		 * Translate those here to no device represented by (dev_t)-1
 		 * and no addr represented by address family 0, respectively.
+		 *
+		 * The timestamp in the headers is nanotime() shortly before
+		 * the syscall returns to the calling userspace process.
 		 */
 
 		switch (tok.id) {

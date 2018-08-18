@@ -61,7 +61,7 @@ typedef struct {
 
 	uint16_t        type;
 	uint16_t        mod;
-	struct timespec tv;
+	struct timespec tv;                     /* nanotime(endtime) */
 
 	size_t          args_count;
 	audit_arg_t     args[UCHAR_MAX+1];
