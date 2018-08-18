@@ -771,8 +771,14 @@ logevt_launchd_add(logfmt_t *fmt, FILE *f, void *arg0) {
 
 	fmt->dict_item(f, "program");
 	fmt->dict_begin(f);
-	fmt->dict_item(f, "path");
-	fmt->value_string(f, ldadd->program_path);
+	if (ldadd->program_rpath) {
+		fmt->dict_item(f, "rpath");
+		fmt->value_string(f, ldadd->program_rpath);
+	}
+	if (ldadd->program_path) {
+		fmt->dict_item(f, "path");
+		fmt->value_string(f, ldadd->program_path);
+	}
 	if (ldadd->program_argv) {
 		fmt->dict_item(f, "argv");
 		fmt->list_begin(f);

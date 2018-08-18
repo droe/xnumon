@@ -43,6 +43,7 @@ typedef struct {
 	/* daemon or agent program read from the plist file */
 	char *program_path;
 	char **program_argv;
+	char *program_rpath; /* resolved absolute path or argv[0] */
 } launchd_add_t;
 
 void filemon_touched(struct timespec *, audit_proc_t *, char *)

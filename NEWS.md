@@ -5,6 +5,8 @@
 -   Also consider link(2), linkat(2), symlink(2), symlinkat(2), clonefile(2),
     clonefileat(2), fclonefileat(2), copyfile(2), fcopyfile(2) and implicit
     close on exit for file monitoring events.
+-   Still produce eventcode 4 when the ProgramPath from the plist cannot be
+    resolved.
 -   Detect a bug in audit(4) where calls to renameat(2) lead to
     `AUE_RENAMEAT` records with missing destination path path tokens
     (radar 42770257).
@@ -32,13 +34,15 @@ Configuration changes:
 
 Event schema changes:
 
--   Event schema version increased to 7.  Changes affect eventcodes 1,5,6,7.
+-   Event schema version increased to 7.  Changes affect eventcodes 1,4,5,6,7.
 -   Eventcode 1 added `evtloop.radar42770257`, `evtloop.radar42770257_fatal`,
     `evtloop.radar42783724`, `evtloop.radar42783724_fatal`,
     `evtloop.radar42784847`, `evtloop.radar42784847_fatal`,
     `evtloop.radar42946744`, `evtloop.radar42946744_fatal`,
     `evtloop.radar43151662`, `evtloop.radar43151662_fatal`,
     `sockmon.recvd`, `sockmon.procd` and `sockmon.ooms`.
+-   Eventcode 4 added `program.rpath` and `program.path` is now exactly the
+    unresolved ProgramPath from the plist.
 -   Eventcodes 5, 6 and 7 added.
 
 ---

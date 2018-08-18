@@ -88,6 +88,8 @@ launchd_add_new(char *path) {
 
 static void
 launchd_add_free(launchd_add_t *ldadd) {
+	if (ldadd->program_rpath)
+		free(ldadd->program_rpath);
 	if (ldadd->program_path)
 		free(ldadd->program_path);
 	if (ldadd->program_argv)
@@ -136,26 +138,27 @@ launchd_add_acquire(launchd_add_t *ldadd) {
 	}
 	CFRelease(plist);
 
-	if (!ldadd->program_path &&
-	    ldadd->program_argv &&
-	    ldadd->program_argv[0]) {
+	if (ldadd->program_path) {
+		ldadd->program_rpath = sys_realpath(ldadd->program_path, NULL);
+	} else if (ldadd->program_argv && ldadd->program_argv[0]) {
 		if (ldadd->program_argv[0][0] == '/') {
 			/* absolute path */
-			ldadd->program_path = strdup(ldadd->program_argv[0]);
+			ldadd->program_rpath =
+				sys_realpath(ldadd->program_argv[0], NULL);
 		} else if (!!strchr(ldadd->program_argv[0], '/')) {
 			/* relative path */
-			ldadd->program_path =
+			ldadd->program_rpath =
 				sys_realpath(ldadd->program_argv[0], "/");
 		} else {
 			/* filename to be searched in PATH */
-			ldadd->program_path = sys_which(ldadd->program_argv[0],
+			ldadd->program_rpath = sys_which(ldadd->program_argv[0],
 			                                _PATH_STDPATH);
+			ldadd->program_rpath =
+				sys_realpath(ldadd->program_rpath, NULL);
 		}
 	}
-	if (!ldadd->program_path) {
-		atomic64_inc(&lpmiss);
-		return;
-	}
+	if (!ldadd->program_path && (errno == ENOMEM))
+		atomic64_inc(&ooms);
 
 	/*
 	 * For now, we are deliberatly not obtaining hashes and codesign status
@@ -175,8 +178,6 @@ static int
 launchd_add_work(launchd_add_t *ldadd) {
 	launchd_add_acquire(ldadd);
 	launchd_add_close(ldadd);
-	if (!ldadd->program_path)
-		return -1; /* don't log */
 	return 0;
 }
 
