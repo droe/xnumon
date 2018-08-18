@@ -157,9 +157,12 @@ errout:
 }
 
 /*
- * Attempt to resolve a relative path token based on the current working
- * directory of the process (if use_cwd is true).  If use_cwd is false, fail if
- * unrpath is a relative path.
+ * Construct an absolute path from a possibly relative path and fully resolve
+ * all symlinks.
+ *
+ * If use_cwd is true, use the current working directory for process pid to
+ * construct the full path of a relative path.  If use_cwd is false, fail if
+ * path is relative.
  *
  * Caller must free *path, but not *cwd.
  */
@@ -173,9 +176,60 @@ path_resolve(char **path, const char **cwd, const char *unrpath,
 	} else {
 		*cwd = NULL;
 	}
+
 	*path = sys_realpath(unrpath, *cwd);
 	if (!*path && (errno == ENOMEM))
 		ooms++;
+}
+
+/*
+ * Variant of path_resolve for symlinks.  Fully resolves all directory
+ * components of the resulting path, but keeps the symlink itself unresolved.
+ */
+static void NONNULL(1,2,3,5)
+path_resolve_symlink(char **path, const char **cwd, const char *unrpath,
+               pid_t pid, struct timespec *tv, bool use_cwd) {
+	char *sep, *udir, *rdir;
+
+	if (use_cwd) {
+		*cwd = procmon_getcwd(pid, tv);
+		if (!*cwd && (errno == ENOMEM))
+			ooms++;
+	} else {
+		*cwd = NULL;
+	}
+
+	if (unrpath[0] == '/') {
+		udir = strdup(unrpath);
+	} else {
+		if (!*cwd) {
+			*path = NULL;
+			return;
+		}
+		(void)asprintf(&udir, "%s/%s", *cwd, unrpath);
+	}
+	if (!udir) {
+		if (errno == ENOMEM)
+			ooms++;
+		*path = NULL;
+		return;
+	}
+	sep = strrchr(udir, '/');
+	assert(sep);
+	*sep = '\0';
+	rdir = sys_realpath(udir, *cwd);
+	if (!rdir) {
+		if (errno == ENOMEM)
+			ooms++;
+		free(udir);
+		*path = NULL;
+		return;
+	}
+	(void)asprintf(path, "%s/%s", rdir, sep+1);
+	if (!*path && (errno == ENOMEM))
+		ooms++;
+	free(rdir);
+	free(udir);
 }
 
 /*
@@ -766,9 +820,9 @@ rename_et_al:
 		} else if (ev.path[0] && !ev.path[1]) {
 			/* only an unresolved target path token */
 			radar42784847++;
-			path_resolve(&path, &cwd, ev.path[0],
-			             ev.subject.pid, &ev.tv,
-			             (ev.type == AUE_SYMLINK));
+			path_resolve_symlink(&path, &cwd, ev.path[0],
+			                     ev.subject.pid, &ev.tv,
+			                     (ev.type == AUE_SYMLINK));
 			if (!path && (errno != ENOMEM)) {
 				radar42784847_fatal++;
 				DEBUG(cfg->debug,
