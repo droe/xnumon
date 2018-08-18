@@ -76,7 +76,9 @@ OBJS=		$(SRCS:.c=.o)
 MKFS=		$(wildcard Makefile GNUmakefile Mk/*.mk)
 
 EXTSRCS=	tommylist.c tommylist.h tommychain.h tommytypes.h \
-		tommyhashtbl.c tommyhashtbl.h tommyhash.c tommyhash.h \
+		tommyhashdyn.c tommyhashdyn.h \
+		tommyhashtbl.c tommyhashtbl.h \
+		tommyhash.c tommyhash.h \
 		memstream.c memstream.h map.h
 GITHUBRAW?=	https://raw.githubusercontent.com
 TOMMYTAG?=	v2.2
