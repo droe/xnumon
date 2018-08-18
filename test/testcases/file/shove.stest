@@ -38,7 +38,7 @@ $shove "$tmpf" "$dstf" & pid=$! || exit 3
 sleep 1
 launchctl load "$dstf" || exit 4
 
-echo "spec:launchd-add subject.pid=$pid subject.image.path=$shove subject.image.ident=com.apple.shove plist.path=$dstf program.path=/usr/bin/true program.argv=/usr/bin/true,$$"
+echo "spec:launchd-add subject.pid=$pid subject.image.path=$shove subject.image.ident=com.apple.shove plist.path=$dstf program.rpath=/usr/bin/true program.argv=/usr/bin/true,$$"
 echo "spec:image-exec subject.image.path=/usr/libexec/xpcproxy image.path=/usr/bin/true argv=/usr/bin/true,$$"
 
 sleep 1

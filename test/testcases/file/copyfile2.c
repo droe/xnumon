@@ -36,21 +36,21 @@ main(int argc, char *argv[]) {
 	       "\n", getpid(), getpath());
 	printf("spec:absent:launchd-add "
 	       "plist.path="DSTDIR"/"DSTFILE" "
-	       "program.path=/usr/bin/true "
+	       "program.rpath=/usr/bin/true "
 	       "program.argv=/usr/bin/true,%i "
 	       "\n", getpid());
 #if 0
 	/* write by any process */
 	printf("spec:launchd-add "
 	       "plist.path="DSTDIR"/"DSTFILE" "
-	       "program.path=/usr/bin/true "
+	       "program.rpath=/usr/bin/true "
 	       "program.argv=/usr/bin/true,%i "
 	       "\n", getpid());
 	/* misidentification of launchd as the source */
 	printf("spec:absent:launchd-add "
 	       "subject.pid=1 "
 	       "plist.path="DSTDIR"/"DSTFILE" "
-	       "program.path=/usr/bin/true "
+	       "program.rpath=/usr/bin/true "
 	       "program.argv=/usr/bin/true,%i "
 	       "\n", getpid());
 	/* identification of the true subject */
@@ -58,7 +58,7 @@ main(int argc, char *argv[]) {
 	       "subject.pid=%i "
 	       "subject.image.path=%s "
 	       "plist.path="DSTDIR"/"DSTFILE" "
-	       "program.path=/usr/bin/true "
+	       "program.rpath=/usr/bin/true "
 	       "program.argv=/usr/bin/true,%i "
 	       "\n", getpid(), getpath(), getpid());
 	/* launchd starting the agent */
