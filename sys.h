@@ -57,7 +57,8 @@ int sys_pidf_write(int) WUNRES;
 void sys_pidf_close(int, const char *) NONNULL(2);
 
 typedef int (*sys_dir_eachfile_cb_t)(const char *, void *) NONNULL(1) WUNRES;
-int sys_dir_eachfile(const char *, sys_dir_eachfile_cb_t, void *) NONNULL(1,2) WUNRES;
+int sys_dir_eachfile_l(const char *, sys_dir_eachfile_cb_t, void *)
+    NONNULL(1,2) WUNRES;
 
 char * sys_which(const char *, const char *) MALLOC NONNULL(1,2);
 

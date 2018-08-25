@@ -319,7 +319,7 @@ int
 sys_islnk(const char *path) {
 	struct stat ss;
 
-	if (stat(path, &ss) == -1)
+	if (lstat(path, &ss) == -1)
 		return -1;
 
 	return S_ISLNK(ss.st_mode) ? 1 : 0;
@@ -406,14 +406,15 @@ sys_pidf_close(int fd, const char *fn)
 /*
  * Iterate over all files in a directory hierarchy, calling the callback
  * cb for each file, passing the filename and arg as arguments.  Files and
- * directories beginning with a dot are skipped, symlinks are followed.
+ * directories beginning with a dot are skipped.  Symlinks pointing to
+ * directories are followed, all other symlinks are returned.
  */
 int
-sys_dir_eachfile(const char *dirname, sys_dir_eachfile_cb_t cb, void *arg)
+sys_dir_eachfile_l(const char *dirname, sys_dir_eachfile_cb_t cb, void *arg)
 {
 	FTS *tree;
 	FTSENT *node;
-	char * paths[2];
+	char *paths[2];
 	int rv = 0;
 
 	paths[1] = NULL;
@@ -421,7 +422,7 @@ sys_dir_eachfile(const char *dirname, sys_dir_eachfile_cb_t cb, void *arg)
 	if (!paths[0])
 		return -1;
 
-	tree = fts_open(paths, FTS_NOCHDIR | FTS_LOGICAL, NULL);
+	tree = fts_open(paths, FTS_NOCHDIR|FTS_COMFOLLOW|FTS_PHYSICAL, NULL);
 	if (!tree) {
 		fprintf(stderr, "Cannot open directory '%s': %s\n",
 		                dirname, strerror(errno));
@@ -432,8 +433,12 @@ sys_dir_eachfile(const char *dirname, sys_dir_eachfile_cb_t cb, void *arg)
 	while ((node = fts_read(tree))) {
 		if (node->fts_level > 0 && node->fts_name[0] == '.')
 			fts_set(tree, node, FTS_SKIP);
-		else if (node->fts_info & FTS_F) {
+		else if (node->fts_info & (FTS_F | FTS_SLNONE)) {
 			rv = cb(node->fts_path, arg);
+			if (rv == -1)
+				goto out2;
+		} else if (node->fts_info & FTS_SL) {
+			rv = sys_dir_eachfile_l(node->fts_path, cb, arg);
 			if (rv == -1)
 				goto out2;
 		}

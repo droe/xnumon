@@ -477,7 +477,7 @@ filemon_init_add_plist(const char *path, UNUSED void *udata) {
 	              st.mtime.tv_sec,
 	              st.ctime.tv_sec,
 	              st.btime.tv_sec);
-	if (S_ISLNK(st.mode))
+	if (sys_islnk(path) == 1)
 		symlinks_path_walk(strdup(path), NULL, NULL);
 	return 0;
 }
@@ -500,19 +500,19 @@ filemon_init(config_t *cfg) {
 
 	symlinks_init();
 
-	(void)sys_dir_eachfile("/System/Library/LaunchDaemons/",
-	                       filemon_init_add_plist, NULL);
-	(void)sys_dir_eachfile("/Library/LaunchDaemons/",
-	                       filemon_init_add_plist, NULL);
-	(void)sys_dir_eachfile("/System/Library/LaunchAgents/",
-	                       filemon_init_add_plist, NULL);
-	(void)sys_dir_eachfile("/Library/LaunchAgents/",
-	                       filemon_init_add_plist, NULL);
+	(void)sys_dir_eachfile_l("/System/Library/LaunchDaemons/",
+	                         filemon_init_add_plist, NULL);
+	(void)sys_dir_eachfile_l("/Library/LaunchDaemons/",
+	                         filemon_init_add_plist, NULL);
+	(void)sys_dir_eachfile_l("/System/Library/LaunchAgents/",
+	                         filemon_init_add_plist, NULL);
+	(void)sys_dir_eachfile_l("/Library/LaunchAgents/",
+	                         filemon_init_add_plist, NULL);
 	bzero(&g, sizeof(g));
 	glob("/Users/*/Library/LaunchAgents/", 0, NULL, &g);
 	for (int i = 0; i < g.gl_matchc; i++) {
-		(void)sys_dir_eachfile(g.gl_pathv[i],
-		                       filemon_init_add_plist, NULL);
+		(void)sys_dir_eachfile_l(g.gl_pathv[i],
+		                         filemon_init_add_plist, NULL);
 	}
 
 	return 0;
