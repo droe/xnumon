@@ -15,7 +15,7 @@
 
 #include "getpath.h"
 
-#define TESTNAME "symlink"
+#define TESTNAME "symlink-f-l"
 #define SRCDIR TESTDIR"/testcases/file"
 #define SRCFILE TESTNAME".plist"
 #define DSTDIR HOME"/Library/LaunchAgents"
@@ -57,6 +57,9 @@ main(int argc, char *argv[]) {
 	       "\n", getpid());
 	fflush(stdout);
 
+	unlink(SRCDIR"/"SRCFILE);
+	unlink(DSTDIR"/"DSTFILE);
+
 	getplist();
 	if (symlink(SRCDIR"/"SRCFILE, DSTDIR"/"DSTFILE) == -1) {
 		perror("symlink");
@@ -67,6 +70,7 @@ main(int argc, char *argv[]) {
 	system("launchctl load -F \""DSTDIR"/"DSTFILE"\"");
 	sleep(1);
 	system("launchctl unload \""DSTDIR"/"DSTFILE"\"");
+	unlink(SRCDIR"/"SRCFILE);
 	unlink(DSTDIR"/"DSTFILE);
 
 	return 0;

@@ -53,6 +53,13 @@ static const char footer[] =
 	"\t</dict>\n"
 	"</plist>\n";
 
+static inline void
+writeplist(const char *path) {
+	FILE *f = fopen(path, "w");
+	fprintf(f, "%s%i%s%i%s", header, getpid(), body, getpid(), footer);
+	fclose(f);
+}
+
 static inline const char *
 getplist(void) {
 	char pathbuf[1024];
@@ -60,11 +67,7 @@ getplist(void) {
 	if (_NSGetExecutablePath(pathbuf, &size) != 0)
 		return NULL;
 	memcpy(&pathbuf[strlen(pathbuf)-4], "plist", 6);
-
-	FILE *f = fopen(pathbuf, "w");
-	fprintf(f, "%s%i%s%i%s", header, getpid(), body, getpid(), footer);
-	fclose(f);
-
+	writeplist(pathbuf);
 	return realpath(pathbuf, NULL);
 }
 
