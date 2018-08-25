@@ -56,11 +56,20 @@ static void filemon_launchd_touched(struct timespec *, audit_proc_t *, char *);
  */
 
 static tommy_hashdyn symlinks;
+static tommy_list symlinks_dangling; /* subset of symlinks */
 
 typedef struct symlinks_obj {
 	tommy_hashdyn_node h_node;
 	tommy_node l_node;
 	char *path;
+
+	/*
+	 * Object is in one of three states at all times:
+	 * a) is_regular_file == false, target == NULL, in symlinks_dangling
+	 * b) is_regular_file == false, target != NULL, in target->origins
+	 * c) is_regular_file == true, target == NULL, not in any list
+	 */
+	bool is_regular_file;
 	tommy_list origins;
 	struct symlinks_obj *target;
 } symlinks_obj_t;
@@ -93,6 +102,7 @@ symlinks_obj_cmp(const void *path, const void* obj) {
 static void
 symlinks_init(void) {
 	tommy_hashdyn_init(&symlinks);
+	tommy_list_init(&symlinks_dangling);
 }
 
 static void
@@ -119,6 +129,8 @@ symlinks_obj_unref(symlinks_obj_t *obj, symlinks_obj_t *origin) {
 	if (origin) {
 		origin->target = NULL;
 		tommy_list_remove_existing(&obj->origins, &origin->l_node);
+		tommy_list_insert_head(&symlinks_dangling,
+		                       &origin->l_node, origin);
 	}
 	if (!tommy_list_empty(&obj->origins))
 		return;
@@ -128,6 +140,9 @@ symlinks_obj_unref(symlinks_obj_t *obj, symlinks_obj_t *origin) {
 		symlinks_obj_unref(obj->target, obj);
 	}
 	tommy_hashdyn_remove_existing(&symlinks, &obj->h_node);
+	if (!obj->is_regular_file) {
+		tommy_list_remove_existing(&symlinks_dangling, &obj->l_node);
+	}
 	symlinks_obj_free(obj);
 }
 
@@ -146,25 +161,30 @@ symlinks_path_add(const char *path, symlinks_obj_t *origin) {
 		if (!obj)
 			return NULL;
 		tommy_hashdyn_insert(&symlinks, &obj->h_node, obj, h);
+		tommy_list_insert_head(&symlinks_dangling, &obj->l_node, obj);
 	}
 	assert(obj);
-	if (origin) {
-		assert(origin->target == NULL || origin->target == obj);
+	if (origin && (origin->target == NULL)) {
 		origin->target = obj;
-		tommy_list_insert_tail(&obj->origins, &origin->l_node, origin);
+		tommy_list_remove_existing(&symlinks_dangling, &origin->l_node);
+		tommy_list_insert_head(&obj->origins, &origin->l_node, origin);
 	}
 	return obj;
 }
 
 static void
-symlinks_path_walk(char *path, struct timespec *tv, audit_proc_t *subject) {
-	symlinks_obj_t *obj;
+symlinks_path_walk(const char *path,
+                   struct timespec *tv, audit_proc_t *subject) {
+	symlinks_obj_t *obj, *root;
 	char *target, *rtarget;
 
-	obj = symlinks_path_add(path, NULL);
+	root = obj = symlinks_path_add(path, NULL);
+	assert(obj);
 	rtarget = strdup(path);
-	if (!rtarget)
-		goto out;
+	if (!rtarget) {
+		ooms++;
+		return;
+	}
 	while (rtarget) {
 		target = sys_readlink(rtarget);
 		free(rtarget);
@@ -181,9 +201,27 @@ symlinks_path_walk(char *path, struct timespec *tv, audit_proc_t *subject) {
 		obj = symlinks_path_add(rtarget, obj);
 	}
 
-out:
-	if (tv)
-		filemon_launchd_touched(tv, subject, path);
+	if (!obj->is_regular_file && sys_islnk(obj->path) != 1) {
+		tommy_list_remove_existing(&symlinks_dangling, &obj->l_node);
+		obj->is_regular_file = true;
+	}
+
+	if (tv) {
+		if (!tommy_list_empty(&symlinks_dangling)) {
+			tommy_node *dsl = tommy_list_head(&symlinks_dangling);
+			while (dsl) {
+				symlinks_obj_t *dslobj = dsl->data;
+				symlinks_path_walk(dslobj->path, NULL, NULL);
+				dsl = dsl->next;
+			}
+		}
+		/* walk up to the actual root for logging */
+		assert(root);
+		while (!tommy_list_empty(&root->origins)) {
+			root = tommy_list_head(&root->origins)->data;
+		}
+		filemon_launchd_touched(tv, subject, strdup(root->path));
+	}
 }
 
 static void
@@ -436,7 +474,7 @@ filemon_unlink(const char *path, audit_attr_t *attr) {
 			return;
 	}
 
-	if (filemon_is_launchd_path(path)) {
+	if (symlinks_path_is_relevant(path)) {
 		events_procd++;
 		symlinks_path_remove(path);
 	}
@@ -455,7 +493,6 @@ filemon_symlink(struct timespec *tv, audit_proc_t *subject, char *path) {
 	if (filemon_is_launchd_path(path)) {
 		events_procd++;
 		symlinks_path_walk(path, tv, subject);
-		return;
 	}
 	free(path);
 }
@@ -478,7 +515,7 @@ filemon_init_add_plist(const char *path, UNUSED void *udata) {
 	              st.ctime.tv_sec,
 	              st.btime.tv_sec);
 	if (sys_islnk(path) == 1)
-		symlinks_path_walk(strdup(path), NULL, NULL);
+		symlinks_path_walk(path, NULL, NULL);
 	return 0;
 }
 
