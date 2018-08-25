@@ -46,8 +46,9 @@ int sys_fdattr(stat_attr_t *, int) NONNULL(1);
 int sys_basenamecmp(const char *restrict, const char *restrict) WUNRES;
 char * sys_realpath(const char *restrict, const char *restrict) MALLOC;
 char * sys_realdir(const char *restrict, const char *restrict) MALLOC;
-char * sys_readlink(const char *restrict) MALLOC;
+char * sys_readlink(const char *) MALLOC;
 void sys_strip_path_noop(char *) NONNULL(1);
+int sys_islnk(const char *) WUNRES;
 
 int sys_limit_nofile(size_t);
 

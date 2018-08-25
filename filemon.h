@@ -50,6 +50,7 @@ void filemon_touched(struct timespec *, audit_proc_t *, char *)
      NONNULL(1,2,3);
 void filemon_symlink(struct timespec *, audit_proc_t *, char *)
      NONNULL(1,2,3);
+void filemon_unlink(const char *, audit_attr_t *) NONNULL(1);
 
 int filemon_init(config_t *) WUNRES NONNULL(1);
 void filemon_fini(void);

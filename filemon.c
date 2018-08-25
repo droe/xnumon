@@ -33,6 +33,7 @@
 #include "tommyhashdyn.h"
 #include "tommylist.h"
 
+#include <sys/stat.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <strings.h>
@@ -61,6 +62,7 @@ typedef struct symlinks_obj {
 	tommy_node l_node;
 	char *path;
 	tommy_list origins;
+	struct symlinks_obj *target;
 } symlinks_obj_t;
 
 static symlinks_obj_t *
@@ -99,17 +101,41 @@ symlinks_fini(void) {
 	tommy_hashdyn_done(&symlinks);
 }
 
-static bool
-symlinks_path_is_relevant(const char *path) {
+static symlinks_obj_t *
+symlinks_path_find(const char *path) {
 	return tommy_hashdyn_search(&symlinks, symlinks_obj_cmp, path,
 	                            tommy_strhash_u32(0, path));
+}
+
+#define symlinks_path_is_relevant(P) ((bool)symlinks_path_find(P))
+
+/*
+ * If origin != NULL, indicates the origin that is being removed and therefore
+ * wants to unreference obj.  If origin == NULL, this is a direct unlink from
+ * an event.
+ */
+static void
+symlinks_obj_unref(symlinks_obj_t *obj, symlinks_obj_t *origin) {
+	if (origin) {
+		origin->target = NULL;
+		tommy_list_remove_existing(&obj->origins, &origin->l_node);
+	}
+	if (!tommy_list_empty(&obj->origins))
+		return;
+
+	/* this node needs to be removed, no origins point to this anymore */
+	if (obj->target) {
+		symlinks_obj_unref(obj->target, obj);
+	}
+	tommy_hashdyn_remove_existing(&symlinks, &obj->h_node);
+	symlinks_obj_free(obj);
 }
 
 /*
  * Copies path.
  */
 static symlinks_obj_t *
-symlinks_path_find_or_add(const char *path, symlinks_obj_t *origin) {
+symlinks_path_add(const char *path, symlinks_obj_t *origin) {
 	symlinks_obj_t *obj;
 
 	tommy_hash_t h;
@@ -122,8 +148,11 @@ symlinks_path_find_or_add(const char *path, symlinks_obj_t *origin) {
 		tommy_hashdyn_insert(&symlinks, &obj->h_node, obj, h);
 	}
 	assert(obj);
-	if (origin)
+	if (origin) {
+		assert(origin->target == NULL);
+		origin->target = obj;
 		tommy_list_insert_tail(&obj->origins, &origin->l_node, origin);
+	}
 	return obj;
 }
 
@@ -132,7 +161,7 @@ symlinks_path_walk(char *path, struct timespec *tv, audit_proc_t *subject) {
 	symlinks_obj_t *obj;
 	char *target, *rtarget;
 
-	obj = symlinks_path_find_or_add(path, NULL);
+	obj = symlinks_path_add(path, NULL);
 	rtarget = strdup(path);
 	if (!rtarget)
 		goto out;
@@ -145,11 +174,21 @@ symlinks_path_walk(char *path, struct timespec *tv, audit_proc_t *subject) {
 		free(target);
 		if (!rtarget)
 			break;
-		obj = symlinks_path_find_or_add(rtarget, obj);
+		obj = symlinks_path_add(rtarget, obj);
 	}
 
 out:
 	filemon_launchd_touched(tv, subject, path);
+}
+
+static void
+symlinks_path_remove(const char *path) {
+	symlinks_obj_t * obj;
+
+	obj = symlinks_path_find(path);
+	if (!obj)
+		return;
+	symlinks_obj_unref(obj, NULL);
 }
 
 static bool
@@ -377,13 +416,33 @@ filemon_touched(struct timespec *tv, audit_proc_t *subject, char *path) {
 }
 
 /*
+ * Called for unlink() with path to the unlinked file or directory.
+ * Path is not freed.
+ */
+void
+filemon_unlink(const char *path, audit_attr_t *attr) {
+	events_recvd++;
+
+	if (attr) {
+		if (!S_ISLNK(attr->mode))
+			return;
+	} else {
+		if (sys_islnk(path) == 1)
+			return;
+	}
+
+	if (filemon_is_launchd_path(path)) {
+		events_procd++;
+		symlinks_path_remove(path);
+	}
+}
+
+/*
  * Called for symlink creation with path to the created symlink.
  * Guarantees path to be freed regardless of outcome.
  *
  * Assumes that path points to a symlink and that all directory components are
  * fully resolved.
- *
- * Obviously this is racy, but cannot be solved in a better way in userland.
  */
 void
 filemon_symlink(struct timespec *tv, audit_proc_t *subject, char *path) {

@@ -304,6 +304,21 @@ sys_strip_path_noop(char *path) {
 }
 
 /*
+ * Returns 1 if path exists and is a symbolic link.
+ * Returns 0 if path exists and is not a symbolic link.
+ * Returns -1 on errors, including if path does not exist.
+ */
+int
+sys_islnk(const char *path) {
+	struct stat ss;
+
+	if (stat(path, &ss) == -1)
+		return -1;
+
+	return S_ISLNK(ss.st_mode) ? 1 : 0;
+}
+
+/*
  * Set the limit on the number of open file descriptors to `no`.
  * The default on macOS on the shell is a measly 256.
  */

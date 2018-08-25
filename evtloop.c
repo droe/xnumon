@@ -247,6 +247,7 @@ auef_readable(UNUSED int fd, void *udata) {
 	audit_event_t ev;
 	const char *cwd;
 	char *path;
+	const char *cpath;
 	bool flag;
 	int rv;
 
@@ -813,6 +814,55 @@ rename_et_al:
 			/* counted above */
 			break;
 		filemon_symlink(&ev.tv, &ev.subject, path);
+		break;
+
+	case AUE_UNLINK:
+	case AUE_UNLINKAT:
+		if (!LOGEVT_WANT(cfg->events, LOGEVT_FILEMON))
+			break;
+		TOKEN_ASSERT("unlink", "return", ev.return_present);
+		if (ev.return_value) {
+			failedsyscalls++;
+			break;
+		}
+		TOKEN_ASSERT("unlink", "subject", ev.subject_present);
+		if (ev.path[1]) {
+			/* two path tokens */
+			cpath = ev.path[1];
+#if 0
+		} else if (ev.path[0]) {
+			/* one path token, assume unresolved if no attr */
+			if (ev.attr_count > 0) {
+				path = strdup(ev.path[0]);
+				if (!path)
+					ooms++;
+			} else {
+				radarXXX++;
+				path_resolve_symlink(&path, &cwd, ev.path[0],
+				                     ev.subject.pid, &ev.tv,
+				                     (ev.type == AUE_UNLINK));
+				if (!path && (errno != ENOMEM)) {
+					radarXXX_fatal++;
+					DEBUG(cfg->debug, "radarXXX_fatal",
+					      "path[0]=%s pid=%i "
+					      "cwd(pid)=>%s",
+					      ev.path[0], ev.subject.pid, cwd);
+				}
+			}
+			// XXX free path after call to unlink!
+#endif
+		} else {
+			cpath = NULL;
+			missingtoken++;
+			DEBUG(cfg->debug, "missingtoken",
+			      "event=unlink token=path");
+			if (cfg->debug)
+				auevent_fprint(stderr, &ev);
+		}
+		if (!cpath)
+			/* counted above */
+			break;
+		filemon_unlink(cpath, ev.attr_count > 0 ? &ev.attr[0] : NULL);
 		break;
 
 	/*

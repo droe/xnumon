@@ -109,6 +109,8 @@ const uint16_t auclass_xnumon_events_filemon[] = {
 	AUE_COPYFILE,   /* copyfile(2) not copyfile(3) */
 	AUE_CLONEFILEAT, /* clonefileat */
 	AUE_FCLONEFILEAT, /* fclonefileat */
+	AUE_UNLINK,     /* unlink */
+	AUE_UNLINKAT,   /* unlinkat */
 	/*
 	 * AUE_CREAT          - syscall not implemented on macOS
 	 * AUE_UTIME          - syscall not implemented on macOS
