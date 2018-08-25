@@ -171,9 +171,13 @@ symlinks_path_walk(char *path, struct timespec *tv, audit_proc_t *subject) {
 		if (!target)
 			break;
 		rtarget = sys_realdir(target, "/");
-		free(target);
-		if (!rtarget)
+		if (!rtarget) {
+			/* directory part may not exist, add unresolved */
+			obj = symlinks_path_add(target, obj);
+			free(target);
 			break;
+		}
+		free(target);
 		obj = symlinks_path_add(rtarget, obj);
 	}
 

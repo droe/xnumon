@@ -265,6 +265,10 @@ sys_readlink(const char *path) {
 	if (n == -1)
 		return NULL;
 	buf[n] = '\0';
+	sys_strip_path_noop(buf);
+
+	if (buf[0] == '/')
+		return strdup(buf);
 
 	/* temporarily modify path in order to avoid allocation and copy */
 	p = strrchr(path, '/');
@@ -276,7 +280,8 @@ sys_readlink(const char *path) {
 }
 
 /*
- * Strip noop sequences from path, transforms /./ => / and // => /.
+ * Strip noop sequences from path, transforms /./ => / and // => / and
+ * removes trailing slashes.
  * Purely a string operation, does not perform any file system access.
  * Does not follow any symlinks.  Does not resolve .. to parent directories.
  *
@@ -300,7 +305,9 @@ sys_strip_path_noop(char *path) {
 			*dst = *src;
 		}
 	}
-	*dst = '\0';
+	*(dst--) = '\0';
+	while (dst >= path && *dst == '/')
+		*(dst--) = '\0';
 }
 
 /*
