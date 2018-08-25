@@ -149,7 +149,7 @@ symlinks_path_add(const char *path, symlinks_obj_t *origin) {
 	}
 	assert(obj);
 	if (origin) {
-		assert(origin->target == NULL);
+		assert(origin->target == NULL || origin->target == obj);
 		origin->target = obj;
 		tommy_list_insert_tail(&obj->origins, &origin->l_node, origin);
 	}
