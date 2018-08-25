@@ -40,11 +40,18 @@ def yellow(text):
 
 
 def tc(path):
+    """
+    Returns test case display name for a test case path.
+    Currently, this is the relative path with the testcases/ prefix removed.
+    """
     if path.startswith('testcases/'):
         return path[10:]
     return path
 
 def tclog(path):
+    """
+    Returns the path to the trace file corresponding to a test cacse path.
+    """
     path = "trace." + os.path.basename(path)
     if path.endswith(".stest"):
         return path[:-6]
@@ -55,7 +62,7 @@ def tclog(path):
 
 class Logs:
     """
-    Encapsulates log access and spec evaluation against a set of logs.
+    Encapsulates log access and spec evaluation against a set of log records.
     """
     def __init__(self, logfilepath, begin=None, end=None):
         self._all_records = []
@@ -307,9 +314,9 @@ class TestSuite:
         self.success_radars = set()
         self._ipv6 = self._test_ipv6()
         if self._ipv6:
-            print("IPv6 connectivity working")
+            print("IPv6 connectivity: " + green("available"))
         else:
-            print(yellow("IPv6 connectivity broken"))
+            print("IPv6 connectivity: " + red("unavailable"))
 
     def _test_ipv6(self):
         argv = ['nc', '-z', '-6', '2a01:7c8:aab0:1fb::1', '80']
