@@ -10,6 +10,17 @@
 
 /*
  * File monitoring core.
+ *
+ * Complexity comes from tracking hardlinks and symlinks properly, to catch
+ * changes outside of the monitored directories, which through indirections
+ * like hardlinks or symlinks constitute an effective change within a monitored
+ * directory, without any actual changes within the monitored directory.
+ *
+ * Due to the complexity, no attempt is made to track directory symlinks or
+ * hardlinks affecting effective contents of monitored path prefixes.  Instead,
+ * regular scans of the monitored directories are performed in order to catch
+ * modifications that were missed.  Those still trigger events, but cannot be
+ * linked to the process or executable image that performed the file operation.
  */
 
 #include "filemon.h"
@@ -19,6 +30,8 @@
 #include "cf.h"
 #include "cacheldpl.h"
 #include "atomic.h"
+#include "tommyhashdyn.h"
+#include "tommylist.h"
 
 #include <stdlib.h>
 #include <stdbool.h>
@@ -35,9 +48,116 @@ static uint64_t events_procd;       /* number of filesystem events processed */
 static atomic64_t ooms;             /* counts events impaired due to OOM */
 static atomic64_t lpmiss;           /* plists that were not present anymore */
 
+static void filemon_launchd_touched(struct timespec *, audit_proc_t *, char *);
+
+/*
+ * Symlinks tracking for launchd add
+ */
+
+static tommy_hashdyn symlinks;
+
+typedef struct symlinks_obj {
+	tommy_hashdyn_node h_node;
+	tommy_node l_node;
+	char *path;
+	tommy_list origins;
+} symlinks_obj_t;
+
+static symlinks_obj_t *
+symlinks_obj_new(char *path) {
+	symlinks_obj_t *obj;
+
+	obj = malloc(sizeof(symlinks_obj_t));
+	if (!obj)
+		return NULL;
+	bzero(obj, sizeof(symlinks_obj_t));
+	obj->path = path;
+	tommy_list_init(&obj->origins);
+	return obj;
+}
+
+static void
+symlinks_obj_free(void *arg) {
+	symlinks_obj_t *obj = arg;
+	free(obj->path);
+	free(obj);
+}
+
+static int
+symlinks_obj_cmp(const void *path, const void* obj) {
+	return strcmp(((const symlinks_obj_t*)obj)->path, path);
+}
+
+static void
+symlinks_init(void) {
+	tommy_hashdyn_init(&symlinks);
+}
+
+static void
+symlinks_fini(void) {
+	tommy_hashdyn_foreach(&symlinks, symlinks_obj_free);
+	tommy_hashdyn_done(&symlinks);
+}
+
+static bool
+symlinks_path_is_relevant(const char *path) {
+	return tommy_hashdyn_search(&symlinks, symlinks_obj_cmp, path,
+	                            tommy_strhash_u32(0, path));
+}
+
+/*
+ * Copies path.
+ */
+static symlinks_obj_t *
+symlinks_path_find_or_add(const char *path, symlinks_obj_t *origin) {
+	symlinks_obj_t *obj;
+
+	tommy_hash_t h;
+	h = tommy_strhash_u32(0, path);
+	obj = tommy_hashdyn_search(&symlinks, symlinks_obj_cmp, path, h);
+	if (!obj) {
+		obj = symlinks_obj_new(strdup(path));
+		if (!obj)
+			return NULL;
+		tommy_hashdyn_insert(&symlinks, &obj->h_node, obj, h);
+	}
+	assert(obj);
+	if (origin)
+		tommy_list_insert_tail(&obj->origins, &origin->l_node, origin);
+	return obj;
+}
+
+static void
+symlinks_path_walk(char *path, struct timespec *tv, audit_proc_t *subject) {
+	symlinks_obj_t *obj;
+	char *target, *rtarget;
+
+	obj = symlinks_path_find_or_add(path, NULL);
+	rtarget = strdup(path);
+	if (!rtarget)
+		goto out;
+	while (rtarget) {
+		target = sys_readlink(rtarget);
+		free(rtarget);
+		if (!target)
+			break;
+		rtarget = sys_realdir(target, "/");
+		free(target);
+		if (!rtarget)
+			break;
+		obj = symlinks_path_find_or_add(rtarget, obj);
+	}
+
+out:
+	filemon_launchd_touched(tv, subject, path);
+}
+
 static bool
 filemon_is_launchd_path(const char *path) {
 	const char *p;
+
+	if (symlinks_path_is_relevant(path))
+		return true;
 
 	assert(path);
 	if (path[0] != '/')
@@ -239,9 +359,11 @@ filemon_launchd_touched(struct timespec *tv, audit_proc_t *subject,
 }
 
 /*
- * Called for all file close and rename events with path to the potentially
- * changed file and the pid that triggered the syscall.
- * Guarantees path to be freed regardless of outcome.
+ * Called for all file close, rename etc events with path to the potentially
+ * changed file.  Guarantees path to be freed regardless of outcome.
+ *
+ * Assumes that path is an absolute and fully resolved path to a real file, not
+ * a symlink.  However, path may or may not be a hard link.
  */
 void
 filemon_touched(struct timespec *tv, audit_proc_t *subject, char *path) {
@@ -255,7 +377,28 @@ filemon_touched(struct timespec *tv, audit_proc_t *subject, char *path) {
 }
 
 /*
- * Add a single plist file to the launchd plist file cache.
+ * Called for symlink creation with path to the created symlink.
+ * Guarantees path to be freed regardless of outcome.
+ *
+ * Assumes that path points to a symlink and that all directory components are
+ * fully resolved.
+ *
+ * Obviously this is racy, but cannot be solved in a better way in userland.
+ */
+void
+filemon_symlink(struct timespec *tv, audit_proc_t *subject, char *path) {
+	events_recvd++;
+	if (filemon_is_launchd_path(path)) {
+		events_procd++;
+		symlinks_path_walk(path, tv, subject);
+		return;
+	}
+	free(path);
+}
+
+/*
+ * Add a single plist file to the launchd plist file cache; used as callback
+ * for sys_dir_eachfile().
  */
 static int
 filemon_init_add_plist(const char *path, UNUSED void *udata) {
@@ -289,6 +432,8 @@ filemon_init(config_t *cfg) {
 	events_procd = 0;
 	glob_t g;
 
+	symlinks_init();
+
 	(void)sys_dir_eachfile("/System/Library/LaunchDaemons/",
 	                       filemon_init_add_plist, NULL);
 	(void)sys_dir_eachfile("/Library/LaunchDaemons/",
@@ -297,13 +442,13 @@ filemon_init(config_t *cfg) {
 	                       filemon_init_add_plist, NULL);
 	(void)sys_dir_eachfile("/Library/LaunchAgents/",
 	                       filemon_init_add_plist, NULL);
-
 	bzero(&g, sizeof(g));
 	glob("/Users/*/Library/LaunchAgents/", 0, NULL, &g);
 	for (int i = 0; i < g.gl_matchc; i++) {
 		(void)sys_dir_eachfile(g.gl_pathv[i],
 		                       filemon_init_add_plist, NULL);
 	}
+
 	return 0;
 }
 
@@ -311,6 +456,7 @@ void
 filemon_fini(void) {
 	if (!config)
 		return;
+	symlinks_fini();
 	config = NULL;
 }
 

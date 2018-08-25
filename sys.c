@@ -14,6 +14,7 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <sys/stat.h>
+#include <limits.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -201,6 +202,105 @@ sys_realpath(const char *restrict path, const char *restrict cwd) {
 	res = realpath(rp, NULL);
 	free(rp);
 	return res;
+}
+
+/*
+ * Variant of sys_realpath that only resolves that directory portion, not the
+ * file portion.
+ *
+ * This implementation is more wasteful than would be possible in that it does
+ * too many allocations.
+ */
+char *
+sys_realdir(const char *restrict path, const char *restrict cwd) {
+	char *sep, *udir, *rdir, *p;
+	bool rerrno;
+
+	if (path[0] == '/') {
+		udir = strdup(path);
+	} else {
+		if (!cwd)
+			return NULL;
+		(void)asprintf(&udir, "%s/%s", cwd, path);
+	}
+	if (!udir)
+		return NULL;
+
+	sep = strrchr(udir, '/');
+	assert(sep);
+	*sep = '\0';
+	rdir = sys_realpath(udir, NULL);
+	if (!rdir) {
+		rerrno = errno;
+		free(udir);
+		errno = rerrno;
+		return NULL;
+	}
+	(void)asprintf(&p, "%s/%s", rdir, sep+1);
+	rerrno = errno;
+	free(rdir);
+	free(udir);
+	errno = rerrno;
+	return p;
+}
+
+/*
+ * Returns a newly allocated absolute path constructed from the content of
+ * symlink path and it's dirname.  Path must not end in '/'.
+ * Path may be temporarily modified but will be restored before returning.
+ *
+ * To resolve the symlink, the result should be passed to sys_realpath.
+ */
+char *
+sys_readlink(const char *path) {
+	char buf[PATH_MAX];
+	char *target, *p;
+	ssize_t n;
+
+	if (!path || path[0] != '/')
+		return NULL;
+
+	/* readlink does not append a NUL character */
+	n = readlink(path, buf, sizeof(buf) - 1);
+	if (n == -1)
+		return NULL;
+	buf[n] = '\0';
+
+	/* temporarily modify path in order to avoid allocation and copy */
+	p = strrchr(path, '/');
+	assert(p);
+	*p = '\0';
+	asprintf(&target, "%s/%s", path, buf);
+	*p = '/';
+	return target;
+}
+
+/*
+ * Strip noop sequences from path, transforms /./ => / and // => /.
+ * Purely a string operation, does not perform any file system access.
+ * Does not follow any symlinks.  Does not resolve .. to parent directories.
+ *
+ * Modifies path directly and always succeeds.
+ */
+void
+sys_strip_path_noop(char *path) {
+	char *src, *dst;
+
+	for (src = dst = path; *src; src++, dst++) {
+		if (*src == '/') {
+			for (;;) {
+				if (*(src + 1) == '/')
+					src++;
+				else if (*(src + 1) == '.' && *(src + 2) == '/')
+					src += 2;
+				else
+					break;
+			}
+		} else {
+			*dst = *src;
+		}
+	}
+	*dst = '\0';
 }
 
 /*

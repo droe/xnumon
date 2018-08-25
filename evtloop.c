@@ -189,8 +189,6 @@ path_resolve(char **path, const char **cwd, const char *unrpath,
 static void NONNULL(1,2,3,5)
 path_resolve_symlink(char **path, const char **cwd, const char *unrpath,
                pid_t pid, struct timespec *tv, bool use_cwd) {
-	char *sep, *udir, *rdir;
-
 	if (use_cwd) {
 		*cwd = procmon_getcwd(pid, tv);
 		if (!*cwd && (errno == ENOMEM))
@@ -199,37 +197,9 @@ path_resolve_symlink(char **path, const char **cwd, const char *unrpath,
 		*cwd = NULL;
 	}
 
-	if (unrpath[0] == '/') {
-		udir = strdup(unrpath);
-	} else {
-		if (!*cwd) {
-			*path = NULL;
-			return;
-		}
-		(void)asprintf(&udir, "%s/%s", *cwd, unrpath);
-	}
-	if (!udir) {
-		if (errno == ENOMEM)
-			ooms++;
-		*path = NULL;
-		return;
-	}
-	sep = strrchr(udir, '/');
-	assert(sep);
-	*sep = '\0';
-	rdir = sys_realpath(udir, *cwd);
-	if (!rdir) {
-		if (errno == ENOMEM)
-			ooms++;
-		free(udir);
-		*path = NULL;
-		return;
-	}
-	(void)asprintf(path, "%s/%s", rdir, sep+1);
+	*path = sys_realdir(unrpath, *cwd);
 	if (!*path && (errno == ENOMEM))
 		ooms++;
-	free(rdir);
-	free(udir);
 }
 
 /*
@@ -842,7 +812,7 @@ rename_et_al:
 		if (!path)
 			/* counted above */
 			break;
-		filemon_touched(&ev.tv, &ev.subject, path);
+		filemon_symlink(&ev.tv, &ev.subject, path);
 		break;
 
 	/*
