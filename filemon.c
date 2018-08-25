@@ -182,7 +182,8 @@ symlinks_path_walk(char *path, struct timespec *tv, audit_proc_t *subject) {
 	}
 
 out:
-	filemon_launchd_touched(tv, subject, path);
+	if (tv)
+		filemon_launchd_touched(tv, subject, path);
 }
 
 static void
@@ -469,13 +470,15 @@ filemon_init_add_plist(const char *path, UNUSED void *udata) {
 	int rv;
 
 	rv = sys_pathattr(&st, path);
-	if (rv != -1) {
-		cacheldpl_put(st.dev,
-		              st.ino,
-		              st.mtime.tv_sec,
-		              st.ctime.tv_sec,
-		              st.btime.tv_sec);
-	}
+	if (rv == -1)
+		return 0;
+	cacheldpl_put(st.dev,
+	              st.ino,
+	              st.mtime.tv_sec,
+	              st.ctime.tv_sec,
+	              st.btime.tv_sec);
+	if (S_ISLNK(st.mode))
+		symlinks_path_walk(strdup(path), NULL, NULL);
 	return 0;
 }
 
