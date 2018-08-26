@@ -76,9 +76,11 @@ typedef struct {
 	bool            process_present;
 	audit_proc_t    process;
 
-	const char *    text;
+	/* Some of the weirder events (e.g. SecSrvr AuthEngine) have multiple
+	 * text labels; never seen anything above three.  Symlink has one. */
+	const char *    text[4];
 
-	/* space for two path arguments (unresolved and resolved) */
+	/* Space for two path arguments (unresolved and resolved). */
 	const char *    path[4];
 	size_t          attr_count;
 	audit_attr_t    attr[2];

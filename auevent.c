@@ -105,6 +105,7 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], int flags, FILE *f) {
 	int rv;
 	int reclen;
 	tokenstr_t tok;
+	size_t textc;
 	size_t pathc;
 
 	assert(ev);
@@ -128,6 +129,7 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], int flags, FILE *f) {
 	if (reclen == 0)
 		goto skip_rec;
 
+	textc = 0;
 	pathc = 0;
 	for (int recpos = 0; recpos < reclen;) {
 		rv = au_fetch_tok(&tok, ev->recbuf+recpos, reclen-recpos);
@@ -342,8 +344,13 @@ auevent_fread(audit_event_t *ev, const uint16_t aues[], int flags, FILE *f) {
 			break;
 		/* symlink text */
 		case AUT_TEXT:
-			assert(!ev->text);
-			ev->text = tok.tt.text.text;
+			if (!(textc < sizeof(ev->text)/sizeof(ev->text[0]))) {
+				fprintf(stderr, "Too many text tokens, "
+				                "skipping record\n");
+				goto skip_rec;
+			}
+			ev->text[textc] = tok.tt.text.text;
+			textc++;
 			break;
 		/* path */
 		case AUT_PATH:
@@ -571,8 +578,10 @@ auevent_fprint(FILE *f, audit_event_t *ev) {
 		fprintf(f, " exit_status=%"PRIu32" exit_return=%"PRIu32,
 		        ev->exit_status, ev->exit_return);
 	}
-	if (ev->text) {
-		fprintf(f, " text=%s", ev->text);
+	for (size_t i = 0; i < sizeof(ev->text)/sizeof(ev->text[0]); i++) {
+		if (ev->text[i]) {
+			fprintf(f, " text[%zu]=%s", i, ev->text[i]);
+		}
 	}
 	for (size_t i = 0; i < sizeof(ev->path)/sizeof(ev->path[0]); i++) {
 		if (ev->path[i]) {
