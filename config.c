@@ -369,7 +369,7 @@ config_setstr_from_plist(setstr_t *set,
 		fprintf(stderr, "Failed to load '" KEY "'\n"); \
 		goto errout; \
 	}
-#define CONFIG_setstr_FROM_PLIST(RV, CFG, PLIST, KEY) \
+#define CONFIG_SETSTR_FROM_PLIST(RV, CFG, PLIST, KEY) \
 	if ((rv = config_setstr_from_plist(&CFG->KEY, PLIST, \
 	                                   CFSTR(#KEY))) == -1) { \
 		fprintf(stderr, "Failed to load '" #KEY "'\n"); \
@@ -460,21 +460,21 @@ config_new(const char *cfgpath) {
 
 	/* The setstr initializations must be called even if we were to allow
 	 * xnumon to run without a config file; they handle plist==NULL. */
-	CONFIG_setstr_FROM_PLIST(rv, cfg, plist,
+	CONFIG_SETSTR_FROM_PLIST(rv, cfg, plist,
 	                         suppress_image_exec_by_ident);
-	CONFIG_setstr_FROM_PLIST(rv, cfg, plist,
+	CONFIG_SETSTR_FROM_PLIST(rv, cfg, plist,
 	                         suppress_image_exec_by_path);
-	CONFIG_setstr_FROM_PLIST(rv, cfg, plist,
+	CONFIG_SETSTR_FROM_PLIST(rv, cfg, plist,
 	                         suppress_image_exec_by_ancestor_ident);
-	CONFIG_setstr_FROM_PLIST(rv, cfg, plist,
+	CONFIG_SETSTR_FROM_PLIST(rv, cfg, plist,
 	                         suppress_image_exec_by_ancestor_path);
-	CONFIG_setstr_FROM_PLIST(rv, cfg, plist,
+	CONFIG_SETSTR_FROM_PLIST(rv, cfg, plist,
 	                         suppress_process_access_by_subject_ident);
-	CONFIG_setstr_FROM_PLIST(rv, cfg, plist,
+	CONFIG_SETSTR_FROM_PLIST(rv, cfg, plist,
 	                         suppress_process_access_by_subject_path);
-	CONFIG_setstr_FROM_PLIST(rv, cfg, plist,
+	CONFIG_SETSTR_FROM_PLIST(rv, cfg, plist,
 	                         suppress_socket_op_by_subject_ident);
-	CONFIG_setstr_FROM_PLIST(rv, cfg, plist,
+	CONFIG_SETSTR_FROM_PLIST(rv, cfg, plist,
 	                         suppress_socket_op_by_subject_path);
 
 	if (plist)
