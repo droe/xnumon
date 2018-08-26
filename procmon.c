@@ -125,6 +125,10 @@ image_exec_free(image_exec_t *image) {
 		image_exec_free(image->script);
 	if (image->prev)
 		image_exec_free(image->prev);
+	if (image->argv)
+		free(image->argv);
+	if (image->envv)
+		free(image->envv);
 	if (image->path)
 		free(image->path);
 	if (image->cwd)
