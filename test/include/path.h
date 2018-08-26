@@ -13,8 +13,8 @@
  * utterly unfit for any other purposes.
  */
 
-#ifndef TEST_GETPATH_H
-#define TEST_GETPATH_H
+#ifndef TEST_PATH_H
+#define TEST_PATH_H
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -29,7 +29,6 @@ getpath(void) {
 		return NULL;
 	return realpath(pathbuf, NULL);
 }
-
 
 static const char header[] =
 	"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"

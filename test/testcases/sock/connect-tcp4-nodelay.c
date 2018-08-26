@@ -20,7 +20,7 @@
 #include <errno.h>
 #include <arpa/inet.h>
 
-#include "getpath.h"
+#include "path.h"
 
 int
 main(int argc, char *argv[]) {

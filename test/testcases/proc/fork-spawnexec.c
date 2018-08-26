@@ -15,7 +15,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-#include "getpath.h"
+#include "path.h"
 
 #define PATH "/usr/bin/true"
 #define ARGV0 "true"

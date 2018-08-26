@@ -14,7 +14,7 @@
 
 #include <mach/mach.h>
 
-#include "getpath.h"
+#include "path.h"
 
 /*
  * For completeness, verify that task_create() always fails.

@@ -17,7 +17,7 @@
 #include <sys/wait.h>
 #include <mach/mach.h>
 
-#include "getpath.h"
+#include "path.h"
 
 #define PATH TESTDIR"/true.dep"
 #define ARGV0 "true.dep"

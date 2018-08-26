@@ -19,7 +19,8 @@
 #include <errno.h>
 #include <arpa/inet.h>
 
-#include "getpath.h"
+#include "path.h"
+#include "sock.h"
 
 #define SOCKADDR4 "0.0.0.0"
 #define SOCKPORT 54345
@@ -37,6 +38,7 @@ main(int argc, char *argv[]) {
 		perror("socket");
 		return 1;
 	}
+	set_so_reuse(fd);
 
 	struct sockaddr_in sai;
 	bzero(&sai, sizeof(sai));

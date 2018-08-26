@@ -12,7 +12,7 @@
 #include <unistd.h>
 #include <spawn.h>
 
-#include "getpath.h"
+#include "path.h"
 
 #define PATH "/usr/bin/true"
 #define ARGV0 "true.NOPID"

@@ -18,7 +18,7 @@
 #include <fcntl.h>
 #include <sys/syscall.h>
 
-#include "getpath.h"
+#include "path.h"
 
 #define TESTNAME "copyfile2"
 #define SRCDIR TESTDIR"/testcases/file"

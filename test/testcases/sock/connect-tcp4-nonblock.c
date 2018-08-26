@@ -20,7 +20,7 @@
 #include <arpa/inet.h>
 #include <fcntl.h>
 
-#include "getpath.h"
+#include "path.h"
 
 /*
  * connect(2) from non-blocking socket, triggers radar 43006946

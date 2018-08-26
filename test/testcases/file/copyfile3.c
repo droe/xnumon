@@ -19,7 +19,7 @@
 #include <fcntl.h>
 #include <copyfile.h>
 
-#include "getpath.h"
+#include "path.h"
 
 #define TESTNAME "copyfile3"
 #define SRCDIR TESTDIR"/testcases/file"

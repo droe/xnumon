@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#include "getpath.h"
+#include "path.h"
 
 #define PATH "/usr/bin/true"
 

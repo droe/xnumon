@@ -15,7 +15,7 @@
 #include <security/mac.h>
 #undef __APPLE_API_PRIVATE
 
-#include "getpath.h"
+#include "path.h"
 
 #define PATH "/usr/bin/true"
 #define ARGV0 "true"

@@ -13,7 +13,7 @@
 #include <stdio.h>
 #include <fcntl.h>
 
-#include "getpath.h"
+#include "path.h"
 
 #define TESTNAME "rename"
 #define SRCDIR TESTDIR"/testcases/file"

@@ -20,7 +20,7 @@
 #include <stdio.h>
 #include <fcntl.h>
 
-#include "getpath.h"
+#include "path.h"
 
 #define TESTNAME "symlinkat"
 #define SRCDIR TESTDIR"/testcases/file"

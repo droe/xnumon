@@ -20,7 +20,8 @@
 #include <arpa/inet.h>
 #include <fcntl.h>
 
-#include "getpath.h"
+#include "path.h"
+#include "sock.h"
 
 #define SOCKADDR6 "::"
 #define SOCKPORT 54345
@@ -34,6 +35,7 @@ server(void) {
 		perror("socket");
 		return 1;
 	}
+	set_so_reuse(fd);
 
 	int flags = fcntl(fd, F_GETFL, 0);
 	if (flags == -1) {
