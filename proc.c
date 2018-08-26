@@ -80,12 +80,19 @@ proc_closefd(proc_t *proc, int fd) {
 
 void
 proc_triggerfd(fd_ctx_t *ctx, struct timespec *tv) {
-	if ((ctx->flags & FDFLAG_FILE) && ctx->fi.path)
+	if ((ctx->flags & FDFLAG_FILE) && ctx->fi.path) {
+		assert(ctx->fi.path);
 		filemon_touched(tv, &ctx->fi.subject, ctx->fi.path);
+		ctx->fi.path = NULL;
+	}
 }
 
 void
 proc_freefd(fd_ctx_t *ctx) {
+	if ((ctx->flags & FDFLAG_FILE) && ctx->fi.path) {
+		free(ctx->fi.path);
+		ctx->fi.path = NULL;
+	}
 	free(ctx);
 }
 
