@@ -232,6 +232,8 @@ codesign_new(const char *cpath, pid_t pid) {
 		DEBUG(config->debug, "codesign_error",
 		      "SecCodeCopyDesignatedRequirement(%s) => %i",
 		      cpath, rv);
+		/* fallthrough */
+	case errSecCSBadObjectFormat:
 		cs->result = CODESIGN_RESULT_ERROR;
 		CFRelease(scode);
 		return cs;
