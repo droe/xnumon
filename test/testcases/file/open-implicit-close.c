@@ -58,6 +58,10 @@ main(int argc, char *argv[]) {
 	       "\n", getpid());
 	fflush(stdout);
 
+	system("launchctl unload \""DSTDIR"/"DSTFILE"\"");
+	unlink(DSTDIR"/"DSTFILE);
+	unlink(SRCDIR"/"SRCFILE);
+
 	getplist();
 	fd1 = open(SRCDIR"/"SRCFILE, O_RDONLY);
 	if (fd1 == -1) {
@@ -93,8 +97,11 @@ main(int argc, char *argv[]) {
 		sleep(1);
 		system("launchctl load \""DSTDIR"/"DSTFILE"\"");
 		sleep(1);
+
 		system("launchctl unload \""DSTDIR"/"DSTFILE"\"");
 		unlink(DSTDIR"/"DSTFILE);
+		unlink(SRCDIR"/"SRCFILE);
+
 		return 0;
 	}
 

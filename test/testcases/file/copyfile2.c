@@ -70,6 +70,9 @@ main(int argc, char *argv[]) {
 	fflush(stdout);
 #endif
 
+	unlink(SRCDIR"/"SRCFILE);
+	unlink(DSTDIR"/"DSTFILE);
+
 	getplist();
 	if (syscall(SYS_copyfile, SRCDIR"/"SRCFILE, DSTDIR"/"DSTFILE, 0777,
 	            CPF_OVERWRITE) < 0) {
@@ -83,6 +86,8 @@ main(int argc, char *argv[]) {
 	sleep(1);
 	system("launchctl unload \""DSTDIR"/"DSTFILE"\"");
 #endif
+
+	unlink(SRCDIR"/"SRCFILE);
 	unlink(DSTDIR"/"DSTFILE);
 
 	return 0;

@@ -63,6 +63,10 @@ main(int argc, char *argv[]) {
 	       "\n", getpid());
 	fflush(stdout);
 
+	system("launchctl unload \""DSTDIR"/"DSTFILE"\"");
+	unlink(DSTDIR"/"DSTFILE);
+	unlink(SRCDIR"/"SRCFILE);
+
 	getplist();
 	if (copyfile(SRCDIR"/"SRCFILE, DSTDIR"/"DSTFILE, NULL,
 	             COPYFILE_ALL) < 0) {
@@ -71,8 +75,10 @@ main(int argc, char *argv[]) {
 	}
 	system("launchctl load \""DSTDIR"/"DSTFILE"\"");
 	sleep(1);
+
 	system("launchctl unload \""DSTDIR"/"DSTFILE"\"");
 	unlink(DSTDIR"/"DSTFILE);
+	unlink(SRCDIR"/"SRCFILE);
 
 	return 0;
 }

@@ -32,6 +32,7 @@
 #include "atomic.h"
 #include "tommyhashdyn.h"
 #include "tommylist.h"
+#include "minmax.h"
 
 #include <sys/stat.h>
 #include <stdlib.h>
@@ -50,6 +51,7 @@ static atomic64_t ooms;             /* counts events impaired due to OOM */
 static atomic64_t lpmiss;           /* plists that were not present anymore */
 
 static void filemon_launchd_touched(struct timespec *, audit_proc_t *, char *);
+static bool filemon_is_launchd_path(const char *);
 
 /*
  * Symlinks tracking for launchd add
@@ -166,7 +168,12 @@ symlinks_path_add(const char *path, symlinks_obj_t *origin) {
 	assert(obj);
 	if (origin && (origin->target == NULL)) {
 		origin->target = obj;
-		tommy_list_remove_existing(&symlinks_dangling, &origin->l_node);
+		if (origin->is_regular_file) {
+			origin->is_regular_file = false;
+		} else {
+			tommy_list_remove_existing(&symlinks_dangling,
+			                           &origin->l_node);
+		}
 		tommy_list_insert_head(&obj->origins, &origin->l_node, origin);
 	}
 	return obj;
@@ -206,22 +213,32 @@ symlinks_path_walk(const char *path,
 		obj->is_regular_file = true;
 	}
 
-	if (tv) {
-		if (!tommy_list_empty(&symlinks_dangling)) {
-			tommy_node *dsl = tommy_list_head(&symlinks_dangling);
-			while (dsl) {
-				symlinks_obj_t *dslobj = dsl->data;
-				symlinks_path_walk(dslobj->path, NULL, NULL);
-				dsl = dsl->next;
-			}
-		}
-		/* walk up to the actual root for logging */
-		assert(root);
-		while (!tommy_list_empty(&root->origins)) {
-			root = tommy_list_head(&root->origins)->data;
-		}
-		filemon_launchd_touched(tv, subject, strdup(root->path));
+	if (!tv)
+		return;
+
+	assert(root);
+	/* walk up to the actual root for logging */
+	while (!tommy_list_empty(&root->origins)) {
+		root = tommy_list_head(&root->origins)->data;
 	}
+	if (!filemon_is_launchd_path(root->path) &&
+	    !tommy_list_empty(&symlinks_dangling)) {
+		/* limit aggressively */
+		size_t n = min(tommy_list_count(&symlinks_dangling),
+		               (size_t)16);
+		char *paths[n];
+		char **pp = paths;
+		tommy_node *dsl = tommy_list_head(&symlinks_dangling);
+		while (dsl) {
+			symlinks_obj_t *dslobj = dsl->data;
+			*(pp++) = dslobj->path;
+			dsl = dsl->next;
+		}
+		for (size_t i = 0; i < n; i++) {
+			symlinks_path_walk(paths[i], NULL, NULL);
+		}
+	}
+	filemon_launchd_touched(tv, subject, strdup(root->path));
 }
 
 static void
@@ -237,9 +254,6 @@ symlinks_path_remove(const char *path) {
 static bool
 filemon_is_launchd_path(const char *path) {
 	const char *p;
-
-	if (symlinks_path_is_relevant(path))
-		return true;
 
 	assert(path);
 	if (path[0] != '/')
@@ -450,7 +464,7 @@ filemon_launchd_touched(struct timespec *tv, audit_proc_t *subject,
 void
 filemon_touched(struct timespec *tv, audit_proc_t *subject, char *path) {
 	events_recvd++;
-	if (filemon_is_launchd_path(path)) {
+	if (symlinks_path_is_relevant(path) || filemon_is_launchd_path(path)) {
 		events_procd++;
 		filemon_launchd_touched(tv, subject, path);
 		return;
@@ -490,7 +504,7 @@ filemon_unlink(const char *path, audit_attr_t *attr) {
 void
 filemon_symlink(struct timespec *tv, audit_proc_t *subject, char *path) {
 	events_recvd++;
-	if (filemon_is_launchd_path(path)) {
+	if (symlinks_path_is_relevant(path) || filemon_is_launchd_path(path)) {
 		events_procd++;
 		symlinks_path_walk(path, tv, subject);
 	}

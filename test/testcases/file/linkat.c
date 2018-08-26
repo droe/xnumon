@@ -61,6 +61,11 @@ main(int argc, char *argv[]) {
 	       "\n", getpid());
 	fflush(stdout);
 
+	system("launchctl unload \""DSTDIR"/"DSTFILE"\"");
+	unlink(DSTDIR"/"DSTFILE);
+	unlink(TMPDIR"/"TMPFILE);
+	unlink(SRCDIR"/"SRCFILE);
+
 	getplist();
 	system("cp "SRCDIR"/"SRCFILE" "TMPDIR"/"TMPFILE);
 	fd1 = open(TMPDIR, O_RDONLY);
@@ -81,9 +86,11 @@ main(int argc, char *argv[]) {
 	close(fd1);
 	system("launchctl load \""DSTDIR"/"DSTFILE"\"");
 	sleep(1);
+
 	system("launchctl unload \""DSTDIR"/"DSTFILE"\"");
 	unlink(DSTDIR"/"DSTFILE);
 	unlink(TMPDIR"/"TMPFILE);
+	unlink(SRCDIR"/"SRCFILE);
 
 	return 0;
 }
