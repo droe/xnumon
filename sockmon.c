@@ -166,11 +166,12 @@ sockmon_bind(struct timespec *tv,
 	events_recvd++;
 	events_procd++;
 	procmon_socket_bind(&proto, subject->pid, fd, sock_addr, sock_port);
-	if (proto == IPPROTO_UDP) {
-		/* trigger listen event, there will not be a listen() */
-		sockmon_socket_op(tv, subject, proto, sock_addr, sock_port,
-		                  NULL, 0, LOGEVT_SOCKET_LISTEN);
-	}
+	/* Only generate event for UDP; for non-AF_INET/AF_INET6 and raw
+	 * sockets, we do not keep state (proto will be 0) */
+	if (proto != IPPROTO_UDP)
+		return;
+	sockmon_socket_op(tv, subject, proto, sock_addr, sock_port, NULL, 0,
+	                  LOGEVT_SOCKET_LISTEN);
 }
 
 /*
@@ -185,6 +186,10 @@ sockmon_listen(struct timespec *tv,
 	uint16_t port;
 
 	procmon_socket_state(&proto, &addr, &port, subject->pid, fd);
+	/* Only generate event for TCP; for non-AF_INET/AF_INET6 and raw
+	 * sockets, we do not keep state (proto will be 0) */
+	if (proto != IPPROTO_TCP)
+		return;
 	sockmon_socket_op(tv, subject, proto, addr, port, NULL, 0,
 	                  LOGEVT_SOCKET_LISTEN);
 }
@@ -201,6 +206,10 @@ sockmon_accept(struct timespec *tv,
 	uint16_t port;
 
 	procmon_socket_state(&proto, &addr, &port, subject->pid, fd);
+	/* Only generate event for TCP; for non-AF_INET/AF_INET6 and raw
+	 * sockets, we do not keep state (proto will be 0) */
+	if (proto != IPPROTO_TCP)
+		return;
 	sockmon_socket_op(tv, subject, proto, addr, port, peer_addr, peer_port,
 	                  LOGEVT_SOCKET_ACCEPT);
 }
@@ -217,7 +226,9 @@ sockmon_connect(struct timespec *tv,
 	uint16_t port;
 
 	procmon_socket_state(&proto, &addr, &port, subject->pid, fd);
-	if (proto == IPPROTO_UDP)
+	/* Only generate event for TCP; for non-AF_INET/AF_INET6 and raw
+	 * sockets, we do not keep state (proto will be 0) */
+	if (proto != IPPROTO_TCP)
 		return;
 	sockmon_socket_op(tv, subject, proto, addr, port, peer_addr, peer_port,
 	                  LOGEVT_SOCKET_CONNECT);
