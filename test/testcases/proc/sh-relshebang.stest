@@ -9,5 +9,5 @@
 # Licensed under the Open Software License version 3.0.
 
 echo "spec:testcase returncode=0"
-echo "spec:image-exec subject.pid=$$ image.path=/bin/sh script.path=`pwd`/$0"
+echo "spec:image-exec subject.pid=$$ image.path=/bin/sh script.path=`pwd -P`/$0"
 exit 0

@@ -9,10 +9,10 @@
 # Licensed under the Open Software License version 3.0.
 
 echo "spec:testcase returncode=0"
-echo "spec:image-exec subject.pid=$$ image.path=/bin/sh script.path=`pwd`/$0"
+echo "spec:image-exec subject.pid=$$ image.path=/bin/sh script.path=`pwd -P`/$0"
 
 shove='/System/Library/PrivateFrameworks/PackageKit.framework/Versions/A/Resources/shove'
-srcf="`pwd`/`dirname $0`/shove.plist"
+srcf="`pwd -P`/`dirname $0`/shove.plist"
 tmpf=`mktemp`
 dstf="$HOME/Library/LaunchAgents/ch.roe.xnumon.test.shove.plist"
 
