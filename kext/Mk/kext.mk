@@ -6,9 +6,10 @@
 # Designed to be included from a Makefile which defines the following:
 #
 # KEXTNAME        short name of the kext (e.g. example)
-# KEXTVERSION     version number, cf TN2420 (e.g. 1.0.0)
-# KEXTBUILD       build number, cd TN2420 (e.g. 1.0.0d1)
+# KEXTVERSION     version number, cf. TN2420 (e.g. 1.0.0)
+# KEXTBUILD       build number, cf. TN2420 (e.g. 1.0.0d1)
 # BUNDLEDOMAIN    the reverse DNS notation prefix (e.g. com.example)
+# COPYRIGHT       human readable copyright string
 #
 # Optionally, the Makefile can define the following:
 #
@@ -20,8 +21,9 @@
 # KEXTBUNDLE      name of kext bundle directory; default $(KEXTNAME).kext
 # KEXTMACHO       name of kext Mach-O executable; default $(KEXTNAME)
 #
+# DEVELOPER_DIR   select Xcode Command Line Developer Tools directory
 # MACOSX_VERSION_MIN  minimal version of macOS to target
-# SDKROOT         Apple Xcode SDK root directory to use
+# SDK             SDK name to build against (e.g. macosx, macosx10.11, ...)
 # CPPFLAGS        additional precompiler flags
 # CFLAGS          additional compiler flags
 # LDFLAGS         additional linker flags
@@ -65,12 +67,33 @@ PREFIX?=	/Library/Extensions/
 
 CODESIGN?=	codesign
 
-# Apple SDK
-ifneq "" "$(SDKROOT)"
-SDKFLAGS=	-isysroot $(SDKROOT)
-CC=		$(shell xcrun -find -sdk $(SDKROOT) cc)
-#CXX=		$(shell xcrun -find -sdk $(SDKROOT) c++)
-CODESIGN=	$(shell xcrun -find -sdk $(SDKROOT) codesign)
+# default SDK for targeted min version
+ifndef SDK
+ifdef MACOSX_VERSION_MIN
+SDK:=		macosx$(MACOSX_VERSION_MIN)
+endif
+endif
+
+# select Xcode
+ifdef DEVELOPER_DIR
+ifndef SDK
+SDK:=		macosx
+endif
+else
+DEVELOPER_DIR:=	$(shell xcode-select -p)
+endif
+
+# activate the selected Xcode and SDK
+ifdef SDK
+SDKPATH:=	$(shell DEVELOPER_DIR="$(DEVELOPER_DIR)" xcrun -find -sdk $(SDK) --show-sdk-path||echo none)
+ifeq "$(SDKPATH)" "none"
+$(error SDK not found)
+endif
+CPPFLAGS+=	-isysroot $(SDKPATH)
+LDFLAGS+=	-isysroot $(SDKPATH)
+CC:=		$(shell DEVELOPER_DIR="$(DEVELOPER_DIR)" xcrun -find -sdk $(SDK) cc||echo false)
+#CXX:=		$(shell DEVELOPER_DIR="$(DEVELOPER_DIR)" xcrun -find -sdk $(SDK) c++||echo false)
+CODESIGN:=	$(shell DEVELOPER_DIR="$(DEVELOPER_DIR)" xcrun -find -sdk $(SDK) codesign||echo false)
 endif
 
 # standard defines and includes for kernel extensions
@@ -79,7 +102,6 @@ CPPFLAGS+=	-DKERNEL \
 		-DDRIVER_PRIVATE \
 		-DAPPLE \
 		-DNeXT \
-		$(SDKFLAGS) \
 		-I/System/Library/Frameworks/Kernel.framework/Headers \
 		-I/System/Library/Frameworks/Kernel.framework/PrivateHeaders
 
@@ -112,6 +134,7 @@ LDFLAGS+=	-nostdlib \
 		-Xlinker -kext \
 		-Xlinker -object_path_lto \
 		-Xlinker -export_dynamic
+LDFLAGS+=	-Xlinker -fatal_warnings
 
 # libraries
 #LIBS+=		-lkmodc++
@@ -141,13 +164,14 @@ $(KEXTMACHO): $(OBJS)
 	$(CC) $(LDFLAGS) -static -o $@ $(LIBS) $^
 	otool -h $@
 
-Info.plist~: Info.plist.in
-	cat $^ \
+Info.plist~: Info.plist.in $(MKFS)
+	cat $< \
 	| sed -e 's/__KEXTNAME__/$(KEXTNAME)/g' \
 	      -e 's/__KEXTMACHO__/$(KEXTMACHO)/g' \
 	      -e 's/__KEXTVERSION__/$(KEXTVERSION)/g' \
 	      -e 's/__KEXTBUILD__/$(KEXTBUILD)/g' \
 	      -e 's/__BUNDLEID__/$(BUNDLEID)/g' \
+	      -e 's/__COPYRIGHT__/$(COPYRIGHT)/g' \
 	>$@
 
 $(KEXTBUNDLE): $(KEXTMACHO) Info.plist~
@@ -161,15 +185,15 @@ $(KEXTBUNDLE): $(KEXTMACHO) Info.plist~
 	>$@/Contents/Info.plist~
 	mv $@/Contents/Info.plist~ $@/Contents/Info.plist
 	touch $@
-ifdef SIGNCERT
-	$(CODESIGN) -s $(SIGNCERT) -f $(KEXTBUNDLE)
+ifdef DEVIDKEXT
+	$(CODESIGN) -s $(DEVIDKEXT) -f $@
 endif
 
 load: $(KEXTBUNDLE)
 	sudo chown -R root:wheel $<
 	sudo sync
 	sudo kextutil $<
-	sudo chown -R $(USER):$(shell id -gn) $<
+	sudo chown -R '$(USER):$(shell id -gn)' $<
 	sudo dmesg|grep $(KEXTNAME)|tail -1
 
 stat:

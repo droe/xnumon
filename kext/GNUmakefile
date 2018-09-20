@@ -5,11 +5,19 @@ KEXTNAME=	xnumon
 KEXTVERSION=	0.1.0
 KEXTBUILD=	0.1.0
 BUNDLEDOMAIN=	ch.roe
+COPYRIGHT=	Copyright (c) 2017-2018 Daniel Roethlisberger. All rights reserved.
 
 MACOSX_VERSION_MIN=	10.11
+DEVELOPER_DIR=	/Applications/Xcode-7.3.1.app/Contents/Developer
 
-#DEVIDKEXT=	"Developer ID Kext: Daniel Roethlisberger (C9BFEG985N)"
-#CFLAGS=	-Wno-\#warnings
+#CFLAGS+=	-Wno-\#warnings
 #KLFLAGS=	-unsupported
+
+# Developer ID Application: Daniel Roethlisberger (C9BFEG985N)
+ifeq "$(KEXTVERSION)" "$(KEXTBUILD)"
+DEVIDKEXT=	"6BF4C67B70848E7A0635F1F1ADC6C9F869B69CEE" # prod
+else
+DEVIDKEXT=	"A6D93D1FFBDBEA6157560516ADED1F9ACD6FDE89" # dev
+endif
 
 include Mk/kext.mk

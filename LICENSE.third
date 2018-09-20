@@ -19,4 +19,10 @@ map.h:
     Licensed under the MIT license.
     https://github.com/swansontec/map-macro
 
+kext/Mk/kext.mk:
+
+    Copyright (c) Daniel Roethlisberger.
+    Licensed under the Unlicense.
+    https://github.com/droe/example.kext
+
 See the respective source code, license and/or website for details.
