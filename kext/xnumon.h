@@ -48,17 +48,6 @@ typedef struct __attribute__((packed)) {
 	uint64_t cookie;
 	uint64_t time_s;
 	uint64_t time_ns;
-#if 0
-	uint32_t dev;
-	uint32_t _reserved;
-	uint64_t ino;
-	uint64_t mtime_s;
-	uint64_t mtime_ns;
-	uint64_t ctime_s;
-	uint64_t ctime_ns;
-	uint64_t btime_s;
-	uint64_t btime_ns;
-#endif
 	char path[];
 } xnumon_msg_t;
 
