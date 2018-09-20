@@ -1,3 +1,9 @@
+### xnumon develop-0.1.7
+
+-   The kernel extension is now appropriately signed (issue #6).
+
+---
+
 ### xnumon 0.1.6.3 2018-08-26
 
 -   Bugfix release fixing a memory leak in executable image tracking.
