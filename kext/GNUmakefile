@@ -2,15 +2,19 @@
 # effectively the kext version is the xnumon release it last changed.
 
 KEXTNAME=	xnumon
-KEXTVERSION=	0.1.0
-KEXTBUILD=	0.1.0
+KEXTVERSION=	0.1.7
+KEXTBUILD=	0.1.7d1
 BUNDLEDOMAIN=	ch.roe
 COPYRIGHT=	Copyright (c) 2017-2018 Daniel Roethlisberger. All rights reserved.
+
+#CFLAGS+=	-DCDEV_ALLOW_TEAMID=\"C9BFEG985N\" \
+#		-DCDEV_ALLOW_IDENTITY=\"ch.roe.xnumon\"
 
 MACOSX_VERSION_MIN=	10.11
 DEVELOPER_DIR=	/Applications/Xcode-7.3.1.app/Contents/Developer
 
 #CFLAGS+=	-Wno-\#warnings
+#CFLAGS+=	-DUSE_PRIVATE_KPI
 #KLFLAGS=	-unsupported
 
 # Developer ID Application: Daniel Roethlisberger (C9BFEG985N)

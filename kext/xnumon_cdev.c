@@ -38,6 +38,17 @@
  * similar to the interface provided by the OpenBSM auditpipe facility.
  */
 
+#ifdef USE_PRIVATE_KPI
+/*
+ * Defined in sys/codesign.h, which is not available in Kernel.framework.
+ * The symbols are unfortunately only available to Apple kexts.
+ */
+struct cs_blob;
+struct cs_blob * csproc_get_blob(struct proc *);
+const char * csblob_get_teamid(struct cs_blob *);
+const char * csblob_get_identity(struct cs_blob *);
+#endif
+
 /*
  * sizeof(struct selinfo) == 24     10.5 - 10.6/i386
  * sizeof(struct selinfo) == 48     10.6/x86_64, 10.10
@@ -139,6 +150,12 @@ xnumon_cdev_open(__attribute__((unused)) dev_t dev,
                  __attribute__((unused)) int flags,
                  __attribute__((unused)) int type,
                                          proc_t p) {
+#ifdef USE_PRIVATE_KPI
+	const char *teamid;
+	const char *identity;
+	struct cs_blob *csb;
+#endif
+
 	if (xnumon_cdev.state == XNUMON_CDEV_STATE_DEAD)
 		return ENXIO;
 
@@ -147,6 +164,29 @@ xnumon_cdev_open(__attribute__((unused)) dev_t dev,
 		XNUMON_CDEV_UNLOCK();
 		return EBUSY;
 	}
+
+#ifdef USE_PRIVATE_KPI
+	csb = csproc_get_blob(p);
+	if (csb) {
+		teamid = csblob_get_teamid(csb);
+		identity = csblob_get_identity(csb);
+	} else {
+		teamid = NULL;
+		identity = NULL;
+	}
+	if (!teamid || !identity ||
+	    (strcmp(teamid, CDEV_ALLOW_TEAMID) != 0) ||
+	    (strcmp(identity, CDEV_ALLOW_IDENTITY) != 0)) {
+		XNUMON_CDEV_UNLOCK();
+		printf(KEXTNAME_S ": open(" XNUMON_DEVPATH ") denied to "
+		       "pid %d identity %s teamid %s\n",
+		       proc_pid(p),
+		       identity ? identity : "n/a",
+		       teamid ? teamid : "n/a");
+		return EACCES;
+	}
+#endif
+
 	xnumon_cdev.state = XNUMON_CDEV_STATE_OPEN;
 	xnumon_cdev.pid = proc_pid(p);
 	xnumon_kauth_start();
