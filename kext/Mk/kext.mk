@@ -21,9 +21,10 @@
 # KEXTBUNDLE      name of kext bundle directory; default $(KEXTNAME).kext
 # KEXTMACHO       name of kext Mach-O executable; default $(KEXTNAME)
 #
-# DEVELOPER_DIR   select Xcode Command Line Developer Tools directory
+# DEVELOPER_DIR   override Xcode Command Line Developer Tools directory
 # MACOSX_VERSION_MIN  minimal version of macOS to target
-# SDK             SDK name to build against (e.g. macosx, macosx10.11, ...)
+# SDK             SDK name to build against (e.g. macosx, macosx10.11, ...);
+#                 defaults to macosx$(MACOSX_VERSION_MIN) if min version is set
 # CPPFLAGS        additional precompiler flags
 # CFLAGS          additional compiler flags
 # LDFLAGS         additional linker flags
@@ -65,36 +66,13 @@ ARCH?=		x86_64
 #ARCH?=		i386
 PREFIX?=	/Library/Extensions/
 
-CODESIGN?=	codesign
-
-# default SDK for targeted min version
-ifndef SDK
+# Xcode selection
 ifdef MACOSX_VERSION_MIN
+ifndef SDK
 SDK:=		macosx$(MACOSX_VERSION_MIN)
 endif
 endif
-
-# select Xcode
-ifdef DEVELOPER_DIR
-ifndef SDK
-SDK:=		macosx
-endif
-else
-DEVELOPER_DIR:=	$(shell xcode-select -p)
-endif
-
-# activate the selected Xcode and SDK
-ifdef SDK
-SDKPATH:=	$(shell DEVELOPER_DIR="$(DEVELOPER_DIR)" xcrun -find -sdk $(SDK) --show-sdk-path||echo none)
-ifeq "$(SDKPATH)" "none"
-$(error SDK not found)
-endif
-CPPFLAGS+=	-isysroot $(SDKPATH)
-LDFLAGS+=	-isysroot $(SDKPATH)
-CC:=		$(shell DEVELOPER_DIR="$(DEVELOPER_DIR)" xcrun -find -sdk $(SDK) cc||echo false)
-#CXX:=		$(shell DEVELOPER_DIR="$(DEVELOPER_DIR)" xcrun -find -sdk $(SDK) c++||echo false)
-CODESIGN:=	$(shell DEVELOPER_DIR="$(DEVELOPER_DIR)" xcrun -find -sdk $(SDK) codesign||echo false)
-endif
+include Mk/xcode.mk
 
 # standard defines and includes for kernel extensions
 CPPFLAGS+=	-DKERNEL \
@@ -113,9 +91,6 @@ CPPFLAGS+=	-DKEXTNAME_S=\"$(KEXTNAME)\" \
 		-DBUNDLEID=$(BUNDLEID) \
 
 # c compiler flags
-ifdef MACOSX_VERSION_MIN
-CFLAGS+=	-mmacosx-version-min=$(MACOSX_VERSION_MIN)
-endif
 CFLAGS+=	-arch $(ARCH) \
 		-fno-builtin \
 		-fno-common \
@@ -126,9 +101,6 @@ CFLAGS+=	-arch $(ARCH) \
 CFLAGS+=	-Wall -Wextra
 
 # linker flags
-ifdef MACOSX_VERSION_MIN
-LDFLAGS+=	-mmacosx-version-min=$(MACOSX_VERSION_MIN)
-endif
 LDFLAGS+=	-arch $(ARCH)
 LDFLAGS+=	-nostdlib \
 		-Xlinker -kext \

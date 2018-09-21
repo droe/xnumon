@@ -13,22 +13,17 @@ BUILD_INFO+=	DEBUG
 endif
 
 PKGNAME:=	xnumon
+
 include Mk/buildinfo.mk
 
-DEVIDAPPL?=	"Developer ID Application: Daniel Roethlisberger (C9BFEG985N)"
-DEVIDINST?=	"Developer ID Installer: Daniel Roethlisberger (C9BFEG985N)"
+DEVIDAPPL?=	"6BF4C67B70848E7A0635F1F1ADC6C9F869B69CEE"
+DEVIDINST?=	"CD9D6DF08F96B0F3EC99A986CB0BF28C68556D4D"
 MACOSX_VERSION_MIN=10.11
 ifdef DEVIDINST
 PRODUCTBUILDFLAGS+=--sign $(DEVIDINST)
 endif
 
-ifdef SDKROOT
-CPPFLAGS=	-isysroot $(SDKROOT)
-CC=		$(shell xcrun -find -sdk $(SDKROOT) cc)
-CODESIGN=	$(shell xcrun -find -sdk $(SDKROOT) codesign)
-else
-CODESIGN?=	codesign
-endif
+include Mk/xcode.mk
 
 CPPFLAGS+=	$(FEATURES)
 ifndef DEBUG
@@ -40,9 +35,6 @@ CFLAGS+=	-g
 LDFLAGS+=	-g
 endif
 
-ifdef MACOSX_VERSION_MIN
-CFLAGS+=	-mmacosx-version-min=$(MACOSX_VERSION_MIN)
-endif
 CFLAGS+=	-arch x86_64
 CFLAGS+=	-std=c11 \
 		-Wall -Wextra -pedantic
@@ -52,9 +44,6 @@ CFLAGS+=	-Wno-gnu # minmax.h
 #endif
 CFLAGS+=	-D_FORTIFY_SOURCE=2 -fstack-protector-all
 
-ifdef MACOSX_VERSION_MIN
-LDFLAGS+=	-mmacosx-version-min=$(MACOSX_VERSION_MIN)
-endif
 LDFLAGS+=	-arch x86_64
 
 LIBS+=		-lbsm \

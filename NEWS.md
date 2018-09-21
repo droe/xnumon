@@ -1,6 +1,8 @@
 ### xnumon develop-0.1.7
 
 -   The kernel extension is now appropriately signed (issue #6).
+-   Build system improvements for alternative Xcode installations, macOS
+    min version targeting, SDK selection and kext signing.
 
 ---
 
