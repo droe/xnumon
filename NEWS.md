@@ -1,4 +1,4 @@
-### xnumon develop-0.1.7
+### xnumon 0.1.7 2018-09-21
 
 -   The kernel extension is now appropriately signed (issue #6).
 -   Build system improvements for alternative Xcode installations, macOS

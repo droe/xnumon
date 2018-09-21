@@ -3,7 +3,7 @@
 
 KEXTNAME=	xnumon
 KEXTVERSION=	0.1.7
-KEXTBUILD=	0.1.7d1
+KEXTBUILD=	0.1.7
 BUNDLEDOMAIN=	ch.roe
 COPYRIGHT=	Copyright (c) 2017-2018 Daniel Roethlisberger. All rights reserved.
 
