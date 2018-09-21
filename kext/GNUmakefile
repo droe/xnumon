@@ -20,7 +20,6 @@ endif
 #KLFLAGS=	-unsupported
 
 ifndef TRAVIS
-# Developer ID Application: Daniel Roethlisberger (C9BFEG985N)
 ifeq "$(KEXTVERSION)" "$(KEXTBUILD)"
 DEVIDKEXT=	"6BF4C67B70848E7A0635F1F1ADC6C9F869B69CEE" # prod
 else
