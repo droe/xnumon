@@ -91,7 +91,7 @@ sign: $(TARGETS:=.signed)
 %.signed: % chkcs
 	cp $< $@
 	@#strip $@
-	$(CODESIGN) -s $(DEVIDAPPL) -i ch.roe.$< -f $@
+	$(CODESIGN) --options library -s $(DEVIDAPPL) -i ch.roe.$< -f $@
 	$(CODESIGN) -d --verbose=4 $@
 	$(CODESIGN) --verify --deep --strict --verbose=4 $@
 	./chkcs $@
