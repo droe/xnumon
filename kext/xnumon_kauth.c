@@ -139,9 +139,9 @@ xnumon_kauth_vnode_cb(__attribute__((unused)) kauth_cred_t cred,
 	_Static_assert(sizeof(pid_t) <= sizeof(msg->pid),
 	               "sizeof(pid_t) <= sizeof(msg->pid)");
 	msg->cookie = kcookie ^ xnumon_kauth.cookie_mask;
+	/* auditpipe time resolution is microseconds, not nanoseconds */
 	msg->time_s = tm.tv_sec;
 	msg->time_ns = tm.tv_nsec - (tm.tv_nsec % 1000);
-	/* auditpipe precision is microseconds, not nanoseconds */
 	strncpy(msg->path, path, entry->sz - sizeof(*msg));
 	if (xnumon_cdev_enqueue(entry) != KERN_SUCCESS) {
 		xnumon_cdev_entry_free(entry);

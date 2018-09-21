@@ -39,7 +39,9 @@ xnumon provides context information such as executable image hashes, code
 signature meta-data, script shebang handling, and the history of previous
 executable images that led to the current process state.  It does so by
 tracking fork and other syscalls instead of relying only on the ppid, which
-can change over the lifetime of a process.
+can change over the lifetime of a process.  For the reliable acquisition of
+image hashes even from short-living or self-modifying executables, xnumon comes
+with an optional kernel extension.
 
 xnumon is configurable.  It supports different log formats and hash algorithms.
 In order to reduce log volume close to the source, xnumon implements a number
@@ -77,10 +79,14 @@ The installer package published on the
 [xnumon website](https://www.roe.ch/xnumon)
 will install the daemon, the control utility and a default configuration which
 by default will log to `/var/log/xnumon.log` in JSON Lines format.  It will
-also install a matching newsyslog configuration and the optional kernel
-extension.  The kernel extension is currently unsigned and as such will not be
-usable in production environments unless you control a kext signing certificate
-(see «Kernel Extension» below).
+also install a matching newsyslog configuration and the kernel extension.
+
+As of macOS 10.13 High Sierra, the kext needs to be explicitly approved by the
+user before it can be loaded.  For enterprise deployments, you will want to
+allow the Team ID C9BFEG985N to bypass user approval using `spctl kext-consent`
+from Recovery OS or NetBoot/NetInstall/NetRestore images, or using Mobile
+Device Management (MDM).  For details, refer to
+[TN2459](https://developer.apple.com/library/archive/technotes/tn2459/).
 
 The extensively commented default configuration is installed to
 `/Library/Application Support/ch.roe.xnumon/configuration.plist-default`.
@@ -98,25 +104,6 @@ In order to make the logs useful and to get them out of reach of malware and
 attackers, it is recommended to continuously forward logs to central log
 collection infrastructure.  A minimal sample Splunk configuration for ingesting
 xnumon logs can be found in `extra/splunk`.
-
-
-## Kernel Extension
-
-The xnumon kext is optional and provides reliable acquisition of image hashes
-and code signing information even for short-living images using the Kauth KPI.
-The kernel extension is currently unsigned and therefore cannot be deployed
-unless you own a kernel signing certificate.  A kernel signing certificate for
-xnumon has been requested from Apple, but has not been approved yet.
-
-To load the unsigned kext for testing and development, you need to disable
-System Integrity Protection (SIP) for kexts.  Reboot to repair mode by pressing
-<kbd>cmd⌘</kbd>+<kbd>r</kbd> during boot and from within the repair console,
-run `csrutil enable --without kext`.  This will also turn off the kext user
-consent requirement of High Sierra.
-
-In addition to a code signature, the kext needs more field testing, especially
-compatibility tests with more security solutions, before recommending
-large-scale deployments.
 
 
 ## Uninstalling
@@ -170,13 +157,20 @@ Pass `DEBUG=1` to make in order to build a debug version of xnumon that
 includes symbols, assertions and additional debugging code.  See make file
 for details.
 
+To load an unsigned, modified kext for testing and development, you need to
+disable System Integrity Protection (SIP) for kexts.  Reboot to Recovery OS by
+pressing <kbd>cmd⌘</kbd>+<kbd>r</kbd> during boot and from within the repair
+console, run `csrutil enable --without kext`.  This will also turn off the kext
+user consent requirement of High Sierra and later.
+
 
 ## Copyright and License
 
 Copyright (c) 2017-2018, [Daniel Roethlisberger](//daniel.roe.ch/).  
 All rights reserved.  
 Licensed under the Open Software License version 3.0.  
-Contains components licensed under BSD and MIT licenses.
+Contains components licensed under BSD and MIT licenses as well as components
+released under the Unlicense.
 
 See `LICENSE`, `LICENSE.contrib` and `LICENSE.third` as well as the respective
 source file headers for details.

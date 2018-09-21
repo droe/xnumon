@@ -19,6 +19,12 @@ map.h:
     Licensed under the MIT license.
     https://github.com/swansontec/map-macro
 
+Mk/xcode.mk, kext/Mk/{kext,xcode}.mk:
+
+    Copyright (c) Daniel Roethlisberger.
+    Released under the Unlicense.
+    https://github.com/droe/example.kext
+
 test/haklib/*:
 
     Copyright (c) Daniel Roethlisberger.

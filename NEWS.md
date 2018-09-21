@@ -47,6 +47,14 @@ Event schema changes:
 
 ---
 
+### xnumon 0.1.7 2018-09-21
+
+-   The kernel extension is now appropriately signed (issue #6).
+-   Build system improvements for alternative Xcode installations, macOS
+    min version targeting, SDK selection and kext signing.
+
+---
+
 ### xnumon 0.1.6.3 2018-08-26
 
 -   Bugfix release fixing a memory leak in executable image tracking.
