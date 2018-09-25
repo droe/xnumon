@@ -104,19 +104,19 @@ copyright: $(filter-out $(EXTSRCS),$(wildcard *.c *.h)) kext/*.c kext/*.h
 fetch: $(EXTSRCS)
 
 map.h:
-	wget $(GITHUBRAW)/swansontec/map-macro/$(MAPTAG)/$@
+	curl -L -O $(GITHUBRAW)/swansontec/map-macro/$(MAPTAG)/$@
 	xattr -c $@
 
 memstream.h memstream.c:
-	wget http://piumarta.com/software/memstream/memstream-0.1/$@
+	curl -L -O http://piumarta.com/software/memstream/memstream-0.1/$@
 	xattr -c $@
 
 tommy%.h:
-	wget $(GITHUBRAW)/amadvance/tommyds/$(TOMMYTAG)/tommyds/$@
+	curl -L -O $(GITHUBRAW)/amadvance/tommyds/$(TOMMYTAG)/tommyds/$@
 	xattr -c $@
 
 tommy%.c:
-	wget $(GITHUBRAW)/amadvance/tommyds/$(TOMMYTAG)/tommyds/$@
+	curl -L -O $(GITHUBRAW)/amadvance/tommyds/$(TOMMYTAG)/tommyds/$@
 	xattr -c $@
 
 clean:
