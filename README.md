@@ -89,7 +89,7 @@ Device Management (MDM).  For details, refer to
 [TN2459](https://developer.apple.com/library/archive/technotes/tn2459/).
 
 The extensively commented
-[default configuration](https://github.com/droe/xnumon/blob/develop/pkg/configuration.plist-default.in)
+[default configuration](pkg/configuration.plist-default.in)
 is installed to
 `/Library/Application Support/ch.roe.xnumon/configuration.plist-default`.
 While the defaults are as sensible as possible, you will most likely want to
