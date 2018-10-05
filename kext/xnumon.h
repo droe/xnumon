@@ -41,7 +41,7 @@ typedef struct __attribute__((packed)) {
 #define XNUMON_ACK_COOKIE       _IOW(XNUMON_IOBASE, 1, uint64_t)
 #define XNUMON_GET_STATS        _IOR(XNUMON_IOBASE, 2, xnumon_stat_t)
 
-typedef struct __attribute__((packed)) {
+typedef struct {
 	uint16_t version;
 	uint16_t msgsz;
 	uint32_t pid;
@@ -50,6 +50,7 @@ typedef struct __attribute__((packed)) {
 	uint64_t time_ns;
 	char path[];
 } xnumon_msg_t;
+_Static_assert(sizeof(xnumon_msg_t) == 32, "xnumon_msg_t has unexpected size");
 
 #define XNUMON_MSG_VERSION      1
 #define XNUMON_MAXPATHLEN       1024
