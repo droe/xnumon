@@ -260,7 +260,7 @@ sys_readlink(const char *path) {
 	if (!path || path[0] != '/')
 		return NULL;
 
-	/* readlink does not append a NUL character */
+	/* readlink does not append a NUL character, PATH_MAX includes NUL */
 	n = readlink(path, buf, sizeof(buf) - 1);
 	if (n == -1)
 		return NULL;
