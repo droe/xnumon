@@ -214,7 +214,7 @@ sys_realpath(const char *restrict path, const char *restrict cwd) {
 char *
 sys_realdir(const char *restrict path, const char *restrict cwd) {
 	char *sep, *udir, *rdir, *p;
-	bool rerrno;
+	int rerrno;
 
 	if (path[0] == '/') {
 		udir = strdup(path);
