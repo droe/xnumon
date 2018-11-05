@@ -239,7 +239,7 @@
        omit_ctime       ctime field of images
        omit_btime       btime field of images
        omit_sid         sid field of processes
-       omit_groups      gid field of processes, egid and rgid of images
+       omit_groups      group id and name fields of processes and images
        If unset, defaults to:   false
        -->
   <!--
