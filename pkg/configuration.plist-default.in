@@ -364,12 +364,12 @@
        -->
   <key>suppress_image_exec_by_path</key>
   <array>
-  <!--
+    <!--
     <string>/usr/libexec/xpcproxy</string>
     <string>/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mdworker</string>
     <string>/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Support/mdworker32</string>
-    -->
     <string>/Applications/Splunk/bin/splunk-optimize</string>
+    -->
   </array>
 
   <!-- Suppress exec image events by ancestor ident:
@@ -399,7 +399,9 @@
        -->
   <key>suppress_image_exec_by_ancestor_path</key>
   <array>
+    <!--
     <string>/opt/local/bin/port</string>
+    -->
   </array>
 
   <!-- Suppress process access events by subject ident:
@@ -473,6 +475,9 @@
     <string>com.apple.mDNSResponder</string>
     <string>com.apple.configd</string>
     <string>com.apple.symptomsd</string>
+    <!--
+    <string>com.docker@9BNSXJN65R</string>
+    -->
   </array>
 
   <!-- Suppress socket op events by subject path:
@@ -489,6 +494,7 @@
     <string>/usr/sbin/mDNSResponder</string>
     <string>/usr/libexec/configd</string>
     <string>/usr/libexec/symptomsd</string>
+    <string>/Applications/Docker.app/Contents/Resources/bin/com.docker.vpnkit</string>
     -->
   </array>
 
