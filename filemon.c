@@ -209,6 +209,8 @@ symlinks_path_walk(const char *path,
 	}
 
 	if (!obj->is_regular_file && sys_islnk(obj->path) != 1) {
+		if (obj->target)
+			symlinks_obj_unref(obj->target, obj);
 		tommy_list_remove_existing(&symlinks_dangling, &obj->l_node);
 		obj->is_regular_file = true;
 	}
