@@ -1,3 +1,10 @@
+### xnumon 0.1.7.1 2018-10-08
+
+-   Bugfix release fixing the handling of ptrace(2) for non-`PT_ATTACHEXC`
+    requests.
+
+---
+
 ### xnumon 0.1.7 2018-09-21
 
 -   The kernel extension is now appropriately signed (issue #6).
