@@ -593,9 +593,13 @@ logevt_process_image_exec_ancestors(logfmt_t *fmt, FILE *f, image_exec_t *ie) {
 	fmt->list_end(f); /* process image exec ancestors */
 }
 
+/*
+ * If we only know the pid and not the full process information, processpid
+ * is != 0 and process must be ignored even if it is != NULL.
+ */
 static void
 logevt_process(logfmt_t *fmt, FILE *f,
-               audit_proc_t *process,
+               audit_proc_t *process, pid_t processpid,
                struct timespec *fork_tv,
                image_exec_t *ie) {
 	fmt->dict_begin(f);
@@ -603,7 +607,10 @@ logevt_process(logfmt_t *fmt, FILE *f,
 		fmt->dict_item(f, "reconstructed");
 		fmt->value_bool(f, true);
 	}
-	if (process) {
+	if (processpid > 0) {
+		fmt->dict_item(f, "pid");
+		fmt->value_int(f, processpid);
+	} else if (process) {
 		fmt->dict_item(f, "pid");
 		fmt->value_int(f, process->pid);
 		logevt_uid(fmt, f, process->auid, "auid", "auname");
@@ -689,7 +696,7 @@ logevt_image_exec(logfmt_t *fmt, FILE *f, void *arg0) {
 
 	fmt->dict_item(f, "subject");
 	logevt_process(fmt, f,
-	               (ie->flags & EIFLAG_PIDLOOKUP) ? NULL : &ie->subject,
+	               (ie->flags & EIFLAG_PIDLOOKUP) ? NULL : &ie->subject, 0,
 	               &ie->fork_tv,
 	               ie->prev);
 
@@ -708,14 +715,14 @@ logevt_process_access(logfmt_t *fmt, FILE *f, void *arg0) {
 
 	fmt->dict_item(f, "object");
 	logevt_process(fmt, f,
-	               &pa->object,
+	               &pa->object, pa->objectpid,
 	               pa->object_image_exec ?
 	                   &pa->object_image_exec->fork_tv : NULL,
 	               pa->object_image_exec);
 
 	fmt->dict_item(f, "subject");
 	logevt_process(fmt, f,
-	               &pa->subject,
+	               &pa->subject, 0,
 	               pa->subject_image_exec ?
 	                   &pa->subject_image_exec->fork_tv : NULL,
 	               pa->subject_image_exec);
@@ -753,7 +760,7 @@ logevt_launchd_add(logfmt_t *fmt, FILE *f, void *arg0) {
 
 	fmt->dict_item(f, "subject");
 	logevt_process(fmt, f,
-	               &ldadd->subject,
+	               &ldadd->subject, 0,
 	               ldadd->subject_image_exec ?
 	                   &ldadd->subject_image_exec->fork_tv : NULL,
 	               ldadd->subject_image_exec);

@@ -30,6 +30,7 @@ typedef struct {
 	logevt_header_t hdr;
 	audit_proc_t subject;
 	audit_proc_t object;
+	pid_t objectpid; /* if != 0, object is unset */
 	image_exec_t *subject_image_exec;
 	image_exec_t *object_image_exec;
 	const char *method; /* "ptrace" or "task_for_pid" */
