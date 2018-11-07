@@ -73,7 +73,8 @@ process_access_work(process_access_t *pa) {
 static void
 log_event_process_access(struct timespec *tv,
                          audit_proc_t *subject,
-                         audit_proc_t *object,
+                         audit_proc_t *object, /* may be NULL */
+                         pid_t objectpid,
                          const char *method) {
 	process_access_t *pa;
 
@@ -83,9 +84,13 @@ log_event_process_access(struct timespec *tv,
 		return;
 	}
 	pa->subject_image_exec = image_exec_by_pid(subject->pid, tv);
-	pa->object_image_exec = image_exec_by_pid(object->pid, tv);
+	pa->object_image_exec = image_exec_by_pid(objectpid, tv);
 	pa->subject = *subject;
-	pa->object = *object;
+	if (object) {
+		pa->object = *object;
+	} else {
+		pa->objectpid = objectpid;
+	}
 	pa->method = method;
 	pa->hdr.tv = *tv;
 	work_submit(pa);
@@ -94,24 +99,18 @@ log_event_process_access(struct timespec *tv,
 static void
 hackmon_process_access(struct timespec *tv,
                        audit_proc_t *subject,
-                       audit_proc_t *object,
+                       audit_proc_t *object, /* may be NULL */
                        pid_t objectpid,
                        const char *method) {
-	pid_t objpid;
-
 	events_recvd++;
-	objpid = object ? object->pid : objectpid;
 
-	if (objpid <= 0)
+	if (objectpid <= 0)
 		return;
-	if (subject->pid == objpid)
+	if (subject->pid == objectpid)
 		return;
-
-	/* XNU only omits the process token if pid <= 0. */
-	assert(object);
 
 	events_procd++;
-	log_event_process_access(tv, subject, object, method);
+	log_event_process_access(tv, subject, object, objectpid, method);
 }
 
 /*

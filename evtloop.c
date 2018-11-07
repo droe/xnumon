@@ -21,6 +21,7 @@
 #include "debug.h"
 #include "attrib.h"
 
+#include <sys/ptrace.h>
 #include <stdint.h>
 #include <inttypes.h>
 #include <limits.h>
@@ -499,13 +500,15 @@ auef_readable(UNUSED int fd, void *udata) {
 			break;
 		}
 		TOKEN_ASSERT("task_for_pid", "subject", ev.subject_present);
-		/* The PROCESS_PID_TOKENS macro in XNU creates a process token
-		 * from pid arg 2 only if pid > 0. */
-		TOKEN_ASSERT("task_for_pid", "process",
+		TOKEN_ASSERT("task_for_pid", "process|args[2](pid)",
 		             ev.process_present || ev.args[2].present);
-		hackmon_taskforpid(&ev.tv, &ev.subject,
-		                   ev.process_present ? &ev.process : NULL,
-		                   ev.args[2].present ? ev.args[2].value : -1);
+		if (ev.process_present) {
+			hackmon_taskforpid(&ev.tv, &ev.subject,
+			                   &ev.process, ev.process.pid);
+		} else {
+			hackmon_taskforpid(&ev.tv, &ev.subject,
+			                   NULL, ev.args[2].value);
+		}
 		break;
 
 	case AUE_PTRACE:
@@ -517,13 +520,18 @@ auef_readable(UNUSED int fd, void *udata) {
 			break;
 		}
 		TOKEN_ASSERT("ptrace", "subject", ev.subject_present);
-		/* The PROCESS_PID_TOKENS macro in XNU creates a process token
-		 * from pid arg 2 only if pid > 0. */
-		TOKEN_ASSERT("ptrace", "process",
+		TOKEN_ASSERT("ptrace", "args[1](request)", ev.args[1].present);
+		if (ev.args[1].value != PT_ATTACHEXC)
+			break;
+		TOKEN_ASSERT("ptrace", "process|args[2](pid)",
 		             ev.process_present || ev.args[2].present);
-		hackmon_ptrace(&ev.tv, &ev.subject,
-		               ev.process_present ? &ev.process : NULL,
-		               ev.args[2].present ? ev.args[2].value : -1);
+		if (ev.process_present) {
+			hackmon_ptrace(&ev.tv, &ev.subject,
+			               &ev.process, ev.process.pid);
+		} else {
+			hackmon_ptrace(&ev.tv, &ev.subject,
+			               NULL, ev.args[2].value);
+		}
 		break;
 
 	/*
