@@ -26,11 +26,12 @@ DEPS=		true.dep
 
 all: $(TARGETS) deps
 
-test: $(TESTS)
+test: $(TESTS) deps
 	sudo -v
 	./testrunner.py $(TESTS)
 
 deps: $(DEPS)
+	mkdir -p ~/Library/LaunchAgents
 
 $(DEPS): %.dep: %.c $(MKFS) $(HDRS)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -o $@ $< $(LIBS)
@@ -45,4 +46,4 @@ clean:
 copyright: $(SRCS) *.c *.py $(HDRS) $(STESTS)
 	../Mk/bin/copyright.py $^
 
-.PHONY: all clean copyright
+.PHONY: all deps clean copyright
