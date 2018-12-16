@@ -11,14 +11,24 @@
 #include <unistd.h>
 #include <stdio.h>
 
+#if 0
 #define __APPLE_API_PRIVATE
 #include <security/mac.h>
 #undef __APPLE_API_PRIVATE
+#endif
 
 #include "path.h"
 
 #define PATH "/usr/bin/true"
 #define ARGV0 "true"
+
+/* <security/mac.h> was removed in High Sierra */
+struct mac {
+	size_t           m_buflen;
+	char            *m_string;
+};
+typedef struct mac      *mac_t;
+int __mac_execve(char *fname, char **argv, char **envv, mac_t _label);
 
 int
 main(int argc, char *argv[]) {
