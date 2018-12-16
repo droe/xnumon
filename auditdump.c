@@ -47,6 +47,7 @@ fusage(FILE *f, const char *argv0) {
 " -s             output short format\n"
 " -x             output XML format\n"
 " -b             output binary format for piping into auditreduce|praudit\n"
+" -v             print auditpipe statistics before and after\n"
 , argv0);
 }
 
@@ -55,6 +56,15 @@ static int active = 1;
 void
 handle_sig(UNUSED int signum) {
 	active = 0;
+}
+
+void
+dump_aupipe_stats(FILE *f) {
+	aupipe_stat_t st;
+
+	aupipe_stats(fileno(f), &st);
+	fprintf(stderr, "aupipe: q=%u/%u insert=%u read=%u drop=%u\n",
+	        st.qlen, st.qlimit, st.inserts, st.reads, st.drops);
 }
 
 int
@@ -66,9 +76,10 @@ main(int argc, char *argv[]) {
 	int oflags = AU_OFLAG_NONE;
 	unsigned int classmask = AC_ALL;
 	bool clearmask = false;
+	bool verbose = false;
 	const char *argv0 = argv[0];
 
-	while ((ch = getopt(argc, argv, "c:Cd:hnrsxb")) != -1) {
+	while ((ch = getopt(argc, argv, "c:Cd:hnrsxbv")) != -1) {
 		switch (ch) {
 			case 'b':
 				binary = true;
@@ -96,6 +107,9 @@ main(int argc, char *argv[]) {
 				break;
 			case 'x':
 				oflags |= AU_OFLAG_XML;
+				break;
+			case 'v':
+				verbose = true;
 				break;
 			case '?':
 				exit(EXIT_FAILURE);
@@ -145,6 +159,10 @@ main(int argc, char *argv[]) {
 		exit(EXIT_FAILURE);
 	}
 
+	if (verbose) {
+		dump_aupipe_stats(f);
+	}
+
 	while (active) {
 		int reclen;
 		u_char *recbuf;
@@ -183,6 +201,10 @@ main(int argc, char *argv[]) {
 		}
 
 		free(recbuf);
+	}
+
+	if (verbose) {
+		dump_aupipe_stats(f);
 	}
 
 	if (clearmask) {
