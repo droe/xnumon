@@ -148,7 +148,10 @@ pkg/resources/license.html: $(LICENSE_HTML_SRCS) $(MKFS)
 # --no-wrap is broken for HTML to RTF conversion in pandoc 1.12.4.2.
 # The last sed removes \line keywords not followed by { from the generated RTF.
 pkg/resources/readme.rtf: README.md $(MKFS)
-	cat $< |sed 's/^.*__BUILD_VERSION__.*$$/~~~§$(PKGNAME) $(BUILD_VERSION) (built $(BUILD_DATE))§~~~/' |tr '§' '\n' |\
+	cat $< |\
+	sed 's/^.*__BUILD_VERSION__.*$$/~~~§$(PKGNAME) $(BUILD_VERSION) (built $(BUILD_DATE))§~~~/' |\
+	tr '§' '\n' |\
+	grep -v '\[!\[' |\
 	pandoc -f markdown_github -t rtf \
 		--highlight-style=haddock \
 		--no-wrap \

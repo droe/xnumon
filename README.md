@@ -1,8 +1,10 @@
 # xnumon - monitor macOS for malicious activity
 https://www.roe.ch/xnumon
 
-[//]: # (__BUILD_VERSION__)
+[![Build status](https://travis-ci.com/droe/xnumon.svg)](https://travis-ci.com/droe/xnumon)
+[![Gitter chat](https://badges.gitter.im/droe/xnumon.png)](https://gitter.im/droe/xnumon)
 
+[//]: # (__BUILD_VERSION__)
 
 ## Overview
 
