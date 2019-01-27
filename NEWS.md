@@ -1,4 +1,4 @@
-### xnumon releng-0.1.7.2
+### xnumon 0.1.7.2 2019-01-27
 
 -   Avoid calling file operations that would block while the kext is blocking
     processes during exec(2); this avoids deadlocking the system while

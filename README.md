@@ -149,7 +149,7 @@ user consent requirement of High Sierra and later.
 
 ## Copyright and License
 
-Copyright (c) 2017-2018, [Daniel Roethlisberger](//daniel.roe.ch/).  
+Copyright (c) 2017-2019, [Daniel Roethlisberger](//daniel.roe.ch/).  
 All rights reserved.  
 Licensed under the Open Software License version 3.0.  
 Contains components licensed under BSD and MIT licenses as well as components

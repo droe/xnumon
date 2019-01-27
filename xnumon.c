@@ -2,7 +2,7 @@
  * xnumon - monitor macOS for malicious activity
  * https://www.roe.ch/xnumon
  *
- * Copyright (c) 2017-2018, Daniel Roethlisberger <daniel@roe.ch>.
+ * Copyright (c) 2017-2019, Daniel Roethlisberger <daniel@roe.ch>.
  * All rights reserved.
  *
  * Licensed under the Open Software License version 3.0.
@@ -56,7 +56,7 @@ static void
 fversion(FILE *f) {
 	fprintf(f, "%s %s (built %s)\n",
 	           build_pkgname, build_version, build_date);
-	fprintf(f, "Copyright (c) 2017-2018, "
+	fprintf(f, "Copyright (c) 2017-2019, "
 	           "Daniel Roethlisberger <daniel@roe.ch>\n");
 	fprintf(f, "https://www.roe.ch/xnumon\n");
 	fprintf(f, "Build info: %s\n", build_info);
