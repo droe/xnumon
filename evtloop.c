@@ -214,9 +214,9 @@ path_resolve_symlink(char **path, const char **cwd, const char *unrpath,
  * Mostly complete workarounds for the following bugs in audit(4):
  * 38845422: audit(4): nonsensical path and missing attr for posix_spawn(2)
  * 38845784: audit(4): spurious return value for execve(2)
- * 39267328: audit(4): target path not resolved for rename(2)
+ * 39267328: audit(4): target path not resolved for rename(2) [fixed]
  * 39623812: audit(4): path not resolved for utimes(2)
- * 42783724: audit(4): target path not resolved for link(2)
+ * 42783724: audit(4): target path not resolved for link(2) [fixed]
  * 43063872: audit(4): port in wrong byte order for ports on IPv6 sockets
  *
  * Partial workarounds for the following audit(4) bugs:
@@ -687,11 +687,12 @@ rename_et_al:
 		TOKEN_ASSERT("rename|link|clonefile|copyfile",
 		             "subject", ev.subject_present);
 		/*
-		 * On at least 10.11.6, AUE_RENAME and AUE_LINK records
+		 * Before 10.14.3/2019-001, AUE_RENAME and AUE_LINK records
 		 * include only an unresolved target path.
 		 *
 		 * Reported to Apple as radar 39267328 on 2018-04-08 and
-		 * radar 42783724 on 2018-07-31 respectively.
+		 * radar 42783724 on 2018-07-31 respectively.  Fix published by
+		 * Apple on 2019-01-22.
 		 */
 		if (ev.path[3]) {
 			/* four path tokens, as expected */
