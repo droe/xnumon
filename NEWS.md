@@ -1,3 +1,9 @@
+### xnumon releng-0.1.7.2
+
+-   Drop support for OS X 10.11 El Capitan.
+
+---
+
 ### xnumon 0.1.7.1 2018-10-08
 
 -   Bugfix release fixing the handling of ptrace(2) for non-`PT_ATTACHEXC`
