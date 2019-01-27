@@ -164,6 +164,19 @@ sys_pathattr(stat_attr_t *sa, const char *path) {
 }
 
 int
+sys_fd_setblocking(int fd) {
+	int opts;
+
+	opts = fcntl(fd, F_GETFL);
+	if (opts == -1)
+		return -1;
+	opts &= ~O_NONBLOCK;
+	if (fcntl(fd, F_SETFL, opts) == -1)
+		return -1;
+	return 0;
+}
+
+int
 sys_basenamecmp(const char *restrict s1, const char *restrict s2) {
 	const char *p1, *p2;
 

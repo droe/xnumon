@@ -43,6 +43,8 @@ const char * sys_ttydevname(dev_t) WUNRES;
 int sys_pathattr(stat_attr_t *, const char *) NONNULL(1,2);
 int sys_fdattr(stat_attr_t *, int) NONNULL(1);
 
+int sys_fd_setblocking(int) WUNRES;
+
 int sys_basenamecmp(const char *restrict, const char *restrict) WUNRES;
 char * sys_realpath(const char *restrict, const char *restrict) MALLOC;
 

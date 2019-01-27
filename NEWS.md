@@ -1,5 +1,9 @@
 ### xnumon releng-0.1.7.2
 
+-   Avoid calling file operations that would block while the kext is blocking
+    processes during exec(2); this avoids deadlocking the system while
+    long-running low-level disk operation are in progress, such as while Boot
+    Camp Assistant is editing partitions or Disk Utility is running fsck.
 -   Drop support for OS X 10.11 El Capitan.
 
 ---
