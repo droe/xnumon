@@ -2,7 +2,7 @@
  * xnumon - monitor macOS for malicious activity
  * https://www.roe.ch/xnumon
  *
- * Copyright (c) 2017-2018, Daniel Roethlisberger <daniel@roe.ch>.
+ * Copyright (c) 2017-2019, Daniel Roethlisberger <daniel@roe.ch>.
  * All rights reserved.
  *
  * Licensed under the Open Software License version 3.0.
@@ -42,6 +42,8 @@ const char * sys_ttydevname(dev_t) WUNRES;
 
 int sys_pathattr(stat_attr_t *, const char *) NONNULL(1,2);
 int sys_fdattr(stat_attr_t *, int) NONNULL(1);
+
+int sys_fd_setblocking(int) WUNRES;
 
 int sys_basenamecmp(const char *restrict, const char *restrict) WUNRES;
 char * sys_realpath(const char *restrict, const char *restrict) MALLOC;

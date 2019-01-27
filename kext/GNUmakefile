@@ -11,8 +11,8 @@ COPYRIGHT=	Copyright (c) 2017-2018 Daniel Roethlisberger. All rights reserved.
 #		-DCDEV_ALLOW_IDENTITY=\"ch.roe.xnumon\"
 
 ifndef TRAVIS
-MACOSX_VERSION_MIN=	10.11
-DEVELOPER_DIR=	/Applications/Xcode-7.3.1.app/Contents/Developer
+MACOSX_VERSION_MIN=	10.12
+DEVELOPER_DIR=	/Applications/Xcode-8.3.3.app/Contents/Developer
 endif
 
 #CFLAGS+=	-Wno-\#warnings

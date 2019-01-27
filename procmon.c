@@ -2,7 +2,7 @@
  * xnumon - monitor macOS for malicious activity
  * https://www.roe.ch/xnumon
  *
- * Copyright (c) 2017-2018, Daniel Roethlisberger <daniel@roe.ch>.
+ * Copyright (c) 2017-2019, Daniel Roethlisberger <daniel@roe.ch>.
  * All rights reserved.
  *
  * Licensed under the Open Software License version 3.0.
@@ -177,18 +177,33 @@ image_exec_prune_ancestors(image_exec_t *image, size_t level) {
 }
 
 /*
+ * This function is called multiple times on the same image_exec_t if
+ * kextlevel > 0.
  * Partially thread-safe: only a single thread may call functions on a given
  * image_exec_t instance at a time.
+ * Kern indicates if we are currently handling a kernel module callback.
+ * Note that attr may be NULL depending on where this function is called from.
  */
 static int
-image_exec_open(image_exec_t *image, const audit_attr_t *attr) {
+image_exec_open(image_exec_t *image, const audit_attr_t *attr, bool kern)
+{
 	char buf[2];
 	int rv;
+	int oflag;
 
 	if (image->flags & (EIFLAG_STAT|EIFLAG_ATTR)) {
 #ifdef DEBUG_EXECIMAGE
 		fprintf(stderr, "DEBUG_EXECIMAGE: already have stat\n");
 #endif
+		/*
+		 * Switch the file descritor to blocking if we are called on
+		 * an instance that was opened in kext prep queue mode.  This
+		 * way we do not have to change all the code to retry all file
+		 * operations when outside of prep queue mode.
+		 */
+		if (image->fd != -1 && !kern &&
+		    sys_fd_setblocking(image->fd) == -1)
+			return -1;
 		return 0;
 	}
 
@@ -197,9 +212,18 @@ image_exec_open(image_exec_t *image, const audit_attr_t *attr) {
 			goto fallback;
 		return -1;
 	}
-
 	assert(!!strncmp(image->path, "/dev/", 5));
-	image->fd = open(image->path, O_RDONLY);
+
+	/*
+	 * Open the image file non-blocking if the kext is waiting for us.
+	 * This is to avoid blocking processes in the kext while a long-running
+	 * low-level disk operation is in progress, such as while Boot Camp
+	 * Assistant is editing partitions or Disk Utility is running fsck.
+	 */
+	oflag = O_RDONLY;
+	if (kern)
+		oflag |= O_NONBLOCK;
+	image->fd = open(image->path, oflag);
 	if (image->fd == -1) {
 		if (attr)
 			goto fallback;
@@ -221,9 +245,15 @@ image_exec_open(image_exec_t *image, const audit_attr_t *attr) {
 		goto fallback;
 
 	/* https://www.in-ulm.de/~mascheck/various/shebang/ */
-	if (pread(image->fd, buf, sizeof(buf), 0) == 2)
-		if (buf[0] == '#' && buf[1] == '!')
-			image->flags |= EIFLAG_SHEBANG;
+	rv = pread(image->fd, buf, sizeof(buf), 0);
+	if (rv == -1) {
+		close(image->fd);
+		image->fd = -1;
+		if (attr)
+			goto fallback;
+		return -1;
+	} else if ((rv == 2) && (buf[0] == '#' && buf[1] == '!'))
+		image->flags |= EIFLAG_SHEBANG;
 
 	image->flags |= EIFLAG_STAT;
 #ifdef DEBUG_EXECIMAGE
@@ -583,7 +613,7 @@ procmon_proc_from_pid(pid_t pid, bool log_event, struct timespec *tv) {
 		proctab_remove(pid, tv);
 		return NULL;
 	}
-	image_exec_open(proc->image_exec, NULL);
+	image_exec_open(proc->image_exec, NULL, false);
 
 	/* after acquiring all info from process, go after parent before
 	 * submitting the child into the queues */
@@ -909,7 +939,7 @@ procmon_exec(struct timespec *tv,
 		free(imagepath);
 	}
 	assert(image);
-	image_exec_open(image, attr);
+	image_exec_open(image, attr, false);
 
 	/*
 	 * XXX why are we not using the shebang from the script file here if
@@ -973,7 +1003,7 @@ procmon_exec(struct timespec *tv,
 			}
 		}
 		assert(interp);
-		image_exec_open(interp, NULL);
+		image_exec_open(interp, NULL, false);
 	}
 
 	/* replace the process' executable image */
@@ -1134,7 +1164,7 @@ procmon_kern_preexec(struct timespec *tm, pid_t pid, const char *imagepath) {
 		return;
 	ei->hdr.tv = *tm;
 	ei->pid = pid;
-	image_exec_open(ei, NULL);
+	image_exec_open(ei, NULL, true);
 	image_exec_acquire(ei, true);
 	prepq_append(ei);
 }

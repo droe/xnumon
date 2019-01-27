@@ -53,12 +53,11 @@ The log subsystem was designed to be easy to extend with custom log drivers.
 
 ## Requirements
 
-A supported version of OS X or macOS, currently:
+A supported version of macOS, currently:
 
--   OS X 10.11 El Capitan
--   macOS 10.12 Sierra
--   macOS 10.13 High Sierra
 -   macOS 10.14 Mojave
+-   macOS 10.13 High Sierra
+-   macOS 10.12 Sierra
 
 Releases of xnumon are considered safe to deploy in production environments.
 
@@ -170,7 +169,7 @@ user consent requirement of High Sierra and later.
 
 ## Copyright and License
 
-Copyright (c) 2017-2018, [Daniel Roethlisberger](//daniel.roe.ch/).  
+Copyright (c) 2017-2019, [Daniel Roethlisberger](//daniel.roe.ch/).  
 All rights reserved.  
 Licensed under the Open Software License version 3.0.  
 Contains components licensed under BSD and MIT licenses as well as components
