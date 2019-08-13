@@ -6,6 +6,16 @@ https://www.roe.ch/xnumon
 
 [//]: # (__BUILD_VERSION__)
 
+## Project Status
+
+To fully support macOS 10.15 Catalina, including reliable acquisition of
+executable images, xnumon will need major refactoring in order to replace the
+kernel extension and `audit(4)` code with two new System Extensions.  That work
+has not been started yet and there is currently no roadmap.  When or if there
+are any specific plans, this notice will be updated.  Feel free to contact me
+if you are interested in working on this.
+
+
 ## Overview
 
 xnumon is a monitoring agent that produces system activity logs intended to be
@@ -178,8 +188,3 @@ released under the Unlicense.
 See `LICENSE`, `LICENSE.contrib` and `LICENSE.third` as well as the respective
 source file headers for details.
 
-
-## Sponsoring
-
-If you are interested in supporting the development and maintenance of xnumon,
-[contact me](mailto:daniel@roe.ch).
