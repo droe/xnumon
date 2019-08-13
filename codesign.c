@@ -249,18 +249,36 @@ codesign_new(const char *cpath, pid_t pid) {
 		rv = SecStaticCodeCheckValidity(scode,
 		                                csflags,
 		                                designated_req);
-		DEBUG(config->debug && rv != errSecSuccess,
-		      "codesign_bad",
-		      "SecStaticCodeCheckValidity(%s, full, designated_req)"
-		      " => %i", cpath, rv);
 	} else {
 		rv = SecCodeCheckValidity((SecCodeRef)scode,
 		                          csflags,
 		                          designated_req);
+	}
+	const char *badreason;
+	if (config->debug) {
+		switch (rv) {
+		case errSecSuccess:
+			badreason = "success";
+			break;
+		case CSSMERR_TP_CERT_REVOKED:
+			/* includes revocation of certs seen on malware */
+			badreason = "revoked";
+			break;
+		default:
+			badreason = "other";
+			break;
+		}
+	}
+	if (cpath) {
+		DEBUG(config->debug && rv != errSecSuccess,
+		      "codesign_bad",
+		      "SecStaticCodeCheckValidity(%s, full, designated_req)"
+		      " => %i (%s)", cpath, rv, badreason);
+	} else {
 		DEBUG(config->debug && rv != errSecSuccess,
 		      "codesign_bad",
 		      "SecCodeCheckValidity(%i, full, designated_req)"
-		      " => %i", pid, rv);
+		      " => %i (%s)", pid, rv, badreason);
 	}
 	CFRelease(designated_req);
 	if (rv != errSecSuccess) {
