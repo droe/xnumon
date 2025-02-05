@@ -1,19 +1,26 @@
 # xnumon - monitor macOS for malicious activity
 https://www.roe.ch/xnumon
 
-[![Build status](https://travis-ci.com/droe/xnumon.svg)](https://travis-ci.com/droe/xnumon)
-[![Gitter chat](https://badges.gitter.im/droe/xnumon.png)](https://gitter.im/droe/xnumon)
-
 [//]: # (__BUILD_VERSION__)
 
 ## Project Status
 
-To fully support macOS 10.15 Catalina, including reliable acquisition of
-executable images, xnumon will need major refactoring in order to replace the
-kernel extension and `audit(4)` code with two new System Extensions.  That work
-has not been started yet and there is currently no roadmap.  When or if there
-are any specific plans, this notice will be updated.  Feel free to contact me
-if you are interested in working on this.
+macOS no longer supports kernel extensions, and since macOS 11.0, audit(4) has
+been deprecated in favour of the Endpoint Security API and Network Extensions.
+audit(4) has been disabled by default in macOS 14.0.
+
+xnumon still works, though without kext, the acquisition of executable images
+is less reliable.
+
+On macOS 14.0 and later, you need to re-enable audit(4) by copying
+`/etc/security/audit_control.example` to `/etc/security/audit_control`, then
+running `launchctl enable system/com.apple.auditd` as root and rebooting.
+
+To fully support recent macOS, the kernel extension and `audit(4)` code needs
+to be replaced with two new System Extensions using the Endpoint Security API
+and the Network Extension API respectively.  That work has not started and
+there is no roadmap.  When or if there are any specific plans, this notice will
+be updated.  Feel free to contact me if you are interested in working on this.
 
 
 ## Overview
@@ -43,7 +50,7 @@ Currently implemented are the following
     connection.&nbsp;<sup>&Dagger;</sup>
 
 <sup>&ast;</sup>    _stable_  
-<sup>&dagger;</sup> _experimental and under active development_  
+<sup>&dagger;</sup> _experimental_  
 <sup>&Dagger;</sup> _stable, but limited to blocking sockets due to an
 unresolved bug in audit(4)_
 
@@ -63,13 +70,13 @@ The log subsystem was designed to be easy to extend with custom log drivers.
 
 ## Requirements
 
-A supported version of macOS, currently:
+A supported version of macOS, for full support includingt the kext:
 
 -   macOS 10.14 Mojave
 -   macOS 10.13 High Sierra
 -   macOS 10.12 Sierra
 
-Releases of xnumon are considered safe to deploy in production environments.
+Later versions work fine without the kext.
 
 
 ## Documentation
