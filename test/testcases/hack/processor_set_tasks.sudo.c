@@ -122,14 +122,16 @@ main(int argc, char *argv[]) {
 	if (rv != 0) {
 		errno = rv;
 		perror("posix_spawnattr_init");
+		return 1;
 	}
 	rv = posix_spawnattr_setflags(&attr, POSIX_SPAWN_START_SUSPENDED);
 	if (rv != 0) {
 		errno = rv;
 		perror("posix_spawnattr_setflags");
+		return 1;
 	}
 	rv = posix_spawn(&pid, PATH, NULL, NULL, av, ev);
-	if (rv == -1) {
+	if (rv != 0) {
 		perror("spawn");
 		return 1;
 	}
