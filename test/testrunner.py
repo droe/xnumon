@@ -20,7 +20,7 @@ import subprocess
 import sys
 import time
 
-import haklib.dt
+import lib.dt
 
 
 def colour(code, text, extra=''):
@@ -79,7 +79,7 @@ class Logs:
                     continue
                 if 'time' not in obj:
                     continue
-                t = haklib.dt.fromiso8601(obj['time'])
+                t = lib.dt.fromiso8601(obj['time'])
                 if begin and t < begin:
                     continue
                 if end and t > end:
@@ -304,7 +304,7 @@ class TestSuite:
             self.pid = proc.pid
 
     def __init__(self):
-        self._dt_begin = haklib.dt.utcnow() - datetime.timedelta(seconds=1)
+        self._dt_begin = lib.dt.utcnow() - datetime.timedelta(seconds=1)
         self._testcases = []
         self.success_testcases = []
         self.failed_testcases = []
@@ -367,7 +367,7 @@ class TestSuite:
         relevant time window.
         """
         logfile = '/var/log/xnumon.log'
-        self._dt_end = haklib.dt.utcnow() + datetime.timedelta(seconds=1)
+        self._dt_end = lib.dt.utcnow() + datetime.timedelta(seconds=1)
         print("waiting for logs to be written")
         time.sleep(1)
         print("reading logs from %s..." % logfile)

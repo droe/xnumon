@@ -25,10 +25,4 @@ Mk/xcode.mk, kext/Mk/{kext,xcode}.mk:
     Released under the Unlicense.
     https://github.com/droe/example.kext
 
-test/haklib/*:
-
-    Copyright (c) Daniel Roethlisberger.
-    Licensed under a 2-clause BSD license.
-    https://github.com/droe/haklib
-
 See the respective source code, license and/or website for details.
